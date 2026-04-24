@@ -24,8 +24,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Portal Sekolah",
+  title: "GuruKuy",
   description: "Admin Panel",
+  icons: {
+    icon: "/images/logo-gurukuy.png",
+  },
 };
 
 export const viewport: Viewport = {

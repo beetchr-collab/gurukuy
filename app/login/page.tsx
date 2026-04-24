@@ -68,88 +68,114 @@ export default function LoginPage() {
     }
   };
 
-const handleGoogleLogin = async () => {
-  setLoading(true);
-  setError('');
+  const handleGoogleLogin = async () => {
+    setLoading(true);
+    setError('');
 
-  try {
-    const provider = new GoogleAuthProvider();
+    try {
+      const provider = new GoogleAuthProvider();
 
-    const result = await signInWithPopup(auth, provider);
-    const user = result.user;
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
 
-    const uid = user.uid;
-    const photo = user.photoURL; // ✅ DI SINI
+      const uid = user.uid;
+      const photo = user.photoURL; // ✅ DI SINI
 
-    const userRef = doc(db, 'users', uid);
-    const userDoc = await getDoc(userRef);
+      const userRef = doc(db, 'users', uid);
+      const userDoc = await getDoc(userRef);
 
-    let role = 'guru'; // ubah role default disini
-    let username = user.displayName || 'User';
+      let role = 'guru'; // ubah role default disini
+      let username = user.displayName || 'User';
 
-    if (!userDoc.exists()) {
-      await setDoc(userRef, {
-        username,
-        email: user.email,
-        role: 'guru', // ubah role default disini
-        photo, // ✅ simpan ke Firestore juga (opsional tapi bagus)
-        createdAt: new Date(),
-      });
+      if (!userDoc.exists()) {
+        await setDoc(userRef, {
+          username,
+          email: user.email,
+          role: 'guru', // ubah role default disini
+          photo, // ✅ simpan ke Firestore juga (opsional tapi bagus)
+          createdAt: new Date(),
+        });
+      }
+
+      // ✅ simpan ke localStorage
+      localStorage.setItem(
+        'user',
+        JSON.stringify({
+          uid,
+          role,
+          username,
+          email: user.email,
+          photo, // ✅ penting
+        })
+      );
+
+      // redirect
+      router.push('/admin/guru/dashboard');
+
+    } catch (err: any) {
+      setError(err.message || 'Login Google gagal');
+    } finally {
+      setLoading(false);
     }
-
-    // ✅ simpan ke localStorage
-    localStorage.setItem(
-      'user',
-      JSON.stringify({
-        uid,
-        role,
-        username,
-        email: user.email,
-        photo, // ✅ penting
-      })
-    );
-
-    // redirect
-    router.push('/admin/guru/dashboard');
-
-  } catch (err: any) {
-    setError(err.message || 'Login Google gagal');
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   return (
-    <div className="container-fluid min-vh-100 login-wrapper">
+    <div className={`container-fluid min-vh-100 ${styles.loginWrapper}`}>
       <div className="row min-vh-100">
 
         {/* CAROUSEL (KIRI) */}
         <div className="col-lg-7 col-md-6 d-none d-md-block p-0 order-lg-1">
-          <div
-            id="loginCarousel"
-            className="carousel slide h-100"
-            data-bs-ride="carousel"
-          >
-            <div className="carousel-inner h-100">
-              <div className="carousel-item active h-100">
-                <div className="carousel-bg bg-1">
-                  <div className="overlay-text">
-                    <h1>Portal Sekolah Digital</h1>
-                    <p>Belajar lebih modern dan interaktif</p>
+          <div className="carousel-inner h-100">
+            <div className="carousel-item active h-100">
+              <div className={styles.heroSection}>
+
+                {/* TEXT */}
+                <div className={styles.heroText}>
+                  <h1>
+                    <span className={styles.blue}>Guru</span>
+                    <span className={styles.orange}>Kuy</span>
+                  </h1>
+
+                  <div className={styles.badge}>
+                    Aplikasi untuk Guru Hebat
                   </div>
+
+                  <p className="text-white">
+                    GuruKuy hadir untuk membantu guru mengelola tugas,
+                    administrasi, dan pembelajaran dengan lebih mudah,
+                    cepat, dan menyenangkan.
+                  </p>
                 </div>
+
+                {/* IMAGE */}
+                <div className={styles.heroImage}>
+                  <img
+                    src="/images/gurukuy.png" // nanti kita jelaskan
+                    alt="GuruKuy"
+                  />
+                </div>
+
               </div>
             </div>
           </div>
         </div>
 
         {/* FORM LOGIN (KANAN) */}
-        <div className="col-lg-5 col-md-6 d-flex align-items-center justify-content-center bg-white order-lg-2">
-          <div className="login-card w-100 px-4">
-            <h2 className="fw-bold mb-2">Selamat Datang</h2>
-            <p className="text-muted mb-4">
-              Silakan login untuk melanjutkan
-            </p>
+        <div className="col-lg-5 col-md-6 d-flex align-items-center justify-content-center order-lg-2">
+          <div className={`${styles.loginCard} w-100 px-4`}>
+            {/* IMAGE */}
+            <div className={styles.loginHeader}>
+              <img
+                src="/images/imagelogo.png" // taruh di public/images
+                alt="GuruKuy"
+              />
+            </div>
+            <div className="text-center">
+              <h2 className="fw-bold mb-2">Selamat Datang</h2>
+              <p className="text-muted mb-4">
+                Silakan login untuk melanjutkan
+              </p>
+            </div>
 
             {error && (
               <div className="alert alert-danger">{error}</div>
@@ -160,7 +186,7 @@ const handleGoogleLogin = async () => {
                 <label className="form-label">Email</label>
                 <input
                   type="email"
-                  className="form-control form-control-lg"
+                  className="form-control"
                   placeholder="nama@email.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -172,7 +198,7 @@ const handleGoogleLogin = async () => {
                 <label className="form-label">Password</label>
                 <input
                   type="password"
-                  className="form-control form-control-lg"
+                  className="form-control"
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -180,26 +206,31 @@ const handleGoogleLogin = async () => {
                 />
               </div>
 
-              <button
-                className="btn btn-primary btn-lg w-100"
-                disabled={loading}
-              >
-                {loading ? 'Loading...' : 'Login'}
-              </button>
+              {/* BUTTON ROW */}
+              <div className="row g-2 mt-2">
+                <div className="col-6">
+                  <button
+                    type="submit"
+                    className="btn btn-outline-primary w-100"
+                    disabled={loading}
+                  >
+                    {loading ? 'Loading...' : 'Login'}
+                  </button>
+                </div>
 
-              <div className="text-center my-3">atau</div>
-
-              <button
-                type="button"
-                onClick={handleGoogleLogin}
-                className="btn btn-outline-danger btn-lg w-100"
-                disabled={loading}
-              >
-                <i className="bi bi-google me-2"></i>
-                Login dengan Google
-              </button>
+                <div className="col-6">
+                  <button
+                    type="button"
+                    onClick={handleGoogleLogin}
+                    className="btn btn-outline-danger w-100"
+                    disabled={loading}
+                  >
+                    <i className="bi bi-google me-2"></i>
+                    Google
+                  </button>
+                </div>
+              </div>
             </form>
-
             <p className="text-center text-muted mt-4">
               © 2026 Portal Sekolah
             </p>

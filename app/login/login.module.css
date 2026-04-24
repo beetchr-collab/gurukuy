@@ -1,49 +1,182 @@
-.login-wrapper {
-  background: linear-gradient(135deg, #4e73df, #1cc88a);
+.loginWrapper {
+    background: linear-gradient(135deg, #1e3a8a, #2563eb, #f59e0b);
+    background-size: 200% 200%;
+    animation: gradientMove 10s ease infinite;
 }
 
-.login-card {
-  max-width: 420px;
+@keyframes gradientMove {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
 }
 
-.carousel-bg {
-  height: 100%;
-  background-size: cover;
-  background-position: center;
-  position: relative;
+/*Login*/
+.loginCard {
+    background: rgba(255, 255, 255, 0.75);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+
+    border-radius: 16px;
+    padding: 32px;
+
+    box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.15),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+
+    border: 1px solid rgba(255, 255, 255, 0.2);
+
+    transition: all 0.3s ease;
+    max-width: 420px;
+    margin: auto;
 }
 
-.bg-1 {
-  background-image: url('/school1.jpg');
+.loginCard:hover {
+    transform: translateY(-4px);
+    box-shadow:
+        0 12px 40px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
 }
 
-.bg-2 {
-  background-image: url('/school2.jpg');
+.loginHeader {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 15px;
 }
 
-.bg-3 {
-  background-image: url('/school3.jpg');
+.loginHeader img {
+    width: 130px;
+    height: auto;
+    object-fit: contain;
 }
 
-.carousel-bg::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.55);
+@keyframes float {
+    0% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-6px);
+    }
+
+    100% {
+        transform: translateY(0);
+    }
 }
 
+/*Kiri*/
+
+.heroSection {
+    display: flex;
+    flex-direction: column;
+    /* ⬅️ ini kuncinya */
+    align-items: flex-start;
+    justify-content: center;
+    height: 100%;
+    padding: 60px;
+}
+
+/* TEXT */
+.heroText {
+    max-width: 500px;
+    z-index: 2;
+}
+
+.heroText h1 {
+    font-size: 48px;
+    font-weight: 800;
+}
+
+.blue {
+    color: #2563eb;
+}
+
+.orange {
+    color: #f59e0b;
+}
+
+.badge {
+    display: inline-block;
+    background: #2563eb;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 999px;
+    margin: 15px 0;
+    font-size: 14px;
+}
+
+.heroText p {
+    color: #444;
+    line-height: 1.6;
+}
+
+/* IMAGE */
+.heroImage {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin-top: 30px;
+}
+
+.heroImage img {
+    width: 100%;
+    max-width: 100%;
+    animation: float 4s ease-in-out infinite;
+}
+
+/* ANIMATION */
+@keyframes float {
+    0% {
+        transform: translateY(0px);
+    }
+
+    50% {
+        transform: translateY(-12px);
+    }
+
+    100% {
+        transform: translateY(0px);
+    }
+}
+
+/* INPUT */
+.modern-input {
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 0.9rem;
+}
+
+/* BUTTON */
+.modern-btn {
+    padding: 8px;
+    font-size: 0.9rem;
+    border-radius: 10px;
+}
+
+
+/* TEXT OVERLAY */
 .overlay-text {
-  position: absolute;
-  bottom: 20%;
-  left: 10%;
-  color: #fff;
-  z-index: 2;
+    position: absolute;
+    bottom: 20%;
+    left: 10%;
+    color: #fff;
+    z-index: 2;
+    max-width: 400px;
 }
 
 .overlay-text h1 {
-  font-weight: 700;
+    font-weight: 700;
+    font-size: 2rem;
 }
 
 .overlay-text p {
-  font-size: 1.1rem;
+    font-size: 1rem;
+    opacity: 0.9;
 }
