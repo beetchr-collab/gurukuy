@@ -1,6 +1,6 @@
 {
-  "name": "portal-tunjung2",
-  "version": "0.1.0",
+  "name": "gurukuy",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -26,9 +26,11 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "autoprefixer": "^10.5.0",
     "eslint": "^9",
     "eslint-config-next": "16.1.1",
-    "tailwindcss": "^4",
+    "postcss": "^8.5.10",
+    "tailwindcss": "^4.2.4",
     "typescript": "^5"
   }
 }
