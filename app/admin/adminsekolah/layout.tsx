@@ -9,7 +9,7 @@ export default function MasterLayout({
   children: React.ReactNode
 }) {
   return (
-     <RoleGuard role="guru">
+     <RoleGuard role="admin">
           <div className="app-wrapper">
             <Navbar />
             <Sidebar />

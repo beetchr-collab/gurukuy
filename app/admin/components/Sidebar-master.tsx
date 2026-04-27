@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
+import Image from "next/image";
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -14,29 +15,27 @@ export default function Sidebar() {
   const isActive = (path: string) =>
     pathname === path || pathname.startsWith(path + "/");
 
-  const handleLogout = async () => {
-    await signOut(auth);
-    router.push("/login");
-
-    // 🔥 auto close sidebar di mobile saat klik menu
-    const closeSidebarMobile = () => {
-      if (window.innerWidth < 992) {
-        document.body.classList.remove("sidebar-open");
-        document.body.classList.remove("sidebar-collapse");
-      }
-    }
-  };
-
   return (
     <aside className="app-sidebar bg-body-secondary shadow" data-bs-theme="dark">
       {/* BRAND */}
       <div className="sidebar-brand">
-        <Link href="/admin/dashboard" className="brand-link">
-          <span className="brand-text fw-semibold">
-            SDN Tunjung 02
-          </span>
-        </Link>
-      </div>
+  <Link
+    href="/"
+    className="brand-link d-flex align-items-center justify-content-center"
+    style={{ background: "transparent" }}
+  >
+    <img
+      src="/images/logo_sidebar.png"
+      alt="GuruKuy Logo"
+      className="brand-image"
+      style={{
+        maxHeight: 55,
+        width: "auto",
+        objectFit: "contain"
+      }}
+    />
+  </Link>
+</div>
 
       {/* SIDEBAR */}
       <div className="sidebar-wrapper">
@@ -48,8 +47,8 @@ export default function Sidebar() {
             data-accordion="false"
           >
 
-            {/* DASHBOARD — ADMIN SAJA */}
-            {user?.role === "admin" && (
+            {/* DASHBOARD — SUPERADMIN */}
+            {user?.role === "superadmin" && (
               <li className="nav-item">
                 <Link
                   href="/admin/dashboard"
@@ -61,38 +60,30 @@ export default function Sidebar() {
               </li>
             )}
 
-            {/* MASTER — ADMIN */}
+            {/* DASHBOARD — ADMIN */}
             {user?.role === "admin" && (
               <>
                 <li className="nav-item">
                   <Link
-                    href="/admin/master"
-                    className={`nav-link ${isActive("/admin/master") ? "active bg-danger text-white" : ""}`}
+                    href="/admin/adminsekolah/dashboard"
+                    className={`nav-link ${isActive("/admin/adminsekolah/dashboard") ? "active" : ""}`}
                   >
-                    <i className="nav-icon fas fa-chart-line"></i>
-                    <p>Beranda</p>
+                    <i className="nav-icon fas fa-chalkboard-teacher"></i>
+                    <p>Dashboard Admin</p>
                   </Link>
                 </li>
 
+                <li className="nav-header">MENU UTAMA</li>
                 <li className="nav-item">
                   <Link
-                    href="/admin/master/users"
-                    className={`nav-link ${isActive("/admin/master/users") ? "active bg-danger text-white" : ""}`}
-                  >
-                    <i className="nav-icon fas fa-users"></i>
-                    <p>Pengguna</p>
-                  </Link>
-                </li>
-
-                <li className="nav-item">
-                  <Link
-                    href="/admin/master/sekolah"
-                    className={`nav-link ${isActive("/admin/master/sekolah") ? "active bg-danger text-white" : ""}`}
+                    href="/admin/adminsekolah/sekolah"
+                    className={`nav-link ${isActive("/admin/adminsekolah/sekolah") ? "active bg-danger text-white" : ""}`}
                   >
                     <i className="nav-icon fas fa-school"></i>
                     <p>Data Sekolah</p>
                   </Link>
                 </li>
+
               </>
             )}
 
@@ -114,20 +105,23 @@ export default function Sidebar() {
                     href="/admin/guru/profil"
                     className={`nav-link ${isActive("/admin/guru/profil") ? "active bg-danger text-white" : ""}`}
                   >
-                    <i className="nav-icon fas fa-users"></i>
+                    <i className="nav-icon fas fa-user"></i>
                     <p>Profil</p>
                   </Link>
                 </li>
+
+                <li className="nav-item">
+                  <Link
+                    href="/admin/guru/sekolah"
+                    className={`nav-link ${isActive("/admin/guru/sekolah") ? "active bg-danger text-white" : ""}`}
+                  >
+                    <i className="nav-icon fas fa-school"></i>
+                    <p>Data Sekolah</p>
+                  </Link>
+                </li>
+
               </>
             )}
-
-            {/* LOGOUT */}
-            <li className="nav-item mt-3">
-              <button onClick={handleLogout} className="nav-link text-danger">
-                <i className="nav-icon fas fa-sign-out-alt"></i>
-                <p>Logout</p>
-              </button>
-            </li>
 
           </ul>
         </nav>

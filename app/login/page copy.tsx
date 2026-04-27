@@ -105,6 +105,9 @@ export default function LoginPage() {
           status: "",
           jenjang: "",
           mapel: "",
+
+          // Menambahkan data sekolah di firebase
+          schoolId: null,
         };
 
         await setDoc(userRef, userData);

@@ -8,7 +8,7 @@ import { auth, db } from "@/lib/firebase";
 type UserData = {
   uid: string;
   email: string | null;
-  role: "admin" | "guru" | "siswa";
+  role: "superadmin" | "admin" | "guru" | "siswa";
   username?: string;
   photo?: string; // ✅ tambahkan ini
 };
