@@ -19,23 +19,23 @@ export default function Sidebar() {
     <aside className="app-sidebar bg-body-secondary shadow" data-bs-theme="dark">
       {/* BRAND */}
       <div className="sidebar-brand">
-  <Link
-    href="/"
-    className="brand-link d-flex align-items-center justify-content-center"
-    style={{ background: "transparent" }}
-  >
-    <img
-      src="/images/logo_sidebar.png"
-      alt="GuruKuy Logo"
-      className="brand-image"
-      style={{
-        maxHeight: 55,
-        width: "auto",
-        objectFit: "contain"
-      }}
-    />
-  </Link>
-</div>
+        <Link
+          href="/"
+          className="brand-link d-flex align-items-center justify-content-center"
+          style={{ background: "transparent" }}
+        >
+          <img
+            src="/images/logo_sidebar.png"
+            alt="GuruKuy Logo"
+            className="brand-image"
+            style={{
+              maxHeight: 55,
+              width: "auto",
+              objectFit: "contain"
+            }}
+          />
+        </Link>
+      </div>
 
       {/* SIDEBAR */}
       <div className="sidebar-wrapper">
@@ -83,6 +83,17 @@ export default function Sidebar() {
                     <p>Data Sekolah</p>
                   </Link>
                 </li>
+
+                <li className="nav-item">
+                  <Link
+                    href="/admin/adminsekolah/listguru"
+                    className={`nav-link ${isActive("/admin/adminsekolah/listguru") ? "active bg-danger text-white" : ""}`}
+                  >
+                    <i className="nav-icon fas fa-list"></i>
+                    <p>Daftar Guru</p>
+                  </Link>
+                </li>
+
 
               </>
             )}

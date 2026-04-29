@@ -149,18 +149,6 @@ export default function SekolahPage() {
           ...form,
           ownerId: user.uid,
         });
-
-        // 🔥 TAMBAHAN (WAJIB)
-        await setDoc(
-          doc(db, "users", user.uid),
-          {
-            schoolId: user.uid,
-            kodeSekolah: form.kodeSekolah,
-            role: "admin",
-          },
-          { merge: true }
-        );
-
         alert("Sekolah berhasil dibuat");
         setIsEdit(true);
       }
