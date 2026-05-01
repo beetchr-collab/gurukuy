@@ -2,6 +2,7 @@ import Navbar from "@/app/admin/components/Navbar"
 import Sidebar from "@/app/admin/components/Sidebar-master"
 import Footer from "@/app/admin/components/Footer"
 import RoleGuard from "@/context/RoleGuard";
+import "@/app/globals.css";
 
 export default function MasterLayout({
   children,

@@ -162,7 +162,7 @@ export default function Sidebar() {
                 <li className="nav-item">
                   <Link
                     href="/admin/guru/profil"
-                    className={`nav-link ${isActive("/admin/guru/profil") ? "active bg-danger text-white" : ""}`}
+                    className={`nav-link ${isActive("/admin/guru/profil") ? "active bg-primary text-white" : ""}`}
                   >
                     <i className="nav-icon fas fa-user"></i>
                     <p>Profil</p>
@@ -172,14 +172,22 @@ export default function Sidebar() {
                 <li className="nav-item">
                   <Link
                     href="/admin/guru/sekolah"
-                    className={`nav-link ${isActive("/admin/guru/sekolah") ? "active bg-danger text-white" : ""}`}
+                    className={`nav-link ${isActive("/admin/guru/sekolah") ? "active bg-primary text-white" : ""}`}
                   >
                     <i className="nav-icon fas fa-school"></i>
                     <p>Data Sekolah</p>
                   </Link>
                 </li>
 
-
+                <li className="nav-item">
+                  <Link
+                    href="/admin/guru/kelas"
+                    className={`nav-link ${isActive("/admin/guru/kelas") ? "active bg-primary text-white" : ""}`}
+                  >
+                    <i className="nav-icon fas fa-door-open"></i>
+                    <p>Kelas</p>
+                  </Link>
+                </li>
               </>
             )}
 

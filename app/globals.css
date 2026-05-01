@@ -23,7 +23,7 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
-   height: 100%;
+  height: 100%;
 }
 
 
@@ -88,7 +88,7 @@ body {
 
 .sekolah-card:hover i {
   transform: scale(1.15);
-  
+
 }
 
 .sekolah-card::before {
@@ -113,7 +113,7 @@ body {
 
 .binbin-stat-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 10px 25px rgba(0,0,0,0.12);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
 }
 
 .binbin-icon-box {
@@ -125,4 +125,122 @@ body {
   justify-content: center;
   color: white;
   font-size: 18px;
+}
+
+/* ================= CARD ================= */
+/* CARD */
+.binbin-card {
+  border-radius: 16px;
+  overflow: hidden;
+  transition: all 0.25s ease;
+  background: #fff;
+}
+
+.binbin-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+}
+
+/* HEADER GRADIENT */
+.binbin-card-header-custom {
+  padding: 14px 16px;
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+  color: #fff;
+  font-weight: 600;
+}
+
+/* BODY */
+.binbin-card-body {
+  padding: 16px;
+  margin-right: 8px;
+  /* 🔥 ini yang paling penting */
+}
+
+.binbin-card-body p {
+  font-size: 14px;
+  color: #555;
+  margin-bottom: 10px;
+  line-height: 1.4;
+}
+
+/* ICON */
+.binbin-card-body i {
+  width: 20px;
+}
+
+.binbin-card-footer {
+  padding: 12px 16px;
+  /* 🔥 biar tombol nggak mepet */
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  /* 🔥 ini penting */
+}
+
+/* BUTTON */
+.binbin-card-footer .btn {
+  border-radius: 10px;
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* BADGE */
+.badge-tingkat {
+  font-size: 11px;
+  padding: 6px 10px;
+  border-radius: 20px;
+
+}
+
+/* ================= WARNA PER TINGKAT ================= */
+.tingkat-1 {
+  background: linear-gradient(45deg, #4facfe, #00f2fe);
+}
+
+.tingkat-2 {
+  background: linear-gradient(45deg, #43e97b, #38f9d7);
+}
+
+.tingkat-3 {
+  background: linear-gradient(45deg, #fa709a, #fee140);
+}
+
+.tingkat-4 {
+  background: linear-gradient(45deg, #30cfd0, #330867);
+}
+
+.tingkat-5 {
+  background: linear-gradient(45deg, #667eea, #764ba2);
+}
+
+.tingkat-6 {
+  background: linear-gradient(45deg, #f7971e, #ffd200);
+}
+
+.tingkat-7 {
+  background: linear-gradient(45deg, #36d1dc, #5b86e5);
+}
+
+.tingkat-8 {
+  background: linear-gradient(45deg, #ff758c, #ff7eb3);
+}
+
+.tingkat-9 {
+  background: linear-gradient(45deg, #11998e, #38ef7d);
+}
+
+.tingkat-10 {
+  background: linear-gradient(45deg, #fc466b, #3f5efb);
+}
+
+.tingkat-11 {
+  background: linear-gradient(45deg, #00c6ff, #0072ff);
+}
+
+.tingkat-12 {
+  background: linear-gradient(45deg, #f953c6, #b91d73);
 }
