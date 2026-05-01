@@ -1,3 +1,4 @@
+import "@/app/globals.css"
 import Navbar from "@/app/admin/components/Navbar"
 import Sidebar from "@/app/admin/components/Sidebar-master"
 import Footer from "@/app/admin/components/Footer"

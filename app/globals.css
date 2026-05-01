@@ -50,3 +50,79 @@ body {
   transform: translateY(20px) scale(0.95);
   transition: all 0.2s ease;
 }
+
+/*Navbar*/
+.navbar-gradient {
+  background: linear-gradient(90deg, #0d6efd, #6610f2);
+  color: white;
+}
+
+/*footer*/
+.footer-gradient {
+  background: linear-gradient(90deg, #0d6efd, #6610f2);
+  color: white;
+}
+
+/*.sekolah-card*/
+.sekolah-card {
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+/* hover naik + shadow */
+.sekolah-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+}
+
+/* efek glow halus */
+.sekolah-card:hover .card-body {
+  background: #fafcff;
+}
+
+/* animasi icon */
+.sekolah-card i {
+  transition: transform 0.3s ease;
+}
+
+.sekolah-card:hover i {
+  transform: scale(1.15);
+  
+}
+
+.sekolah-card::before {
+  content: "";
+  display: block;
+  height: 4px;
+  width: 0%;
+  background: linear-gradient(90deg, #4e73df, #224abe);
+  transition: width 0.3s ease;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+}
+
+.sekolah-card:hover::before {
+  width: 100%;
+}
+
+.binbin-stat-card {
+  border-radius: 12px;
+  transition: all 0.25s ease;
+}
+
+.binbin-stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.12);
+}
+
+.binbin-icon-box {
+  width: 45px;
+  height: 45px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 18px;
+}

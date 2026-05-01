@@ -11,6 +11,7 @@ type UserData = {
   role: "superadmin" | "admin" | "guru" | "siswa";
   username?: string;
   photo?: string; // ✅ tambahkan ini
+  schoolId?: string;
 };
 
 type AuthContextType = {
@@ -51,6 +52,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           photo: rawPhoto
             ? rawPhoto.replace(/"/g, '') + '?sz=100'
             : 'node_modules/admin-lte/dist/assest/img/default-avatar.png', //menghapus tanda kutip
+          schoolId: data?.schoolId,
         });
       }
 

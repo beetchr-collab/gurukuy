@@ -63,7 +63,9 @@ export default function Navbar() {
     };
 
     return (
-        <nav className="app-header navbar navbar-expand bg-secondary-subtle" data-bs-theme="light">
+        <nav className="app-header navbar navbar-expand bg-secondary-subtle" style={{
+            background: "linear-gradient(90deg, #0d6efd, #6610f2)"
+        }}>
             {/* begin::Container */}
             <div className="container-fluid">
                 {/* begin::Start Navbar Links */}

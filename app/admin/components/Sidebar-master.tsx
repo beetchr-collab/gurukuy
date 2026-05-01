@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { useEffect, useState } from "react";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import Image from "next/image";
@@ -12,8 +13,17 @@ export default function Sidebar() {
   const router = useRouter();
   const { user } = useAuth(); // ambil user + role + username
 
-  const isActive = (path: string) =>
-    pathname === path || pathname.startsWith(path + "/");
+  const isActive = (path: string) => pathname === path;
+
+  const isParentActive = (path: string) =>
+    pathname.startsWith(path);
+
+  const [openMenu, setOpenMenu] = useState<string | null>(null);
+  useEffect(() => {
+    if (!pathname.startsWith("/admin/adminsekolah")) {
+      setOpenMenu(null); // 🔥 tutup otomatis
+    }
+  }, [pathname]);
 
   return (
     <aside className="app-sidebar bg-body-secondary shadow" data-bs-theme="dark">
@@ -74,15 +84,53 @@ export default function Sidebar() {
                 </li>
 
                 <li className="nav-header">MENU UTAMA</li>
-                <li className="nav-item">
-                  <Link
-                    href="/admin/adminsekolah/sekolah"
-                    className={`nav-link ${isActive("/admin/adminsekolah/sekolah") ? "active bg-danger text-white" : ""}`}
+                <li className={`nav-item ${openMenu === "sekolah" ? "menu-open" : ""}`}>
+                  <a
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setOpenMenu(openMenu === "sekolah" ? null : "sekolah");
+                    }}
+                    className={`nav-link ${isParentActive("/admin/adminsekolah") ? "active" : ""}`}
                   >
                     <i className="nav-icon fas fa-school"></i>
-                    <p>Data Sekolah</p>
-                  </Link>
+                    <p>
+                      Sekolah
+                      <i className="right fas fa-angle-right"></i>
+                    </p>
+                  </a>
+
+                  <ul className="nav nav-treeview">
+
+                    <li className="nav-item">
+                      <Link
+                        href="/admin/adminsekolah/sekolah"
+                        className={`nav-link ${isActive("/admin/adminsekolah/sekolah")
+                          ? "active bg-danger text-white"
+                          : ""
+                          }`}
+                      >
+                        <i className="far fa-circle nav-icon"></i>
+                        <p>Data Sekolah</p>
+                      </Link>
+                    </li>
+
+                    <li className="nav-item">
+                      <Link
+                        href="/admin/adminsekolah/setting-sekolah"
+                        className={`nav-link ${isActive("/admin/adminsekolah/setting-sekolah")
+                          ? "active bg-danger text-white"
+                          : ""
+                          }`}
+                      >
+                        <i className="far fa-circle nav-icon"></i>
+                        <p>Setting Sekolah</p>
+                      </Link>
+                    </li>
+
+                  </ul>
                 </li>
+
 
                 <li className="nav-item">
                   <Link
@@ -130,6 +178,7 @@ export default function Sidebar() {
                     <p>Data Sekolah</p>
                   </Link>
                 </li>
+
 
               </>
             )}
