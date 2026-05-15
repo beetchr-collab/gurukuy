@@ -131,7 +131,6 @@ export default function Sidebar() {
                   </ul>
                 </li>
 
-
                 <li className="nav-item">
                   <Link
                     href="/admin/adminsekolah/listguru"
@@ -139,6 +138,16 @@ export default function Sidebar() {
                   >
                     <i className="nav-icon fas fa-list"></i>
                     <p>Daftar Guru</p>
+                  </Link>
+                </li>
+
+                <li className="nav-item">
+                  <Link
+                    href="/admin/adminsekolah/siswa/daftarsiswa"
+                    className={`nav-link ${isActive("/admin/adminsekolah/siswa/daftarsiswa") ? "active bg-danger text-white" : ""}`}
+                  >
+                    <i className="nav-icon fas fa-list"></i>
+                    <p>Peserta Didik</p>
                   </Link>
                 </li>
 
@@ -186,6 +195,16 @@ export default function Sidebar() {
                   >
                     <i className="nav-icon fas fa-door-open"></i>
                     <p>Kelas</p>
+                  </Link>
+                </li>
+
+                <li className="nav-item">
+                  <Link
+                    href="/admin/guru/eujian"
+                    className={`nav-link ${isActive("/admin/guru/eujian") ? "active bg-primary text-white" : ""}`}
+                  >
+                    <i className="nav-icon fas fa-laptop"></i>
+                    <p>E-Ujian</p>
                   </Link>
                 </li>
               </>
