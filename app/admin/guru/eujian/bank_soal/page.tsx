@@ -29,6 +29,13 @@ export default function BankSoalPage() {
         jenisPaket: "",
         ownerId: "",
         status: "Tidak Aktif",
+        examStatus: "draft",
+        allowAccess: false,
+        token: "",
+        examDate: "",
+        startTime: "",
+        endTime: "",
+        duration: 0,
     });
 
     const handleChange = (
@@ -44,6 +51,7 @@ export default function BankSoalPage() {
 
     // LOADING
     const [loading, setLoading] = useState(false);
+
     // SIMPAN DATA
     const handleSubmit = async (
         e: React.FormEvent<HTMLFormElement>
@@ -121,6 +129,13 @@ export default function BankSoalPage() {
                 jenisPaket: "",
                 ownerId: "",
                 status: "Tidak Aktif",
+                examStatus: "draft",
+                allowAccess: false,
+                token: "",
+                examDate: "",
+                startTime: "",
+                endTime: "",
+                duration: 0,
             });
 
             // RESET EDIT
@@ -273,6 +288,13 @@ export default function BankSoalPage() {
             jenisPaket: item.jenisPaket || "",
             ownerId: item.ownerId || "",
             status: item.status || "Tidak Aktif",
+            examStatus: "draft",
+            allowAccess: false,
+            token: "",
+            examDate: "",
+            startTime: "",
+            endTime: "",
+            duration: 0,
         });
 
         const modalElement = document.getElementById(
@@ -339,6 +361,43 @@ export default function BankSoalPage() {
         }
     };
 
+    // JUMLAH SOAL PER BANK SOAL
+    const [jumlahSoalMap, setJumlahSoalMap] = useState<{
+        [key: string]: number;
+    }>({});
+    useEffect(() => {
+        if (bankSoalList.length === 0) return;
+
+        const unsubscribes: any[] = [];
+
+        bankSoalList.forEach((bankSoal) => {
+
+            const q = query(
+                collection(
+                    db,
+                    "bank_soal",
+                    bankSoal.id,
+                    "soal"
+                )
+            );
+
+            const unsubscribe = onSnapshot(q, (snapshot) => {
+
+                setJumlahSoalMap((prev) => ({
+                    ...prev,
+                    [bankSoal.id]: snapshot.size,
+                }));
+            });
+
+            unsubscribes.push(unsubscribe);
+        });
+
+        return () => {
+            unsubscribes.forEach((unsub) => unsub());
+        };
+
+    }, [bankSoalList]);
+
     return (
         <>
             <div className="app-main">
@@ -394,8 +453,10 @@ export default function BankSoalPage() {
                                 <div className="d-flex flex-wrap gap-2">
 
                                     <span className="badge bg-light text-primary px-3 py-2">
-                                        <i className="fas fa-layer-group me-1"></i>
-                                        Paket Soal
+                                        <a href="/admin/guru/eujian" className="text-decoration-none text-primary fw-semibold">
+                                            <i className="fas fa-layer-group me-1"></i>
+                                            Status Ujian
+                                        </a>
                                     </span>
 
                                     <span className="badge bg-light text-primary px-3 py-2">
@@ -564,7 +625,7 @@ export default function BankSoalPage() {
 
                                                             {/* JUMLAH SOAL */}
                                                             <span className="badge bg-dark px-3 py-2">
-                                                                {item.jumlahSoal || 0} Soal
+                                                                {jumlahSoalMap[item.id] || 0} Soal
                                                             </span>
 
                                                             {/* TAMBAH SOAL */}
