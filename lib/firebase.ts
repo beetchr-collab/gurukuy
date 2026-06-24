@@ -11,6 +11,16 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
+const missingFirebaseVars = Object.entries(firebaseConfig)
+  .filter(([, value]) => !value)
+  .map(([key]) => key);
+
+if (missingFirebaseVars.length) {
+  const message = `Firebase config missing: ${missingFirebaseVars.join(', ')}`;
+  console.error(message);
+  throw new Error(message);
+}
+
 const app = !getApps().length
   ? initializeApp(firebaseConfig)
   : getApps()[0];

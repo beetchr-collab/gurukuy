@@ -13,6 +13,8 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { usePagination } from "@/hooks/usePagination";
+import Pagination from "@/components/Pagination";
 
 export default function AdminGuruPage() {
   const { user } = useAuth();
@@ -25,8 +27,6 @@ export default function AdminGuruPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedGuru, setSelectedGuru] = useState<any>(null);
   const [deleting, setDeleting] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10; // bebas (misal 5, 10, 20)
 
   /* =========================
      AMBIL SCHOOL ADMIN
@@ -102,10 +102,6 @@ export default function AdminGuruPage() {
     return () => clearInterval(interval);
   }, [user]);
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [search, filterStatus]);
-
   const isOnline = (lastActive: any) => {
     if (!lastActive) return false;
 
@@ -136,13 +132,14 @@ export default function AdminGuruPage() {
   /* =========================
     PAGNITION
   ========================= */
-  const totalPages = Math.ceil(filteredGuru.length / itemsPerPage);
-
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const currentData = filteredGuru.slice(
+  const {
+    currentPage,
+    setCurrentPage,
+    totalPages,
     startIndex,
-    startIndex + itemsPerPage
-  );
+    currentData,
+    itemsPerPage,
+  } = usePagination(filteredGuru, 10);
 
   /* =========================
   HAPUS GURU + MODAL
@@ -318,9 +315,11 @@ Ingin menghubungi terkait data di sistem.`;
 
             <div className="d-flex justify-content-between align-items-center p-3">
               <small>
-                Menampilkan {startIndex + 1} -{" "}
-                {Math.min(startIndex + itemsPerPage, filteredGuru.length)} dari{" "}
-                {filteredGuru.length} data
+                Menampilkan {startIndex + 1} -
+                {Math.min(
+                  startIndex + itemsPerPage,
+                  filteredGuru.length
+                )} dari {filteredGuru.length} data
               </small>
 
               <nav>

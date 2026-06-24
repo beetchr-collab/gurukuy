@@ -1,5 +1,4 @@
 "use client";
-
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import {
@@ -11,6 +10,8 @@ import {
     deleteDoc,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { usePagination } from "@/hooks/usePagination";
+import Pagination from "@/components/Pagination";
 
 export default function AdminSiswaPage() {
     const { user } = useAuth();
@@ -77,11 +78,79 @@ export default function AdminSiswaPage() {
 
                 {/* HEADER */}
                 <div className="content-header">
-                    <h1>Data Peserta Didik</h1>
+                    <h3>Data Peserta Didik</h3>
+                </div>
+
+                {/* ================= INFO CALL OUT ================= */}
+                <div className="callout callout-info mb-3">
+                    <h5>
+                        <i className="bi bi-info-circle-fill me-2"></i>
+                        Informasi Peserta Didik
+                    </h5>
+
+                    <p className="mb-0">
+                        Halaman ini digunakan untuk mengelola data peserta didik meliputi
+                        identitas, kelas, alamat, serta informasi akademik. Pastikan data
+                        yang diinput lengkap dan sesuai dokumen resmi agar informasi tetap
+                        akurat dan mudah diperbarui.
+                    </p>
+                </div>
+
+                {/* ================= ACTION CARD ================= */}
+                <div
+                    className="layout-aksi mb-3"
+                    style={{
+                        background:
+                            "linear-gradient(135deg,#0d6efd 0%,#3b5bdb 50%,#6f42c1 100%)",
+                        borderRadius: "12px",
+                        padding: "16px",
+                        color: "#fff"
+                    }}
+                >
+                    <div className="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 className="mb-1 text-white">
+                                ⚡ Menu Aksi Peserta Didik
+                            </h5>
+                            <small className="text-white">
+                                Tambah, impor, ekspor, dan kelola data siswa.
+                            </small>
+                        </div>
+
+                        <div className="d-flex gap-2">
+                            <a
+                                href="/admin/adminsekolah/siswa/tambahsiswa"
+                                className="btn btn-light"
+                            >
+                                <i className="bi bi-person-plus-fill me-2"></i>
+                                Tambah Siswa
+                            </a>
+
+                            <div className="dropdown">
+                                <button
+                                    className="btn btn-outline-light dropdown-toggle"
+                                    data-bs-toggle="dropdown"
+                                >
+                                    <i className="bi bi-sliders me-2"></i>
+                                    Menu Aksi
+                                </button>
+
+                                <ul className="dropdown-menu dropdown-menu-end" style={{
+                                    zIndex: 9999
+                                }}>
+                                    <li><a className="dropdown-item" href="#">Lanjut Semester</a></li>
+                                    <li><a className="dropdown-item" href="/admin/adminsekolah/siswa/kenaikan-tingkat">Kenaikan Tingkat</a></li>
+                                    <li><a className="dropdown-item" href="#">Export Excel</a></li>
+                                    <li><a className="dropdown-item" href="#">Cetak Data</a></li>
+                                    <li><hr className="dropdown-divider" /></li>
+                                    <li><a className="dropdown-item" href="#">Refresh Data</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 {/* ================= TABLE CARD ================= */}
-
                 <div className="card">
                     <div className="card-header">
                         <h3 className="card-title">Daftar Siswa</h3>
@@ -90,12 +159,6 @@ export default function AdminSiswaPage() {
 
                         {/* TOMBOL TAMBAH */}
                         <a
-                            href="/admin/adminsekolah/siswa/tambahsiswa"
-                            className="btn btn-primary"
-                        >
-                            <i className="fas fa-plus"></i> Tambah Siswa
-                        </a>
-                         <a
                             href="/admin/adminsekolah/siswa/assignkelas"
                             className="btn btn-success"
                         >
@@ -114,7 +177,7 @@ export default function AdminSiswaPage() {
                             }}
                         />
                     </div>
-                    
+
                     <div className="card-body p-3">
                         <table className="table table-striped">
                             <thead>
@@ -125,6 +188,7 @@ export default function AdminSiswaPage() {
                                     <th>NISN</th>
                                     <th>JK</th>
                                     <th>TTL</th>
+                                    <th>Kelas</th>
                                     <th>Aksi</th>
                                 </tr>
                             </thead>
@@ -152,6 +216,7 @@ export default function AdminSiswaPage() {
                                             <td>
                                                 {s.tempatLahir}, {s.tanggalLahir}
                                             </td>
+                                            <td>{s.kelas}</td>
                                             <td>
                                                 <div className="d-flex gap-1">
 

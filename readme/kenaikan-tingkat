@@ -1,0 +1,27 @@
+src/
+│
+├── app/
+│   └── adminsekolah/
+│       └── siswa/
+│           └── kenaikan-tingkat/
+│               └── page.tsx -> sudah
+│
+├── components/
+│   └── promotion/
+│       ├── PromotionForm.tsx -> sudah
+│       ├── PromotionPreview.tsx -> sudah
+│       ├── PromotionSummary.tsx -> sudah
+│       └── PromotionConfirmModal.tsx -> sudah
+│
+├── hooks/
+│   └── usePromotion.ts -> sudah
+│
+├── lib/
+│   └── promotion.ts -> sudah
+│
+├── services/
+│   └── promotion.service.ts -> sudah
+|   └── kepalaSekolah.service.ts -> sudah
+│
+└── types/
+    └── promotion.ts -> sudah

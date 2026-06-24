@@ -6,8 +6,11 @@ import {
   getDocs,
   query,
   where,
+  doc,
+  getDoc,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { useAuth } from "@/context/AuthContext";
 
 type Sekolah = {
   id: string;
@@ -22,217 +25,300 @@ type Sekolah = {
 };
 
 export default function DashboardSekolah() {
-  const [sekolah, setSekolah] = useState<Sekolah | null>(null);
+  const { user } = useAuth();
+
   const [loading, setLoading] = useState(true);
+  const [sekolah, setSekolah] = useState<Sekolah | null>(null);
   const [jumlahGuru, setJumlahGuru] = useState(0);
+  const [jumlahSiswa, setJumlahSiswa] = useState(0);
 
   useEffect(() => {
-    const fetchSekolah = async () => {
+    const loadDashboard = async () => {
       try {
-        const querySnapshot = await getDocs(collection(db, "sekolah"));
+        if (!user?.uid) {
+          setLoading(false);
+          return;
+        }
 
-        if (!querySnapshot.empty) {
-          const doc = querySnapshot.docs[0];
-          setSekolah({
+        // ======================
+        // Ambil Data User Login
+        // ======================
+        const userRef = doc(db, "users", user.uid);
+        const userSnap = await getDoc(userRef);
+
+        if (!userSnap.exists()) {
+          console.error("User tidak ditemukan");
+          setLoading(false);
+          return;
+        }
+
+        const userData = userSnap.data();
+
+        if (!userData.schoolId) {
+          console.error("User belum memiliki schoolId");
+          setLoading(false);
+          return;
+        }
+
+        // ======================
+        // Ambil Data Sekolah
+        // ======================
+        const sekolahRef = doc(
+          db,
+          "sekolah",
+          userData.schoolId
+        );
+
+        const sekolahSnap = await getDoc(sekolahRef);
+
+        if (!sekolahSnap.exists()) {
+          console.error("Sekolah tidak ditemukan");
+          setLoading(false);
+          return;
+        }
+
+        const sekolahData = {
+          id: sekolahSnap.id,
+          ...sekolahSnap.data(),
+        } as Sekolah;
+
+        setSekolah(sekolahData);
+
+        console.log("School ID:", sekolahSnap.id);
+
+        // ======================
+        // Hitung Guru
+        // ======================
+        const guruQuery = query(
+          collection(db, "guru"),
+          where("schoolId", "==", sekolahSnap.id)
+        );
+
+        const guruSnap = await getDocs(guruQuery);
+
+        setJumlahGuru(guruSnap.size);
+
+        console.log(
+          "Guru:",
+          guruSnap.docs.map((doc) => doc.data())
+        );
+
+        // ======================
+        // Hitung Siswa
+        // ======================
+        const siswaQuery = query(
+          collection(db, "students"),
+          where("schoolId", "==", sekolahSnap.id)
+        );
+
+        const siswaSnap = await getDocs(siswaQuery);
+
+        setJumlahSiswa(siswaSnap.size);
+
+        console.log(
+          "Siswa:",
+          siswaSnap.docs.map((doc) => doc.data())
+        );
+
+        // ======================
+        // Debug Semua User
+        // ======================
+        const allUsers = await getDocs(
+          collection(db, "users")
+        );
+
+        console.log(
+          "SEMUA USER:",
+          allUsers.docs.map((doc) => ({
             id: doc.id,
             ...doc.data(),
-          } as Sekolah);
-        } else {
-          setSekolah(null);
-        }
+          }))
+        );
       } catch (error) {
-        console.error("Error ambil sekolah:", error);
+        console.error("Dashboard Error:", error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchSekolah();
-  }, []);
-
-  {/* Jumlah Guru */ }
-  useEffect(() => {
-    const fetchGuru = async () => {
-      try {
-        if (!sekolah?.id) return;
-
-        const q = query(
-          collection(db, "users"),
-          where("schoolId", "==", sekolah.id),
-          where("role", "==", "guru")
-        );
-
-        const snapshot = await getDocs(q);
-        setJumlahGuru(snapshot.size);
-
-      } catch (err) {
-        console.error("Error ambil guru:", err);
-      }
-    };
-
-    fetchGuru();
-  }, [sekolah]);
+    loadDashboard();
+  }, [user]);
 
   if (loading) {
-    return <p>Loading...</p>;
+    return (
+      <main className="app-main">
+        <div className="app-content">
+          <div className="container-fluid">
+            <p>Loading...</p>
+          </div>
+        </div>
+      </main>
+    );
   }
 
   return (
-    <>
-      <main className="app-main">
-        {/* HEADER */}
-        <div className="app-content-header">
-          <div className="container-fluid">
-            <div className="d-flex justify-content-between align-items-center">
-              <h4 className="mb-0">Dashboard</h4>
+    <main className="app-main">
+      {/* HEADER */}
+      <div className="app-content-header">
+        <div className="container-fluid">
+          <div className="d-flex justify-content-between align-items-center">
+            <h4 className="mb-0">Dashboard</h4>
 
-              <nav>
-                <ol className="breadcrumb mb-0">
-                  <li className="breadcrumb-item active">Dashboard</li>
-                </ol>
-              </nav>
-            </div>
+            <nav>
+              <ol className="breadcrumb mb-0">
+                <li className="breadcrumb-item active">
+                  Dashboard
+                </li>
+              </ol>
+            </nav>
           </div>
         </div>
+      </div>
 
-        {/* CONTENT */}
-        <div className="app-content">
-          <div className="container-fluid">
+      {/* CONTENT */}
+      <div className="app-content">
+        <div className="container-fluid">
 
-            {/* WELCOME CARD */}
-            <div className="callout callout-info mb-3">
-              <div className="card-body">
-                <h5 className="fw-bold mb-2">Selamat Datang 👋</h5>
-                <p className="text-muted mb-0">
-                  Portal ini merupakan media informasi dan komunikasi sekolah
-                  yang memberikan layanan cepat, transparan, dan mudah diakses.
-                </p>
-              </div>
+          {/* Welcome */}
+          <div className="callout callout-info mb-3">
+            <div className="card-body">
+              <h5 className="fw-bold mb-2">
+                Selamat Datang 👋
+              </h5>
+              <p className="text-muted mb-0">
+                Portal ini merupakan media informasi dan
+                komunikasi sekolah yang memberikan layanan
+                cepat, transparan, dan mudah diakses.
+              </p>
             </div>
+          </div>
 
-            <div className="row">
-              <div className="col-8">
-                {/* Data Sekolah */}
-                <div className="card sekolah-card mb-3 border-0">
-                  {sekolah ? (
-                    <>
-                      {/* HEADER */}
-                      <div
-                        className="p-3 text-white"
-                        style={{
-                          background: "linear-gradient(135deg, #4e73df, #224abe)",
-                          borderTopLeftRadius: "0.5rem",
-                          borderTopRightRadius: "0.5rem",
-                        }}
-                      >
-                        <h5 className="fw-bold mb-0 d-flex align-items-center gap-2">
-                          <i className="fas fa-school"></i>
-                          {sekolah.namaSekolah}
-                        </h5>
-                      </div>
+          <div className="row">
 
-                      {/* BODY */}
-                      <div className="card-body">
-                        <div className="row">
-                          <div className="col-md-6 mb-2">
-                            <div className="d-flex align-items-center gap-2">
-                              <i className="fas fa-id-card text-primary"></i>
-                              <div>
-                                <small className="text-muted d-block">NPSN</small>
-                                <span className="fw-semibold">{sekolah.npsn}</span>
-                              </div>
-                            </div>
-                          </div>
+            {/* Data Sekolah */}
+            <div className="col-lg-8">
+              <div className="card border-0 shadow-sm">
 
-                          <div className="col-md-6 mb-2">
-                            <div className="d-flex align-items-center gap-2">
-                              <i className="fas fa-map-marker-alt text-danger"></i>
-                              <div>
-                                <small className="text-muted d-block">Alamat</small>
-                                <span className="fw-semibold">{sekolah.alamat} Dusun {sekolah.dusun} RT. {sekolah.rt} RW. {sekolah.rw} Desa {sekolah.desa} Kec. {sekolah.kecamatan}</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </>
-                  ) : (
+                {sekolah ? (
+                  <>
+                    <div
+                      className="p-3 text-white"
+                      style={{
+                        background:
+                          "linear-gradient(135deg,#4e73df,#224abe)",
+                      }}
+                    >
+                      <h5 className="mb-0 fw-bold">
+                        <i className="fas fa-school me-2"></i>
+                        {sekolah.namaSekolah}
+                      </h5>
+                    </div>
+
                     <div className="card-body">
-                      <div className="text-center py-4">
-                        <i className="fas fa-school fa-2x text-warning mb-3"></i>
-                        <h5 className="fw-bold">Sekolah Belum Tersedia</h5>
-                        <p className="text-muted mb-3">
-                          Silahkan buat data sekolah terlebih dahulu sebelum menggunakan sistem.
-                        </p>
+                      <div className="row">
 
-                        <a href="/admin/sekolah" className="btn btn-primary btn-sm">
-                          + Tambah Sekolah
-                        </a>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="col-4">
-                {/* STATISTIK */}
-                {sekolah && (
-                  <div className="">
-
-                    {/* JUMLAH GURU */}
-                    <div className="info-box text-bg-warning">
-                      <span className="info-box-icon">
-                        <i className="fas fa-chalkboard-teacher"></i>
-                      </span>
-
-                      <div className="info-box-content">
-                        <span className="info-box-text">Jumlah Guru</span>
-                        <span className="info-box-number"><h5>{jumlahGuru}</h5></span>
-
-                        <div className="progress">
-                          <div className="progress-bar" style={{ width: "100%" }}></div>
+                        <div className="col-md-6">
+                          <small className="text-muted">
+                            NPSN
+                          </small>
+                          <div className="fw-semibold">
+                            {sekolah.npsn}
+                          </div>
                         </div>
-                      </div>
-                    </div>
 
-                     {/* JUMLAH Siswa */}
-                    <div className="info-box text-bg-danger">
-                      <span className="info-box-icon">
-                        <i className="fas fa-chalkboard-teacher"></i>
-                      </span>
-
-                      <div className="info-box-content">
-                        <span className="info-box-text">Jumlah Siswa</span>
-                        <span className="info-box-number"><h5>{jumlahGuru}</h5></span>
-
-                        <div className="progress">
-                          <div className="progress-bar" style={{ width: "100%" }}></div>
+                        <div className="col-md-6">
+                          <small className="text-muted">
+                            Alamat
+                          </small>
+                          <div className="fw-semibold">
+                            {sekolah.alamat}
+                            {" "}Dusun {sekolah.dusun}
+                            {" "}RT {sekolah.rt}
+                            {" "}RW {sekolah.rw}
+                            {" "}Desa {sekolah.desa}
+                            {" "}Kec. {sekolah.kecamatan}
+                          </div>
                         </div>
+
                       </div>
                     </div>
+                  </>
+                ) : (
+                  <div className="card-body text-center py-5">
+                    <i className="fas fa-school fa-2x text-warning mb-3"></i>
+                    <h5>Sekolah Belum Tersedia</h5>
+
+                    <p className="text-muted">
+                      Silakan buat data sekolah terlebih dahulu.
+                    </p>
+
+                    <a
+                      href="/admin/sekolah"
+                      className="btn btn-primary"
+                    >
+                      + Tambah Sekolah
+                    </a>
                   </div>
                 )}
               </div>
             </div>
 
-            {/* FITUR LIST */}
-            <div className="card shadow-sm border-0">
-              <div className="card-body bg-warning">
-                <h6 className="fw-bold mb-3">Fitur Utama</h6>
+            {/* Statistik */}
+            <div className="col-lg-4">
 
-                <ul className="mb-0">
-                  <li>📊 Melihat ringkasan aktivitas mengajar</li>
-                  <li>👤 Mengelola profil dan data pribadi</li>
-                  <li>📢 Mengakses informasi sekolah terbaru</li>
-                  <li>📝 Memantau tugas dan laporan pembelajaran</li>
-                </ul>
+              <div className="info-box text-bg-warning mb-3">
+                <span className="info-box-icon">
+                  <i className="fas fa-chalkboard-teacher"></i>
+                </span>
+
+                <div className="info-box-content">
+                  <span className="info-box-text">
+                    Jumlah Guru
+                  </span>
+
+                  <span className="info-box-number">
+                    {jumlahGuru}
+                  </span>
+                </div>
               </div>
+
+              <div className="info-box text-bg-danger">
+                <span className="info-box-icon">
+                  <i className="fas fa-user-graduate"></i>
+                </span>
+
+                <div className="info-box-content">
+                  <span className="info-box-text">
+                    Jumlah Siswa
+                  </span>
+
+                  <span className="info-box-number">
+                    {jumlahSiswa}
+                  </span>
+                </div>
+              </div>
+
             </div>
-
           </div>
-        </div>
-      </main>
 
-    </>
+          {/* Fitur */}
+          <div className="card mt-3 border-0 shadow-sm">
+            <div className="card-body bg-warning">
+              <h6 className="fw-bold mb-3">
+                Fitur Utama
+              </h6>
+
+              <ul className="mb-0">
+                <li>📊 Melihat ringkasan aktivitas mengajar</li>
+                <li>👤 Mengelola profil dan data pribadi</li>
+                <li>📢 Mengakses informasi sekolah terbaru</li>
+                <li>📝 Memantau tugas dan laporan pembelajaran</li>
+              </ul>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </main>
   );
 }

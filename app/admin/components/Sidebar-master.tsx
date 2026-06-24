@@ -106,7 +106,7 @@ export default function Sidebar() {
                       <Link
                         href="/admin/adminsekolah/sekolah"
                         className={`nav-link ${isActive("/admin/adminsekolah/sekolah")
-                          ? "active bg-danger text-white"
+                          ? "active bg-primary text-white"
                           : ""
                           }`}
                       >
@@ -119,7 +119,7 @@ export default function Sidebar() {
                       <Link
                         href="/admin/adminsekolah/setting-sekolah"
                         className={`nav-link ${isActive("/admin/adminsekolah/setting-sekolah")
-                          ? "active bg-danger text-white"
+                          ? "active bg-primary text-white"
                           : ""
                           }`}
                       >
@@ -134,7 +134,7 @@ export default function Sidebar() {
                 <li className="nav-item">
                   <Link
                     href="/admin/adminsekolah/listguru"
-                    className={`nav-link ${isActive("/admin/adminsekolah/listguru") ? "active bg-danger text-white" : ""}`}
+                    className={`nav-link ${isActive("/admin/adminsekolah/listguru") ? "active bg-primary text-white" : ""}`}
                   >
                     <i className="nav-icon fas fa-list"></i>
                     <p>Daftar Guru</p>
@@ -144,9 +144,9 @@ export default function Sidebar() {
                 <li className="nav-item">
                   <Link
                     href="/admin/adminsekolah/siswa/daftarsiswa"
-                    className={`nav-link ${isActive("/admin/adminsekolah/siswa/daftarsiswa") ? "active bg-danger text-white" : ""}`}
+                    className={`nav-link ${isActive("/admin/adminsekolah/siswa/daftarsiswa") ? "active bg-primary text-white" : ""}`}
                   >
-                    <i className="nav-icon fas fa-list"></i>
+                    <i className="nav-icon fas fa-user-graduate"></i>
                     <p>Peserta Didik</p>
                   </Link>
                 </li>

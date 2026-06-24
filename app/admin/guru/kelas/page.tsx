@@ -263,7 +263,7 @@ export default function KelasPage() {
             <li>Gunakan tombol tambah untuk membuat kelas baru</li>
           </ul>
         </div>
-<hr />
+        <hr />
         <button
           className="btn btn-primary"
           onClick={() => setShowModal(true)}
