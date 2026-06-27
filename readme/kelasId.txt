@@ -1,0 +1,24 @@
+// Tambahan untuk halaman detail kelas dan anggota kelas
+
+app
+└── admin
+    └── guru
+        └── kelas
+            └── [kelasId]
+                ├── page.tsx                 // Daftar anggota
+                └── tambah
+                    └── page.tsx             // Tambah anggota
+
+components
+└── kelas
+    ├── AddMemberHeader.tsx
+    ├── StudentFilter.tsx
+    ├── StudentSelectTable.tsx
+    ├── SelectedMemberCard.tsx
+    └── EmptyStudent.tsx
+
+hooks
+└── useAvailableStudents.ts
+
+services
+└── student.service.ts

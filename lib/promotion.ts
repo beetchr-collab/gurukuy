@@ -50,12 +50,80 @@ export function getNextClass(
 }
 
 /**
+ * Mengambil nilai kelas siswa sebagai angka
+ */
+function getStudentClassLevel(
+  student: Student
+): number {
+  const candidates = [
+    student.tingkatKelas,
+    student.kelas,
+    (student as Student & { kelasSiswa?: string }).kelasSiswa,
+  ];
+
+  for (const rawValue of candidates) {
+    if (typeof rawValue === "number" && Number.isFinite(rawValue)) {
+      return rawValue;
+    }
+
+    if (typeof rawValue === "string") {
+      const trimmed = rawValue.trim();
+
+      if (!trimmed) {
+        continue;
+      }
+
+      const normalized = trimmed.toLowerCase();
+
+      const romanMap: Record<string, number> = {
+        i: 1,
+        ii: 2,
+        iii: 3,
+        iv: 4,
+        v: 5,
+        vi: 6,
+        vii: 7,
+        viii: 8,
+        ix: 9,
+        x: 10,
+      };
+
+      if (romanMap[normalized]) {
+        return romanMap[normalized];
+      }
+
+      const match = trimmed.match(/\d+/);
+
+      if (match) {
+        return Number(match[0]);
+      }
+    }
+  }
+
+  return 0;
+}
+
+/**
  * Menentukan status siswa
  */
 export function getPromotionStatus(
   student: Student
 ): PromotionStatus {
-  const semester = getSemester(student.tahunAjaran);
+  const academicYear =
+    typeof student.tahunAjaran === "string"
+      ? student.tahunAjaran
+      : "";
+
+  const semester = getSemester(academicYear);
+  const currentClass = getStudentClassLevel(student);
+
+  if (typeof student.status === "string") {
+    const normalizedStatus = student.status.toUpperCase();
+
+    if (normalizedStatus === "NAIK" || normalizedStatus === "TETAP" || normalizedStatus === "LULUS") {
+      return normalizedStatus as PromotionStatus;
+    }
+  }
 
   // Semester ganjil tidak naik kelas
   if (semester === "Ganjil") {
@@ -63,7 +131,7 @@ export function getPromotionStatus(
   }
 
   // Semester genap kelas 6 lulus
-  if (student.kelas >= 6) {
+  if (currentClass >= 6) {
     return "LULUS";
   }
 
@@ -77,19 +145,20 @@ export function calculateNewClass(
   student: Student
 ): number {
   const status = getPromotionStatus(student);
+  const currentClass = getStudentClassLevel(student);
 
   switch (status) {
     case "NAIK":
-      return getNextClass(student.kelas);
+      return getNextClass(currentClass);
 
     case "TETAP":
-      return student.kelas;
+      return currentClass;
 
     case "LULUS":
-      return student.kelas;
+      return currentClass;
 
     default:
-      return student.kelas;
+      return currentClass;
   }
 }
 
@@ -101,26 +170,20 @@ export function createPromotionPreview(
 ): PromotionStudent {
 
   const status = getPromotionStatus(student);
+  const currentClass = getStudentClassLevel(student);
+
+  const academicYear = student.tahunAjaran ?? "";
 
   return {
     id: student.id,
-
     nama: student.nama,
-
     nis: student.nis,
-
-    kelasLama: student.kelas,
-
-    kelasBaru: calculateNewClass(student),
-
-    tahunAjaranLama: student.tahunAjaran,
-
-    tahunAjaranBaru: getNextAcademicYear(
-      student.tahunAjaran
-    ),
-
+    nisn: student.nisn,
+    tingkatKelasLama: currentClass,
+    tingkatKelasBaru: calculateNewClass(student),
+    tahunAjaranLama: academicYear,
+    tahunAjaranBaru: getNextAcademicYear(academicYear),
     status,
-
     selected: true,
   };
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Select from "react-select";
 import { useAuth } from "@/context/AuthContext";
 import { db } from "@/lib/firebase";
@@ -20,16 +21,18 @@ import {
 
 export default function KelasPage() {
   const { user } = useAuth();
+  const router = useRouter();
 
   const [showModal, setShowModal] = useState(false);
 
   const [form, setForm] = useState({
     namaKelas: "",
     mataPelajaran: "",
-    tingkat: "",
+    tingkatKelas: null as number | null,
     schoolId: "",
     kepalaSekolah: "",
     tahunAjaran: "",
+    ownerName: "",
   });
 
   //state
@@ -44,6 +47,10 @@ export default function KelasPage() {
     const loadData = async () => {
       const userDoc = await getDoc(doc(db, "users", user.uid));
       const userData = userDoc.data();
+      const namaGuru =
+        userData?.nama ??
+        userData?.displayName ??
+        "";
 
       if (!userData?.schoolId) return;
 
@@ -74,18 +81,54 @@ export default function KelasPage() {
         schoolId: schoolId,
         kepalaSekolah,
         tahunAjaran,
+        ownerName: namaGuru,
       }));
+
+      // ================= AMBIL TINGKAT DARI STUDENTS =================
+      // ===========================================================
+      // AMBIL DATA SISWA
+      // ===========================================================
+
+      const studentQuery = query(
+        collection(db, "students"),
+        where("schoolId", "==", schoolId)
+      );
+
+      const studentSnap = await getDocs(studentQuery);
+
+      console.log("Jumlah siswa :", studentSnap.size);
+
+      const tingkatList = [
+        ...new Set(
+          studentSnap.docs
+            .map((doc) => {
+              const data = doc.data();
+
+              console.log("Student :", data);
+
+              return Number(data.tingkatKelas);
+            })
+            .filter(
+              (tingkat) =>
+                !isNaN(tingkat) &&
+                tingkat > 0
+            )
+        ),
+      ];
+
+      tingkatList.sort((a, b) => a - b);
+
+      console.log("Tingkat ditemukan :", tingkatList);
+
+      setTingkatOptions(
+        tingkatList.map((tingkat) => ({
+          value: tingkat,
+          label: tingkat.toString(),
+        }))
+      );
     };
 
     loadData();
-
-    // ================= TINGKAT =================
-    const tingkat = Array.from({ length: 12 }, (_, i) => ({
-      value: `Kelas ${i + 1}`,
-      label: `Kelas ${i + 1}`,
-    }));
-    setTingkatOptions(tingkat);
-
   }, [user]);
 
   // ================= REALTIME CLASSES =================
@@ -125,7 +168,7 @@ export default function KelasPage() {
         await updateDoc(doc(db, "classes", editId), {
           namaKelas: form.namaKelas,
           mataPelajaran: form.mataPelajaran,
-          tingkat: form.tingkat,
+          tingkatKelas: form.tingkatKelas,
           updatedAt: serverTimestamp(),
         });
 
@@ -135,6 +178,7 @@ export default function KelasPage() {
         await addDoc(collection(db, "classes"), {
           ...form,
           ownerId: user.uid,
+          ownerName: form.ownerName,
           createdAt: serverTimestamp(),
         });
 
@@ -149,7 +193,7 @@ export default function KelasPage() {
         ...prev,
         namaKelas: "",
         mataPelajaran: "",
-        tingkat: "",
+        tingkat: null,
       }));
 
     } catch (err) {
@@ -167,7 +211,7 @@ export default function KelasPage() {
       ...prev,
       namaKelas: item.namaKelas || "",
       mataPelajaran: item.mataPelajaran || "",
-      tingkat: item.tingkat || "",
+      tingkat: item.tingkat ?? null,
     }));
   };
 
@@ -235,9 +279,8 @@ export default function KelasPage() {
   }));
 
   // ================= TINGKAT KELAS =================
-  const getTingkatNumber = (tingkat?: string) => {
-    if (!tingkat) return 1;
-    return tingkat.replace("Kelas ", "");
+  const getTingkatNumber = (tingkat?: number) => {
+    return tingkat ?? 1;
   };
 
   return (
@@ -279,7 +322,7 @@ export default function KelasPage() {
             </div>
           ) : (
             classes.map((item) => {
-              const tingkatNum = getTingkatNumber(item.tingkat);
+              const tingkatNum = getTingkatNumber(item.tingkatKelas);
 
               return (
                 <div className="col-md-4 col-lg-3 mb-4" key={item.id}>
@@ -290,7 +333,7 @@ export default function KelasPage() {
                       <div className="d-flex justify-content-between align-items-center">
                         <span>{item.namaKelas}</span>
                         <span className="badge bg-light text-dark badge-tingkat">
-                          {item.tingkat}
+                          {item.tingkatKelas}
                         </span>
                       </div>
                     </div>
@@ -327,7 +370,10 @@ export default function KelasPage() {
                         <i className="fas fa-trash"></i>
                       </button>
 
-                      <button className="btn btn-success text-white shadow-sm">
+                      <button
+                        className="btn btn-success text-white shadow-sm"
+                        onClick={() => router.push(`/admin/guru/kelas/${item.id}`)}
+                      >
                         <i className="fas fa-users"></i>
                       </button>
                     </div>
@@ -390,16 +436,26 @@ export default function KelasPage() {
                       <label>Tingkat</label>
                       <Select
                         options={tingkatOptions}
-                        placeholder="Pilih tingkat"
-                        value={tingkatOptions.find(
-                          (opt) => opt.value === form.tingkat
-                        )}
-                        onChange={(val: any) =>
-                          setForm({ ...form, tingkat: val?.value || "" })
+                        placeholder="Pilih Tingkat"
+                        value={
+                          tingkatOptions.find(
+                            (item) => item.value === form.tingkatKelas
+                          ) || null
+                        }
+                        onChange={(selected) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            tingkatKelas: selected
+                              ? Number(selected.value)
+                              : null,
+                          }))
                         }
                       />
                     </div>
-
+                    <div className="form-group">
+                      <label>School ID</label>
+                      <input className="form-control" value={form.ownerName} disabled />
+                    </div>
                     <div className="form-group">
                       <label>School ID</label>
                       <input className="form-control" value={form.schoolId} disabled />

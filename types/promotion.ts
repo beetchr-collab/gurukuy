@@ -7,10 +7,15 @@ export interface Student {
   nis: number;
   nisn?: string;
   jk: "L" | "P";
-  kelas: number;
-  tahunAjaran: string;
+  tingkatKelas?: string | number;
+  kelas?: string;
+  tahunAjaran?: string;
+  tahunPelajaran?: string;
+  tahun_ajaran?: string;
+  tahunAjaranAktif?: string;
   schoolId: string;
   ownerId: string;
+  status?: string;
 }
 
 /**
@@ -30,10 +35,11 @@ export interface PromotionStudent {
   nama: string;
 
   nis: number;
+  nisn?: string;
 
-  kelasLama: number;
+  tingkatKelasLama: number;
 
-  kelasBaru: number;
+  tingkatKelasBaru: number;
 
   tahunAjaranLama: string;
 

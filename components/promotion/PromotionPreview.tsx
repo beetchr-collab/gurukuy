@@ -22,8 +22,10 @@ export default function PromotionPreview({
     (student) => student.selected
   ).length;
 
-  const badgeClass = (status: string) => {
-    switch (status) {
+  const badgeClass = (status?: string) => {
+    const normalizedStatus = status?.toUpperCase();
+
+    switch (normalizedStatus) {
       case "NAIK":
         return "badge badge-success";
 
@@ -36,6 +38,18 @@ export default function PromotionPreview({
       default:
         return "badge badge-secondary";
     }
+  };
+
+  const renderValue = (value: unknown) => {
+    if (value === undefined || value === null || value === "") {
+      return "—";
+    }
+
+    if (typeof value === "number" && Number.isNaN(value)) {
+      return "—";
+    }
+
+    return String(value);
   };
 
   return (
@@ -72,9 +86,9 @@ export default function PromotionPreview({
               <th style={{ width: 120 }}>NIS</th>
               <th style={{ width: 120 }}>NISN</th>
 
-              <th style={{ width: 120 }}>Kelas Lama</th>
+              <th style={{ width: 120 }}>Tingkat Kelas Lama</th>
 
-              <th style={{ width: 120 }}>Kelas Baru</th>
+              <th style={{ width: 120 }}>Tingkat Kelas Baru</th>
 
               <th style={{ width: 170 }}>Status</th>
 
@@ -137,12 +151,12 @@ export default function PromotionPreview({
 
                   <td>{student.nis}</td>
 
-                  <td>{/* NISN not available on PromotionStudent type */ "-"}</td>
+                  <td>{student.nisn || "-"}</td>
 
                   <td>
 
                     <span className="badge badge-secondary">
-                      {student.kelasLama}
+                      {renderValue(student.tingkatKelasLama)}
                     </span>
 
                   </td>
@@ -150,7 +164,7 @@ export default function PromotionPreview({
                   <td>
 
                     <span className="badge badge-success">
-                      {student.kelasBaru}
+                      {renderValue(student.tingkatKelasBaru)}
                     </span>
 
                   </td>
@@ -162,7 +176,7 @@ export default function PromotionPreview({
                         student.status
                       )}
                     >
-                      {student.status}
+                      {renderValue(student.status)}
                     </span>
 
                   </td>

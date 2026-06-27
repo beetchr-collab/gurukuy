@@ -189,6 +189,7 @@ export default function AdminSiswaPage() {
                                     <th>JK</th>
                                     <th>TTL</th>
                                     <th>Kelas</th>
+                                    <th>Tingkat</th>
                                     <th>Aksi</th>
                                 </tr>
                             </thead>
@@ -214,9 +215,15 @@ export default function AdminSiswaPage() {
                                             <td>{s.nisn}</td>
                                             <td>{s.jk}</td>
                                             <td>
-                                                {s.tempatLahir}, {s.tanggalLahir}
+                                                {s.tempatLahir},{" "}
+                                                {new Date(s.tanggalLahir).toLocaleDateString("id-ID", {
+                                                    day: "2-digit",
+                                                    month: "long",
+                                                    year: "numeric",
+                                                })}
                                             </td>
                                             <td>{s.kelas}</td>
+                                            <td>{s.tingkatKelas}</td>
                                             <td>
                                                 <div className="d-flex gap-1">
 

@@ -77,6 +77,7 @@ export default function AdminSiswaPage() {
     tanggalLahir: "Tanggal Lahir",
     notlpn: "No. Telepon",
     kelas: "Kelas",
+    tingkatKelas: "Tingkat Kelas",
   };
 
   // Menyimpan data ke Firestore
@@ -114,6 +115,7 @@ export default function AdminSiswaPage() {
           "tempatLahir",
           "tanggalLahir",
           "kelas",
+          "tingkatKelas"
         ];
 
         // Cari kolom yang kosong
@@ -149,7 +151,7 @@ export default function AdminSiswaPage() {
           tanggalLahir: item.tanggalLahir || "",
           notlpn: item.notlpn || "",
           kelas: item.kelas || "",
-
+          tingkatKelas: item.tingkatKelas || "",
           schoolId: user.schoolId,
           ownerId: user.uid,
           tahunAjaran,
@@ -204,6 +206,7 @@ export default function AdminSiswaPage() {
         tanggalLahir: "2010-01-01",
         notlpn: "08123456789",
         kelas: "5A",
+        tingkatKelas: "5",
       },
     ];
 
@@ -377,6 +380,7 @@ export default function AdminSiswaPage() {
                       <th>Tempat Lahir</th>
                       <th>Tanggal Lahir</th>
                       <th>Kelas</th>
+                      <th>Tingkat Kelas</th>
 
                     </tr>
 
@@ -414,11 +418,15 @@ export default function AdminSiswaPage() {
                         <td>{row.tanggalLahir}</td>
 
                         <td>
-
                           <span className="badge bg-secondary">
                             {row.kelas}
                           </span>
 
+                        </td>
+                        <td>
+                          <span className="badge bg-secondary">
+                            {row.tingkatKelas}
+                          </span>
                         </td>
 
                       </tr>

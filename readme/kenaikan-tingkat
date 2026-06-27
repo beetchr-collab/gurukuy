@@ -4,24 +4,24 @@ src/
 │   └── adminsekolah/
 │       └── siswa/
 │           └── kenaikan-tingkat/
-│               └── page.tsx -> sudah
+│               └── page.tsx
 │
 ├── components/
 │   └── promotion/
-│       ├── PromotionForm.tsx -> sudah
-│       ├── PromotionPreview.tsx -> sudah
-│       ├── PromotionSummary.tsx -> sudah
-│       └── PromotionConfirmModal.tsx -> sudah
+│       ├── PromotionForm.tsx
+│       ├── PromotionPreview.tsx
+│       ├── PromotionSummary.tsx
+│       └── PromotionConfirmModal.tsx
 │
 ├── hooks/
-│   └── usePromotion.ts -> sudah
+│   └── usePromotion.ts
 │
 ├── lib/
-│   └── promotion.ts -> sudah
+│   └── promotion.ts
 │
 ├── services/
-│   └── promotion.service.ts -> sudah
-|   └── kepalaSekolah.service.ts -> sudah
+│   └── promotion.service.ts
+|   └── kepalaSekolah.service.ts
 │
 └── types/
-    └── promotion.ts -> sudah
+    └── promotion.ts
