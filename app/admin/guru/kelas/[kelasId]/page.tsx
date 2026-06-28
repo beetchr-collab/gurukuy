@@ -3,21 +3,23 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useModal } from "@/components/modals/useModal";
 import { useParams } from "next/navigation";
 import {
     collection,
-    query,
-    where,
     getDocs,
     doc,
     getDoc,
+    deleteDoc,
 } from "firebase/firestore";
-
 import { db } from "@/lib/firebase";
+import { useConfirm } from "@/context/ConfirmModalContext";
+import SearchInput from "@/components/search/SearchInput";
 
 interface Student {
     id: string;
     nama: string;
+    jk: string;
     nis: string;
     nisn: string;
     kelas: string;
@@ -31,12 +33,12 @@ export default function AnggotaKelasPage() {
     const { kelasId } = useParams<{
         kelasId: string;
     }>();
-
     const [loading, setLoading] = useState(true);
-
     const [students, setStudents] = useState<Student[]>([]);
     const [kelasData, setKelasData] = useState<any>(null);
+    const [search, setSearch] = useState("");
 
+    // Mengambil data kelas dan siswa saat halaman dimuat
     useEffect(() => {
 
         if (!kelasId) return;
@@ -46,33 +48,27 @@ export default function AnggotaKelasPage() {
 
     }, [kelasId]);
 
+    // Mengambil data siswa dari Firestore
     async function loadStudents() {
-
         setLoading(true);
-
         try {
-
-            const q = query(
-                collection(db, "students"),
-                where("kelasId", "==", kelasId)
+            const anggotaRef = collection(
+                db,
+                "classes",
+                kelasId,
+                "anggotakelas"
             );
-
-            const snapshot = await getDocs(q);
-
+            const snapshot = await getDocs(anggotaRef);
             const data = snapshot.docs.map((doc) => ({
                 id: doc.id,
                 ...doc.data(),
             })) as Student[];
-
             setStudents(data);
-
         } catch (error) {
-
             console.log(error);
-
+        } finally {
+            setLoading(false);
         }
-
-        setLoading(false);
     }
 
     // Menampilkan Informasi Kelas
@@ -89,11 +85,55 @@ export default function AnggotaKelasPage() {
     // Menghitung jumlah siswa berdasarkan jenis kelamin
     const totalSiswa = students.length;
     const jumlahLakiLaki = students.filter(
-        (item) => item.jenisKelamin === "Laki-laki"
+        (item) => item.jk === "L"
     ).length;
     const jumlahPerempuan = students.filter(
-        (item) => item.jenisKelamin === "Perempuan"
+        (item) => item.jk === "P"
     ).length;
+
+    // Menghapus siswa dari anggota kelas
+    const { confirm } = useConfirm();
+    const { showModal } = useModal();
+    async function handleRemoveStudent(student: Student) {
+        const confirmDelete = await confirm({
+            title: "Konfirmasi",
+            message: `Apakah yakin ingin menghapus ${student.nama} dari anggota kelas?`,
+        });
+        if (!confirmDelete) return;
+        try {
+            await deleteDoc(
+                doc(
+                    db,
+                    "classes",
+                    kelasId,
+                    "anggotakelas",
+                    student.id
+                )
+            );
+
+            // Refresh data
+            loadStudents();
+            showModal({
+                title: "Berhasil",
+                message: `${student.nama} berhasil dihapus dari anggota kelas.`,
+                type: "success",
+            });
+        } catch (error) {
+            console.error(error);
+            alert("Gagal menghapus anggota kelas.");
+        }
+    }
+
+    // Filter siswa berdasarkan pencarian
+    const filteredStudents = students.filter((student) => {
+        const keyword = search.toLowerCase().trim();
+
+        return (
+            String(student.nama ?? "").toLowerCase().includes(keyword) ||
+            String(student.nis ?? "").includes(keyword) ||
+            String(student.nisn ?? "").includes(keyword)
+        );
+    });
 
     return (
         <main className="content-wrapper">
@@ -160,44 +200,39 @@ export default function AnggotaKelasPage() {
                         {/* Statistik */}
                         <div className="col-lg-4">
                             <div className="card shadow-sm border-0">
-
                                 <div className="card-body">
-
-                                    <h5 className="font-weight-bold mb-4">
+                                    <h5 className="fw-bold mb-4">
                                         Statistik Anggota
                                     </h5>
-
-                                    <div className="d-flex justify-content-between align-items-center py-3 border-bottom">
+                                    <div className="d-flex justify-content-between align-items-center mb-3">
                                         <div>
-                                            <i className="fas fa-mars text-primary mr-2"></i>
+                                            <i className="fas fa-mars text-primary me-2"></i>
                                             Laki-laki
                                         </div>
-
-                                        <span className="badge badge-primary px-3 py-2">
+                                        <span className="badge bg-primary rounded-pill px-3 py-2">
                                             {jumlahLakiLaki}
                                         </span>
                                     </div>
 
-                                    <div className="d-flex justify-content-between align-items-center py-3 border-bottom">
+                                    <div className="d-flex justify-content-between align-items-center mb-3">
                                         <div>
-                                            <i className="fas fa-venus text-danger mr-2"></i>
+                                            <i className="fas fa-venus text-danger me-2"></i>
                                             Perempuan
                                         </div>
-
-                                        <span className="badge badge-danger px-3 py-2">
+                                        <span className="badge bg-danger rounded-pill px-3 py-2">
                                             {jumlahPerempuan}
                                         </span>
                                     </div>
 
-                                    <div className="d-flex justify-content-between align-items-center py-3">
+                                    <div className="d-flex justify-content-between align-items-center">
                                         <div>
-                                            <i className="fas fa-users text-success mr-2"></i>
+                                            <i className="fas fa-users text-success me-2"></i>
                                             Total Siswa
                                         </div>
-
-                                        <span className="badge badge-success px-3 py-2">
+                                        <span className="badge bg-success rounded-pill px-3 py-2">
                                             {totalSiswa}
                                         </span>
+
                                     </div>
 
                                 </div>
@@ -244,12 +279,12 @@ export default function AnggotaKelasPage() {
                                 <ul className="dropdown-menu dropdown-menu-end" style={{
                                     zIndex: 9999
                                 }}>
-                                    <li><a className="dropdown-item" href="#">Tambah Anggota</a></li>
-                                    <li><a className="dropdown-item" href="#">Presensi</a></li>
-                                    <li><a className="dropdown-item" href="#">Penilaian</a></li>
-                                    <li><a className="dropdown-item" href="#">Cetak Data</a></li>
+                                    <li><a className="dropdown-item" href={`/admin/guru/kelas/${kelasId}/tambah`}>Tambah Anggota</a></li>
+                                    <li><a className="dropdown-item" href={`/admin/guru/kelas/${kelasId}/presensi`}>Presensi</a></li>
+                                    <li><a className="dropdown-item" href={`/admin/guru/kelas/${kelasId}/penilaian`}>Penilaian</a></li>
+                                    <li><a className="dropdown-item" href={`/admin/guru/kelas/${kelasId}/cetak`}>Cetak Data</a></li>
                                     <li><hr className="dropdown-divider" /></li>
-                                    <li><a className="dropdown-item" href="#">Refresh Data</a></li>
+                                    <li><a className="dropdown-item" href="/admin/guru/kelas/[kelasId]/refresh">Refresh Data</a></li>
                                 </ul>
                             </div>
                         </div>
@@ -258,84 +293,71 @@ export default function AnggotaKelasPage() {
 
                 {/* ================= TABLE ANGGOTA KELAS ================= */}
                 <div className="card">
-
-                    <div className="card-header">
-
-                        <h3 className="card-title">
-                            Anggota Kelas
-                        </h3>
-
+                    <div className="card-header bg-white border-bottom py-3">
+                        <div className="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+                            <div>
+                                <h4 className="mb-0 fw-bold">
+                                    Daftar Siswa
+                                </h4>
+                            </div>
+                            <div className="ms-md-auto" style={{ width: "100%", maxWidth: 380 }}>
+                                <SearchInput
+                                    value={search}
+                                    onChange={setSearch}
+                                    placeholder="Cari nama, NIS atau NISN..."
+                                />
+                            </div>
+                        </div>
                     </div>
 
                     <div className="card-body">
-
                         {loading && (
                             <p>Loading...</p>
                         )}
-
                         {!loading && (
-
                             <table className="table table-bordered table-striped">
-
                                 <thead>
-
                                     <tr>
-
                                         <th>No</th>
-
                                         <th>NIS</th>
-
                                         <th>NISN</th>
-
                                         <th>Nama</th>
-
                                         <th>Jenis Kelamin</th>
-
                                         <th>Kelas</th>
-
+                                        <th style={{ width: 120 }}>Aksi</th>
                                     </tr>
-
                                 </thead>
 
                                 <tbody>
-
-                                    {students.length === 0 && (
-
+                                    {filteredStudents.length === 0 && (
                                         <tr>
-
                                             <td
                                                 colSpan={6}
                                                 className="text-center"
                                             >
                                                 Tidak ada anggota kelas
                                             </td>
-
                                         </tr>
-
                                     )}
-
-                                    {students.map((student, index) => (
-
+                                    {filteredStudents.map((student, index) => (
                                         <tr key={student.id}>
-
                                             <td>{index + 1}</td>
-
                                             <td>{student.nis}</td>
-
                                             <td>{student.nisn}</td>
-
                                             <td>{student.nama}</td>
-
-                                            <td>{student.jenisKelamin}</td>
-
+                                            <td>{student.jk}</td>
                                             <td>{student.kelas}</td>
-
+                                            <td>
+                                                <button
+                                                    className="btn btn-sm btn-outline-danger"
+                                                    onClick={() => handleRemoveStudent(student)}
+                                                >
+                                                    <i className="fas fa-trash"></i>
+                                                </button>
+                                            </td>
                                         </tr>
-
                                     ))}
-
                                 </tbody>
-
                             </table>
 
                         )}

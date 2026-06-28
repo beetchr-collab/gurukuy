@@ -12,6 +12,10 @@ import RoleGuard from "@/context/RoleGuard";
 
 // ===== CLIENT PROVIDER =====
 import AdminLTEProvider from "./components/AdminLTEProvider";
+// ===== MODAL PROVIDER =====
+import ModalProvider from "@/components/modals/ModalProvider";
+// ===== CONFIRM MODAL PROVIDER =====
+import { ConfirmProvider } from "@/context/ConfirmModalContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -51,12 +55,15 @@ export default function RootLayout({
     antialiased
   `}
       >
-
-        <AuthProvider>
-          <AdminLTEProvider>
-            {children}
-          </AdminLTEProvider>
-        </AuthProvider>
+        <ModalProvider>
+          <ConfirmProvider>
+            <AuthProvider>
+              <AdminLTEProvider>
+                {children}
+              </AdminLTEProvider>
+            </AuthProvider>
+          </ConfirmProvider>
+        </ModalProvider>
       </body>
     </html>
   );

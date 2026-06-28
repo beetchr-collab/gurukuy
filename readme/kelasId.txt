@@ -22,3 +22,22 @@ hooks
 
 services
 └── student.service.ts
+
+// PRESENSI
+app/
+└── admin/
+    └── guru/
+        └── kelas/
+            ├── page.tsx
+            └── [kelasId]/
+                ├── page.tsx
+                ├── tambah/
+                │   └── page.tsx
+                ├── presensi/
+                │   ├── page.tsx          // Daftar & Riwayat Presensi
+                │   ├── tambah/
+                │   │   └── page.tsx      // Input Presensi
+                │   └── [presensiId]/
+                │       └── page.tsx      // Detail/Edit Presensi
+                └── nilai/
+                    └── page.tsx
