@@ -31,12 +31,12 @@ app/
             ├── page.tsx
             └── [kelasId]/
                 ├── page.tsx
-                ├── tambah/
+                ├── tambah// untuk menambah siswa
                 │   └── page.tsx
                 ├── presensi/
-                │   ├── page.tsx          // Daftar & Riwayat Presensi
-                │   ├── tambah/
-                │   │   └── page.tsx      // Input Presensi
+                │   ├── page.tsx
+                │   ├── rekap/
+                │   │   └── page.tsx      // Rekap Presensi
                 │   └── [presensiId]/
                 │       └── page.tsx      // Detail/Edit Presensi
                 └── nilai/

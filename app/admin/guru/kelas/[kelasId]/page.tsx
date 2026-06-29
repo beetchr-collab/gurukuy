@@ -16,6 +16,7 @@ import { db } from "@/lib/firebase";
 import { useConfirm } from "@/context/ConfirmModalContext";
 import SearchInput from "@/components/search/SearchInput";
 
+// Interface untuk data siswa
 interface Student {
     id: string;
     nama: string;
