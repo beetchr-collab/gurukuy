@@ -3,6 +3,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useModal } from "@/components/modals/useModal";
 import { useParams } from "next/navigation";
 import {
@@ -15,6 +16,11 @@ import {
 import { db } from "@/lib/firebase";
 import { useConfirm } from "@/context/ConfirmModalContext";
 import SearchInput from "@/components/search/SearchInput";
+
+// Rekap Presensi
+import { getAttendanceRecap } from "@/services/presensi.service";
+import { AttendanceRecap } from "@/types/presensi";
+import { useAuth } from "@/context/AuthContext";
 
 // Interface untuk data siswa
 interface Student {
@@ -135,6 +141,45 @@ export default function AnggotaKelasPage() {
             String(student.nisn ?? "").includes(keyword)
         );
     });
+
+    // Rekap Presensi
+    const { user } = useAuth();
+
+    const [rekap, setRekap] = useState<AttendanceRecap[]>([]);
+    useEffect(() => {
+        if (!kelasId || !user?.schoolId) return;
+
+        loadKelas();
+        loadStudents();
+        loadRekap();
+
+    }, [kelasId, user]);
+
+    async function loadRekap() {
+
+        if (!user?.schoolId) return;
+
+        const data = await getAttendanceRecap(
+            user.schoolId,
+            kelasId
+        );
+
+        setRekap(data);
+
+    }
+    function getStudentRecap(studentId: string) {
+        return rekap.find(
+            (item) => item.studentId === studentId
+        );
+    }
+
+
+    const getProgressColor = (persentase: number) => {
+        if (persentase >= 90) return "bg-success";
+        if (persentase >= 75) return "bg-primary";
+        if (persentase >= 60) return "bg-warning";
+        return "bg-danger";
+    };
 
     return (
         <main className="content-wrapper">
@@ -323,8 +368,8 @@ export default function AnggotaKelasPage() {
                                         <th>NIS</th>
                                         <th>NISN</th>
                                         <th>Nama</th>
-                                        <th>Jenis Kelamin</th>
-                                        <th>Kelas</th>
+                                        <th>L/P</th>
+                                        <th>% Kehadiran</th>
                                         <th style={{ width: 120 }}>Aksi</th>
                                     </tr>
                                 </thead>
@@ -332,32 +377,95 @@ export default function AnggotaKelasPage() {
                                 <tbody>
                                     {filteredStudents.length === 0 && (
                                         <tr>
-                                            <td
-                                                colSpan={6}
-                                                className="text-center"
-                                            >
+                                            <td colSpan={7} className="text-center">
                                                 Tidak ada anggota kelas
                                             </td>
                                         </tr>
                                     )}
-                                    {filteredStudents.map((student, index) => (
-                                        <tr key={student.id}>
-                                            <td>{index + 1}</td>
-                                            <td>{student.nis}</td>
-                                            <td>{student.nisn}</td>
-                                            <td>{student.nama}</td>
-                                            <td>{student.jk}</td>
-                                            <td>{student.kelas}</td>
-                                            <td>
-                                                <button
-                                                    className="btn btn-sm btn-outline-danger"
-                                                    onClick={() => handleRemoveStudent(student)}
-                                                >
-                                                    <i className="fas fa-trash"></i>
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))}
+
+                                    {[...filteredStudents]
+                                        .sort((a, b) =>
+                                            a.nama.localeCompare(b.nama, "id", {
+                                                sensitivity: "base",
+                                                numeric: true,
+                                            })
+                                        )
+                                        .map((student, index) => (
+                                            <tr key={student.id}>
+                                                <td>{index + 1}</td>
+                                                <td>{student.nis}</td>
+                                                <td>{student.nisn}</td>
+                                                <td>{student.nama}</td>
+                                                <td>{student.jk}</td>
+
+                                                <td style={{ minWidth: 220 }}>
+                                                    {(() => {
+                                                        const recap = getStudentRecap(student.id);
+
+                                                        return (
+                                                            <Link
+                                                                href={`/admin/guru/kelas/${kelasId}/presensi/siswa-presensi/${student.id}`}
+                                                                className="text-decoration-none text-reset"
+                                                            >
+                                                                <div className="riwayat-presensi-link p-2 rounded">
+
+                                                                    <div className="d-flex align-items-center mb-2">
+                                                                        <div
+                                                                            className="progress flex-grow-1 me-2"
+                                                                            style={{ height: 8 }}
+                                                                        >
+                                                                            <div
+                                                                                className={`progress-bar ${getProgressColor(
+                                                                                    recap?.persentase ?? 0
+                                                                                )}`}
+                                                                                style={{
+                                                                                    width: `${recap?.persentase ?? 0}%`,
+                                                                                }}
+                                                                            />
+                                                                        </div>
+
+                                                                        <small
+                                                                            className="fw-bold"
+                                                                            style={{ width: 45, textAlign: "right" }}
+                                                                        >
+                                                                            {recap?.persentase ?? 0}%
+                                                                        </small>
+                                                                    </div>
+
+                                                                    <div className="d-flex flex-wrap gap-1">
+                                                                        <span className="badge bg-success">
+                                                                            H {recap?.hadir ?? 0}
+                                                                        </span>
+
+                                                                        <span className="badge bg-warning text-dark">
+                                                                            I {recap?.izin ?? 0}
+                                                                        </span>
+
+                                                                        <span className="badge bg-info">
+                                                                            S {recap?.sakit ?? 0}
+                                                                        </span>
+
+                                                                        <span className="badge bg-danger">
+                                                                            A {recap?.alpha ?? 0}
+                                                                        </span>
+                                                                    </div>
+
+                                                                </div>
+                                                            </Link>
+                                                        );
+                                                    })()}
+                                                </td>
+
+                                                <td>
+                                                    <button
+                                                        className="btn btn-sm btn-outline-danger"
+                                                        onClick={() => handleRemoveStudent(student)}
+                                                    >
+                                                        <i className="fas fa-trash"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
                                 </tbody>
                             </table>
 

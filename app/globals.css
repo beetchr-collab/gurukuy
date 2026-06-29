@@ -3,9 +3,6 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
-}
-
-@theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
@@ -604,3 +601,115 @@ body {
   }
 }
 
+/* Card Riwayat Presensi */
+.riwayat-presensi-card .riwayat-presensi-item {
+    background: #fff;
+    border: 1px solid #e9ecef !important;
+    border-radius: 12px;
+    transition: all .25s ease;
+}
+
+.riwayat-presensi-card .riwayat-presensi-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0,0,0,.08);
+    border-color: #0d6efd !important;
+}
+
+/* Badge Perempuan */
+.riwayat-presensi-card .bg-pink {
+    background: #e83e8c !important;
+}
+
+/* ===========================
+   Riwayat Presensi - Statistik
+=========================== */
+
+.riwayat-presensi-stat-card{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:18px 20px;
+    border-radius:16px;
+    color:#fff;
+    min-height:110px;
+    transition:.25s ease;
+    box-shadow:0 6px 18px rgba(0,0,0,.08);
+}
+
+.riwayat-presensi-stat-card:hover{
+    transform:translateY(-4px);
+    box-shadow:0 12px 28px rgba(0,0,0,.15);
+}
+
+.riwayat-presensi-label{
+    display:block;
+    font-size:.85rem;
+    opacity:.9;
+    margin-bottom:6px;
+}
+
+.riwayat-presensi-stat-card h3{
+    margin:0;
+    font-size:2rem;
+    font-weight:700;
+}
+
+.riwayat-presensi-icon{
+    width:60px;
+    height:60px;
+    border-radius:50%;
+    background:rgba(255,255,255,.18);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+}
+
+.riwayat-presensi-icon i{
+    font-size:1.7rem;
+}
+
+/* Warna */
+
+.riwayat-presensi-stat-card.total{
+    background:linear-gradient(135deg,#0dcaf0,#0b8db8);
+}
+
+.riwayat-presensi-stat-card.hadir{
+    background:linear-gradient(135deg,#20c997,#198754);
+}
+
+.riwayat-presensi-stat-card.izin{
+    background:linear-gradient(135deg,#4f8ef7,#0d6efd);
+}
+
+.riwayat-presensi-stat-card.sakit{
+    background:linear-gradient(135deg,#ffc107,#ff9800);
+}
+
+.riwayat-presensi-stat-card.alpha{
+    background:linear-gradient(135deg,#dc3545,#b02a37);
+}
+
+/* Mobile */
+
+@media (max-width:768px){
+
+    .riwayat-presensi-stat-card{
+        min-height:95px;
+        padding:16px;
+    }
+
+    .riwayat-presensi-stat-card h3{
+        font-size:1.6rem;
+    }
+
+    .riwayat-presensi-icon{
+        width:50px;
+        height:50px;
+    }
+
+    .riwayat-presensi-icon i{
+        font-size:1.3rem;
+    }
+
+}

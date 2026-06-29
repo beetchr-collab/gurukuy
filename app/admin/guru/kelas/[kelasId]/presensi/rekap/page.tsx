@@ -106,6 +106,7 @@ export default function RekapPresensiPage() {
                                         <th>Alpha</th>
 
                                         <th>% Kehadiran</th>
+                                        <th>Aksi</th>
 
                                     </tr>
 
@@ -129,6 +130,16 @@ export default function RekapPresensiPage() {
                                                 <td>{item.sakit}</td>
                                                 <td>{item.alpha}</td>
                                                 <td>{item.persentase}%</td>
+                                                <td className="text-center">
+                                                    <Link
+                                                        href={`/admin/guru/kelas/${kelasId}/presensi/siswa-presensi/${item.studentId}`}
+                                                        className="btn btn-info btn-sm"
+                                                        title="Riwayat Presensi"
+                                                    >
+                                                        <i className="fas fa-history mr-1"></i>
+                                                        Riwayat
+                                                    </Link>
+                                                </td>
                                             </tr>
                                         ))}
 
