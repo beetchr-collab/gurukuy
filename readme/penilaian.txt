@@ -1,0 +1,29 @@
+app
+└── guru
+    ├── dashboard
+    ├── kelas
+    ├── penilaian
+        ├── page.tsx                  // Dashboard Penilaian
+        ├── tambah
+        │   └── page.tsx              // Membuat penilaian baru
+        ├── [penilaianId]
+        │   ├── page.tsx              // Detail penilaian
+        │   ├── input
+        │   │   └── page.tsx          // Input nilai siswa
+        │   ├── rekap
+        │   │   └── page.tsx
+        │   ├── statistik
+        │   │   └── page.tsx
+        │   └── edit
+        │       └── page.tsx
+        │
+    ├── komponen
+    │   ├── PenilaianCard.tsx
+    │   ├── NilaiTable.tsx
+    │   ├── StatistikCard.tsx
+    │   └── FilterPenilaian.tsx
+    │
+    ├── types.ts
+    └── utils.ts
+    │
+    └── ujian

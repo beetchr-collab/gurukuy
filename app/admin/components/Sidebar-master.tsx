@@ -200,6 +200,16 @@ export default function Sidebar() {
 
                 <li className="nav-item">
                   <Link
+                    href="/admin/guru/penilaian"
+                    className={`nav-link ${isActive("/admin/guru/penilaian") ? "active bg-primary text-white" : ""}`}
+                  >
+                    <i className="nav-icon fas fa-clipboard-check"></i>
+                    <p>Penilaian</p>
+                  </Link>
+                </li>
+
+                <li className="nav-item">
+                  <Link
                     href="/admin/guru/eujian"
                     className={`nav-link ${isActive("/admin/guru/eujian") ? "active bg-primary text-white" : ""}`}
                   >
