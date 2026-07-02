@@ -198,15 +198,73 @@ export default function Sidebar() {
                   </Link>
                 </li>
 
-                <li className="nav-item">
-                  <Link
-                    href="/admin/guru/penilaian"
-                    className={`nav-link ${isActive("/admin/guru/penilaian") ? "active bg-primary text-white" : ""}`}
+                {/* Menu nilai */}
+                <li className={`nav-item ${openMenu === "penilaian" ? "menu-open" : ""}`}>
+                  <a
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setOpenMenu(openMenu === "penilaian" ? null : "penilaian");
+                    }}
+                    className={`nav-link ${isParentActive("/admin/guru/penilaian") ? "active" : ""}`}
                   >
                     <i className="nav-icon fas fa-clipboard-check"></i>
-                    <p>Penilaian</p>
-                  </Link>
+                    <p className="d-flex align-items-center w-100 mb-0">
+                      <span>Penilaian</span>
+
+                      <i
+                        className={`fas ${openMenu === "penilaian"
+                          ? "fa-angle-down"
+                          : "fa-angle-right"
+                          } ms-auto`}
+                      ></i>
+                    </p>
+                  </a>
+
+                  <ul className="nav nav-treeview">
+
+                    <li className="nav-item">
+                      <Link
+                        href="/admin/guru/penilaian"
+                        className={`nav-link ${isActive("/admin/guru/penilaian")
+                          ? "active bg-primary text-white"
+                          : ""
+                          }`}
+                      >
+                        <i className="far fa-chart-bar nav-icon"></i>
+                        <p>Progres Nilai</p>
+                      </Link>
+                    </li>
+
+                    <li className="nav-item">
+                      <Link
+                        href="/admin/guru/penilaian/tambah"
+                        className={`nav-link ${isActive("/admin/guru/penilaian/tambah")
+                          ? "active bg-primary text-white"
+                          : ""
+                          }`}
+                      >
+                        <i className="far fa-edit nav-icon"></i>
+                        <p>Topik/Input Nilai</p>
+                      </Link>
+                    </li>
+
+                    <li className="nav-item">
+                      <Link
+                        href="/admin/guru/penilaian/rekap"
+                        className={`nav-link ${isActive("/admin/guru/penilaian/rekap")
+                          ? "active bg-primary text-white"
+                          : ""
+                          }`}
+                      >
+                        <i className="far fa-file-alt nav-icon"></i>
+                        <p>Rekap</p>
+                      </Link>
+                    </li>
+
+                  </ul>
                 </li>
+
 
                 <li className="nav-item">
                   <Link

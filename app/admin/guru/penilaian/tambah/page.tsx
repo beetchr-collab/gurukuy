@@ -13,7 +13,11 @@ import {
     AnggotaKelas,
     getAnggotaKelas,
 } from "@/services/anggotakelas.service";
-import { createPenilaian } from "@/services/penilaian.service";
+import {
+    createPenilaian,
+    getTopikByMapel,
+} from "@/services/penilaian.service";
+import CreatableSelect from "react-select/creatable";
 
 export default function TambahPenilaianPage() {
 
@@ -55,6 +59,7 @@ export default function TambahPenilaianPage() {
         // TODO: implement subject loading logic
     };
 
+    // Memuat data saat user tersedia
     useEffect(() => {
         if (!user?.schoolId) return;
 
@@ -64,6 +69,7 @@ export default function TambahPenilaianPage() {
         loadSubjects();
     }, [user]);
 
+    // Form state
     const [form, setForm] = useState({
         topik: "",
         subtopik: "",
@@ -76,6 +82,7 @@ export default function TambahPenilaianPage() {
         tanggalPenilaian: new Date().toISOString().split("T")[0],
     });
 
+    // Handle form input changes
     const handleChange = (
         e: React.ChangeEvent<
             HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
@@ -88,77 +95,77 @@ export default function TambahPenilaianPage() {
     };
 
     // Simpan data ke firebase
-const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
 
-    if (!user) {
-        alert("User tidak ditemukan.");
-        return;
-    }
+        if (!user) {
+            alert("User tidak ditemukan.");
+            return;
+        }
 
-    if (!user.schoolId) {
-        alert("School ID tidak ditemukan.");
-        return;
-    }
+        if (!user.schoolId) {
+            alert("School ID tidak ditemukan.");
+            return;
+        }
 
-    if (!selectedKelas) {
-        alert("Silakan pilih kelas.");
-        return;
-    }
+        if (!selectedKelas) {
+            alert("Silakan pilih kelas.");
+            return;
+        }
 
-    const kelasAktif = kelas.find(
-        (item) => item.id === selectedKelas
-    );
-
-    if (!kelasAktif) {
-        alert("Data kelas tidak ditemukan.");
-        return;
-    }
-
-    try {
-
-        console.log("DATA USER", user);
-
-        console.log({
-            schoolId: user.schoolId,
-            ownerId: user.uid,
-            ownerName: user.username,
-        });
-
-        const penilaianId = await createPenilaian(
-            {
-                schoolId: user.schoolId,
-                ownerId: user.uid,
-                ownerName: user.username ?? "",
-
-                kelasId: kelasAktif.id,
-                namaKelas: kelasAktif.namaKelas,
-                tingkatKelas: kelasAktif.tingkatKelas,
-
-                mapel: form.mapel,
-                topik: form.topik,
-                subtopik: form.subtopik,
-                jenisPenilaian: form.jenisPenilaian,
-
-                kkm: Number(form.kkm),
-                deskripsi: form.deskripsi,
-
-                tanggalPenilaian: form.tanggalPenilaian,
-                tahunAjaran: tahunajaran?.tahunAjaran ?? "",
-            },
-            students,
-            scores
+        const kelasAktif = kelas.find(
+            (item) => item.id === selectedKelas
         );
 
-        console.log("Penilaian berhasil:", penilaianId);
+        if (!kelasAktif) {
+            alert("Data kelas tidak ditemukan.");
+            return;
+        }
 
-        alert("Penilaian berhasil disimpan.");
+        try {
 
-    } catch (error) {
-        console.error(error);
-        alert("Gagal menyimpan penilaian.");
-    }
-};
+            console.log("DATA USER", user);
+
+            console.log({
+                schoolId: user.schoolId,
+                ownerId: user.uid,
+                ownerName: user.username,
+            });
+
+            const penilaianId = await createPenilaian(
+                {
+                    schoolId: user.schoolId,
+                    ownerId: user.uid,
+                    ownerName: user.username ?? "",
+
+                    kelasId: kelasAktif.id,
+                    namaKelas: kelasAktif.namaKelas,
+                    tingkatKelas: kelasAktif.tingkatKelas,
+
+                    mapel: form.mapel,
+                    topik: form.topik,
+                    subtopik: form.subtopik,
+                    jenisPenilaian: form.jenisPenilaian,
+
+                    kkm: Number(form.kkm),
+                    deskripsi: form.deskripsi,
+
+                    tanggalPenilaian: form.tanggalPenilaian,
+                    tahunAjaran: tahunajaran?.tahunAjaran ?? "",
+                },
+                students,
+                scores
+            );
+
+            console.log("Penilaian berhasil:", penilaianId);
+
+            alert("Penilaian berhasil disimpan.");
+
+        } catch (error) {
+            console.error(error);
+            alert("Gagal menyimpan penilaian.");
+        }
+    };
 
     // Isian tanggal otomatis
     useEffect(() => {
@@ -197,6 +204,38 @@ const handleSubmit = async (e: React.FormEvent) => {
                     : Math.min(100, Math.max(0, Number(value))),
         }));
     };
+
+    // Mengambil topik berdasarkan mata pelajaran yang dipilih
+    const [topikOptions, setTopikOptions] = useState<
+        { label: string; value: string }[]
+    >([]);
+    useEffect(() => {
+        async function loadTopik() {
+            if (!form.mapel) {
+                setTopikOptions([]);
+                return;
+            }
+
+            const ownerId = user?.uid;
+
+            if (!ownerId) return;
+
+            const data = await getTopikByMapel(
+                ownerId,
+                form.mapel
+            );
+
+            setTopikOptions(
+                data.map((item) => ({
+                    label: item,
+                    value: item,
+                }))
+            );
+        }
+
+        loadTopik();
+    }, [form.mapel]);
+
 
     return (
         <div className="container-fluid py-2">
@@ -338,13 +377,30 @@ const handleSubmit = async (e: React.FormEvent) => {
                                     Topik
                                 </label>
 
-                                <input
-                                    type="text"
-                                    className="form-control"
-                                    name="topik"
-                                    value={form.topik}
-                                    onChange={handleChange}
-                                    placeholder="Contoh: Bilangan Bulat"
+                                <CreatableSelect
+                                    options={topikOptions}
+                                    placeholder="Cari atau ketik topik..."
+                                    value={
+                                        form.topik
+                                            ? {
+                                                label: form.topik,
+                                                value: form.topik,
+                                            }
+                                            : null
+                                    }
+                                    onChange={(selected) =>
+                                        setForm({
+                                            ...form,
+                                            topik: selected?.value || "",
+                                        })
+                                    }
+                                    onCreateOption={(inputValue) =>
+                                        setForm({
+                                            ...form,
+                                            topik: inputValue,
+                                        })
+                                    }
+                                    isClearable
                                 />
                             </div>
 

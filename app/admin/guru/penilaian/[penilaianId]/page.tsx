@@ -1,128 +1,193 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
 
-interface StudentScore {
-    id: string;
-    nama: string;
-    jk: string;
-    nilai: string;
-}
+import {
+    getPenilaianById,
+    getNilaiByPenilaian,
+    saveNilai,
+    NilaiSiswa,
+} from "@/services/penilaian.service";
 
 export default function InputNilaiPage() {
-    const [students, setStudents] = useState<StudentScore[]>([
-        {
-            id: "1",
-            nama: "Ahmad Fauzi",
-            jk: "L",
-            nilai: "90",
-        },
-        {
-            id: "2",
-            nama: "Budi Santoso",
-            jk: "L",
-            nilai: "",
-        },
-        {
-            id: "3",
-            nama: "Citra Lestari",
-            jk: "P",
-            nilai: "85",
-        },
-        {
-            id: "4",
-            nama: "Dinda Putri",
-            jk: "P",
-            nilai: "",
-        },
-    ]);
+    const params = useParams();
+    const penilaianId = params.penilaianId as string;
+    const router = useRouter();
+
+    const [penilaian, setPenilaian] = useState<any>(null);
+
+    const [students, setStudents] = useState<NilaiSiswa[]>([]);
 
     const [keyword, setKeyword] = useState("");
+
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        loadData();
+    }, [penilaianId]);
+
+    async function loadData() {
+        try {
+            const data = await getPenilaianById(penilaianId);
+
+            if (data) {
+                setPenilaian(data);
+            }
+
+            const nilai = await getNilaiByPenilaian(penilaianId);
+
+            setStudents(nilai);
+        } finally {
+            setLoading(false);
+        }
+    }
 
     const filtered = students.filter((item) =>
         item.nama.toLowerCase().includes(keyword.toLowerCase())
     );
 
-    const handleChange = (id: string, value: string) => {
+    const handleChange = (studentId: string, value: string) => {
         if (Number(value) > 100) return;
 
         setStudents((prev) =>
             prev.map((item) =>
-                item.id === id
+                item.studentId === studentId
                     ? {
-                          ...item,
-                          nilai: value,
-                      }
+                        ...item,
+                        nilai: value === "" ? "" : Number(value),
+                    }
                     : item
             )
         );
     };
 
     const total = students.length;
-    const selesai = students.filter((s) => s.nilai !== "").length;
-    const progress = Math.round((selesai / total) * 100);
 
-    const handleSave = () => {
-        console.log(students);
+    const selesai = students.filter(
+        (item) => item.nilai !== ""
+    ).length;
 
-        alert("Nilai berhasil disimpan");
+    const progress =
+        total === 0
+            ? 0
+            : Math.round((selesai / total) * 100);
+
+    const handleSave = async () => {
+        try {
+            await saveNilai(penilaianId, students);
+
+            alert("Nilai berhasil disimpan");
+        } catch (error) {
+            console.error(error);
+            alert("Gagal menyimpan nilai");
+        }
     };
 
+    if (loading) {
+        return (
+            <div className="container-fluid py-3">
+                Memuat data...
+            </div>
+        );
+    }
+
     return (
-        <div className="container-fluid">
+        <div className="container-fluid py-2">
 
             {/* Header */}
 
             <div className="mb-4">
 
-                <h1 className="h3 font-weight-bold">
-                    Input Nilai
-                </h1>
-
-                <p className="text-muted mb-0">
-                    Input nilai siswa
-                </p>
-
+                <h3 className="h3 font-weight-bold">
+                    Daftar Nilai
+                </h3>
             </div>
 
             {/* Informasi Penilaian */}
+            <div className="card shadow-sm border-0 mb-4 infonilai-card">
 
-            <div className="card shadow-sm mb-4">
-
-                <div className="card-header">
-
-                    <h3 className="card-title">
+                <div className="card-header bg-white border-0 pb-0">
+                    <h5 className="fw-bold mb-0">
+                        <i className="fas fa-clipboard-check text-primary me-2"></i>
                         Informasi Penilaian
-                    </h3>
-
+                    </h5>
                 </div>
 
                 <div className="card-body">
 
-                    <div className="row">
+                    <div className="row g-3">
 
-                        <div className="col-md-3">
-                            <strong>Penilaian</strong>
-                            <br />
-                            UH Bab 1
+                        <div className="col-12 col-sm-6 col-lg-3">
+                            <div className="infonilai-info-item">
+                                <div className="infonilai-icon bg-primary">
+                                    <i className="fas fa-book"></i>
+                                </div>
+
+                                <div>
+                                    <small className="text-muted d-block">
+                                        Topik Penilaian
+                                    </small>
+
+                                    <div className="fw-bold">
+                                        {penilaian?.topik ?? "-"}
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
-                        <div className="col-md-3">
-                            <strong>Kelas</strong>
-                            <br />
-                            VII A
+                        <div className="col-12 col-sm-6 col-lg-3">
+                            <div className="infonilai-info-item">
+                                <div className="infonilai-icon bg-success">
+                                    <i className="fas fa-users"></i>
+                                </div>
+
+                                <div>
+                                    <small className="text-muted d-block">
+                                        Kelas
+                                    </small>
+
+                                    <span className="badge bg-success">
+                                        {penilaian?.namaKelas ?? "-"}
+                                    </span>
+                                </div>
+                            </div>
                         </div>
 
-                        <div className="col-md-3">
-                            <strong>Mapel</strong>
-                            <br />
-                            Matematika
+                        <div className="col-12 col-sm-6 col-lg-3">
+                            <div className="infonilai-info-item">
+                                <div className="infonilai-icon bg-warning text-dark">
+                                    <i className="fas fa-book-open"></i>
+                                </div>
+
+                                <div>
+                                    <small className="text-muted d-block">
+                                        Mata Pelajaran
+                                    </small>
+
+                                    <span className="badge bg-primary">
+                                        {penilaian?.mapel ?? "-"}
+                                    </span>
+                                </div>
+                            </div>
                         </div>
 
-                        <div className="col-md-3">
-                            <strong>KKM</strong>
-                            <br />
-                            75
+                        <div className="col-12 col-sm-6 col-lg-3">
+                            <div className="infonilai-info-item">
+                                <div className="infonilai-icon bg-danger">
+                                    <i className="fas fa-award"></i>
+                                </div>
+
+                                <div>
+                                    <small className="text-muted d-block">
+                                        KKM
+                                    </small>
+
+                                    <span className="badge bg-danger fs-6">
+                                        {penilaian?.kkm ?? "-"}
+                                    </span>
+                                </div>
+                            </div>
                         </div>
 
                     </div>
@@ -130,7 +195,6 @@ export default function InputNilaiPage() {
                 </div>
 
             </div>
-
             {/* Progress */}
 
             <div className="card shadow-sm mb-4">
@@ -204,7 +268,8 @@ export default function InputNilaiPage() {
                             <tr>
 
                                 <th style={{ width: "60px" }}>No</th>
-
+                                <th>NIS</th>
+                                <th>NISN</th>
                                 <th>Nama</th>
 
                                 <th style={{ width: "80px" }}>JK</th>
@@ -221,16 +286,15 @@ export default function InputNilaiPage() {
 
                             {filtered.map((item, index) => (
 
-                                <tr key={item.id}>
+                                <tr key={item.studentId}>
 
                                     <td>{index + 1}</td>
 
+                                    <td>{item.nis}</td>
+                                    <td>{item.nisn}</td>
                                     <td>{item.nama}</td>
-
                                     <td>{item.jk}</td>
-
                                     <td>
-
                                         <input
                                             type="number"
                                             className="form-control text-center"
@@ -239,7 +303,7 @@ export default function InputNilaiPage() {
                                             value={item.nilai}
                                             onChange={(e) =>
                                                 handleChange(
-                                                    item.id,
+                                                    item.studentId,
                                                     e.target.value
                                                 )
                                             }
@@ -257,8 +321,16 @@ export default function InputNilaiPage() {
 
                 </div>
 
-                <div className="card-footer text-right">
-
+                <div className="card-footer text-right gap-2 d-flex justify-content-end">
+                    {/* Tombol Kembali */}
+                    <button
+                        className="btn btn-secondary mr-2"
+                        onClick={() => router.back()}
+                    >
+                        <i className="fas fa-arrow-left mr-2"></i>
+                        Kembali
+                    </button>
+                    {/* Save Button */}
                     <button
                         className="btn btn-primary"
                         onClick={handleSave}

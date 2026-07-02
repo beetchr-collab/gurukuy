@@ -603,113 +603,286 @@ body {
 
 /* Card Riwayat Presensi */
 .riwayat-presensi-card .riwayat-presensi-item {
-    background: #fff;
-    border: 1px solid #e9ecef !important;
-    border-radius: 12px;
-    transition: all .25s ease;
+  background: #fff;
+  border: 1px solid #e9ecef !important;
+  border-radius: 12px;
+  transition: all .25s ease;
 }
 
 .riwayat-presensi-card .riwayat-presensi-item:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 20px rgba(0,0,0,.08);
-    border-color: #0d6efd !important;
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, .08);
+  border-color: #0d6efd !important;
 }
 
 /* Badge Perempuan */
 .riwayat-presensi-card .bg-pink {
-    background: #e83e8c !important;
+  background: #e83e8c !important;
 }
 
 /* ===========================
    Riwayat Presensi - Statistik
 =========================== */
 
-.riwayat-presensi-stat-card{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    padding:18px 20px;
-    border-radius:16px;
-    color:#fff;
-    min-height:110px;
-    transition:.25s ease;
-    box-shadow:0 6px 18px rgba(0,0,0,.08);
+.riwayat-presensi-stat-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 20px;
+  border-radius: 16px;
+  color: #fff;
+  min-height: 110px;
+  transition: .25s ease;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .08);
 }
 
-.riwayat-presensi-stat-card:hover{
-    transform:translateY(-4px);
-    box-shadow:0 12px 28px rgba(0,0,0,.15);
+.riwayat-presensi-stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, .15);
 }
 
-.riwayat-presensi-label{
-    display:block;
-    font-size:.85rem;
-    opacity:.9;
-    margin-bottom:6px;
+.riwayat-presensi-label {
+  display: block;
+  font-size: .85rem;
+  opacity: .9;
+  margin-bottom: 6px;
 }
 
-.riwayat-presensi-stat-card h3{
-    margin:0;
-    font-size:2rem;
-    font-weight:700;
+.riwayat-presensi-stat-card h3 {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 700;
 }
 
-.riwayat-presensi-icon{
-    width:60px;
-    height:60px;
-    border-radius:50%;
-    background:rgba(255,255,255,.18);
-    display:flex;
-    align-items:center;
-    justify-content:center;
+.riwayat-presensi-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.riwayat-presensi-icon i{
-    font-size:1.7rem;
+.riwayat-presensi-icon i {
+  font-size: 1.7rem;
 }
 
 /* Warna */
 
-.riwayat-presensi-stat-card.total{
-    background:linear-gradient(135deg,#0dcaf0,#0b8db8);
+.riwayat-presensi-stat-card.total {
+  background: linear-gradient(135deg, #0dcaf0, #0b8db8);
 }
 
-.riwayat-presensi-stat-card.hadir{
-    background:linear-gradient(135deg,#20c997,#198754);
+.riwayat-presensi-stat-card.hadir {
+  background: linear-gradient(135deg, #20c997, #198754);
 }
 
-.riwayat-presensi-stat-card.izin{
-    background:linear-gradient(135deg,#4f8ef7,#0d6efd);
+.riwayat-presensi-stat-card.izin {
+  background: linear-gradient(135deg, #4f8ef7, #0d6efd);
 }
 
-.riwayat-presensi-stat-card.sakit{
-    background:linear-gradient(135deg,#ffc107,#ff9800);
+.riwayat-presensi-stat-card.sakit {
+  background: linear-gradient(135deg, #ffc107, #ff9800);
 }
 
-.riwayat-presensi-stat-card.alpha{
-    background:linear-gradient(135deg,#dc3545,#b02a37);
+.riwayat-presensi-stat-card.alpha {
+  background: linear-gradient(135deg, #dc3545, #b02a37);
 }
 
 /* Mobile */
 
-@media (max-width:768px){
+@media (max-width:768px) {
 
-    .riwayat-presensi-stat-card{
-        min-height:95px;
-        padding:16px;
+  .riwayat-presensi-stat-card {
+    min-height: 95px;
+    padding: 16px;
+  }
+
+  .riwayat-presensi-stat-card h3 {
+    font-size: 1.6rem;
+  }
+
+  .riwayat-presensi-icon {
+    width: 50px;
+    height: 50px;
+  }
+
+  .riwayat-presensi-icon i {
+    font-size: 1.3rem;
+  }
+
+}
+
+/* ===========================
+   Statistik Penilaian
+=========================== */
+
+.penilaian-stat-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  min-height: 120px;
+  border-radius: 18px;
+  color: #fff;
+  overflow: hidden;
+  transition: .25s ease;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, .08);
+}
+
+.penilaian-stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, .15);
+}
+
+.penilaian-stat-card h2 {
+  margin: 6px 0;
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.penilaian-stat-label {
+  display: block;
+  font-size: .9rem;
+  opacity: .9;
+}
+
+.penilaian-stat-card small {
+  opacity: .9;
+}
+
+.penilaian-stat-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .18);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.penilaian-stat-icon i {
+  font-size: 28px;
+}
+
+/* Warna */
+
+.penilaian-stat-card.total {
+  background: linear-gradient(135deg, #0d6efd, #4f8ef7);
+}
+
+.penilaian-stat-card.belum {
+  background: linear-gradient(135deg, #fd7e14, #f59e0b);
+}
+
+.penilaian-stat-card.selesai {
+  background: linear-gradient(135deg, #198754, #20c997);
+}
+
+.penilaian-stat-card.progress {
+  background: linear-gradient(135deg, #6f42c1, #8b5cf6);
+}
+
+/* Mobile */
+
+@media (max-width:768px) {
+
+  .penilaian-stat-card {
+    min-height: 100px;
+    padding: 18px;
+  }
+
+  .penilaian-stat-card h2 {
+    font-size: 1.7rem;
+  }
+
+  .penilaian-stat-icon {
+    width: 54px;
+    height: 54px;
+  }
+
+  .penilaian-stat-icon i {
+    font-size: 22px;
+  }
+
+}
+
+/* ===========================
+   Info Nilai
+=========================== */
+
+.infonilai-card {
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+.infonilai-info-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px;
+    border: 1px solid #eef1f4;
+    border-radius: 14px;
+    background: #fff;
+    transition: all .25s ease;
+    height: 100%;
+}
+
+.infonilai-info-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, .08);
+    border-color: #dbeafe;
+}
+
+.infonilai-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #fff;
+    font-size: 20px;
+    flex-shrink: 0;
+    box-shadow: 0 4px 10px rgba(0,0,0,.08);
+}
+
+.infonilai-info-item small {
+    font-size: .78rem;
+    color: #6c757d;
+}
+
+.infonilai-info-item .fw-bold {
+    font-size: .95rem;
+    line-height: 1.3;
+}
+
+.infonilai-info-item .badge {
+    font-size: .75rem;
+    font-weight: 600;
+    padding: .45rem .8rem;
+    border-radius: 50rem;
+}
+
+/* Responsive */
+
+@media (max-width: 768px) {
+
+    .infonilai-info-item {
+        padding: 12px;
+        gap: 12px;
     }
 
-    .riwayat-presensi-stat-card h3{
-        font-size:1.6rem;
+    .infonilai-icon {
+        width: 46px;
+        height: 46px;
+        font-size: 18px;
     }
 
-    .riwayat-presensi-icon{
-        width:50px;
-        height:50px;
-    }
-
-    .riwayat-presensi-icon i{
-        font-size:1.3rem;
+    .infonilai-info-item .fw-bold {
+        font-size: .9rem;
     }
 
 }
