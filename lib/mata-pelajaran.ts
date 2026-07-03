@@ -14,13 +14,33 @@ export const MATA_PELAJARAN: MataPelajaran[] = [
 
     // WAJIB
     {
-        idMataPelajaran: "pai",
-        namaMataPelajaran: "PendidMataPelajaranikan Agama dan Budi Pekerti",
+        idMataPelajaran: "islam",
+        namaMataPelajaran: "Pendidikan Agama Islam dan Budi Pekerti",
+        kategoriMataPelajaran: "Wajib",
+    },
+    {
+        idMataPelajaran: "kristen",
+        namaMataPelajaran: "Pendidikan Agama Kristen dan Budi Pekerti",
+        kategoriMataPelajaran: "Wajib",
+    },
+    {
+        idMataPelajaran: "hindu",
+        namaMataPelajaran: "Pendidikan Agama Hindu dan Budi Pekerti",
+        kategoriMataPelajaran: "Wajib",
+    },
+    {
+        idMataPelajaran: "buddha",
+        namaMataPelajaran: "Pendidikan Agama Buddha dan Budi Pekerti",
+        kategoriMataPelajaran: "Wajib",
+    },
+    {
+        idMataPelajaran: "khonghucu",
+        namaMataPelajaran: "Pendidikan Agama Khonghucu dan Budi Pekerti",
         kategoriMataPelajaran: "Wajib",
     },
     {
         idMataPelajaran: "pp",
-        namaMataPelajaran: "PendidMataPelajaranikan Pancasila (PP)",
+        namaMataPelajaran: "Pendidikan Pancasila (PP)",
         kategoriMataPelajaran: "Wajib",
     },
     {
@@ -31,6 +51,11 @@ export const MATA_PELAJARAN: MataPelajaran[] = [
     {
         idMataPelajaran: "matematika",
         namaMataPelajaran: "Matematika",
+        kategoriMataPelajaran: "Wajib",
+    },
+    {
+        idMataPelajaran: "ipas",
+        namaMataPelajaran: "Ilmu Pengetahuan Alam dan Sosial (IPAS)",
         kategoriMataPelajaran: "Wajib",
     },
     {
@@ -57,7 +82,7 @@ export const MATA_PELAJARAN: MataPelajaran[] = [
     },
     {
         idMataPelajaran: "pjok",
-        namaMataPelajaran: "PendidMataPelajaranikan Jasmani, Olahraga, dan Kesehatan (PJOK)",
+        namaMataPelajaran: "Pendidikan Jasmani, Olahraga, dan Kesehatan (PJOK)",
         kategoriMataPelajaran: "Seni & Olahraga",
     },
 
@@ -151,6 +176,11 @@ export const MATA_PELAJARAN: MataPelajaran[] = [
     {
         idMataPelajaran: "kewirausahaan",
         namaMataPelajaran: "Kewirausahaan",
+        kategoriMataPelajaran: "Opsional",
+    },
+    {
+        idMataPelajaran: "kka",
+        namaMataPelajaran: "Koding dan Kecerdasan Artifisial (KKA)",
         kategoriMataPelajaran: "Opsional",
     },
 ];

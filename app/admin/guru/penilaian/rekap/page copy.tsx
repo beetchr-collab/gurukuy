@@ -587,8 +587,8 @@ export default function RekapPenilaianPage() {
 
                                 <span
                                     className={`badge fs-6 ${total === 100
-                                        ? "bg-success"
-                                        : "bg-danger"
+                                            ? "bg-success"
+                                            : "bg-danger"
                                         }`}
                                 >
                                     {total}%
@@ -838,65 +838,12 @@ export default function RekapPenilaianPage() {
 
                                 {students.map((student, index) => {
 
-                                    // ==========================
-                                    // FORMATIF
-                                    // ==========================
-                                    const formatifItems = rekap.filter(item =>
-                                        item.jenisPenilaian
-                                            .toLowerCase()
-                                            .includes("formatif")
-                                    );
-
-                                    const totalFormatif = formatifItems.reduce((sum, item) => {
-                                        return sum + Number(student.nilai[item.id] ?? 0);
-                                    }, 0);
-
-                                    const rataFormatif =
-                                        formatifItems.length > 0
-                                            ? totalFormatif / formatifItems.length
-                                            : 0;
-
-                                    // ==========================
-                                    // SUMATIF
-                                    // ==========================
-                                    const sumatifItems = rekap.filter(item =>
-                                        item.jenisPenilaian
-                                            .toLowerCase()
-                                            .includes("sumatif") &&
-                                        !item.jenisPenilaian
-                                            .toLowerCase()
-                                            .includes("sumatif akhir semester")
-                                    );
-
-                                    const totalSumatif = sumatifItems.reduce((sum, item) => {
-                                        return sum + Number(student.nilai[item.id] ?? 0);
-                                    }, 0);
-
-                                    const rataSumatif =
-                                        sumatifItems.length > 0
-                                            ? totalSumatif / sumatifItems.length
-                                            : 0;
-
-                                    // ==========================
-                                    // SAS
-                                    // ==========================
+                                    // Nilai SAS
                                     const sas = rekap.find(item =>
                                         item.jenisPenilaian
                                             .toLowerCase()
                                             .includes("sumatif akhir semester")
                                     );
-
-                                    const nilaiSAS = sas
-                                        ? Number(student.nilai[sas.id] ?? 0)
-                                        : 0;
-
-                                    // ==========================
-                                    // NILAI AKHIR
-                                    // ==========================
-                                    const nilaiAkhir =
-                                        (rataFormatif * formData.formatif) / 100 +
-                                        (rataSumatif * formData.sumatif) / 100 +
-                                        (nilaiSAS * formData.sas) / 100;
 
                                     return (
 
@@ -912,9 +859,15 @@ export default function RekapPenilaianPage() {
 
                                             <td>{student.jk}</td>
 
-                                            {/* FORMATIF & SUMATIF */}
+                                            {/* =============================
+                    FORMATIF & SUMATIF
+                ============================== */}
+
                                             {groupedJenis.flatMap((jenis) => {
 
+                                                // =============================
+                                                // FORMATIF
+                                                // =============================
                                                 if (jenis.jenis === "Formatif") {
 
                                                     return jenis.topik.flatMap((topik: any) =>
@@ -934,8 +887,13 @@ export default function RekapPenilaianPage() {
 
                                                 }
 
+                                                // =============================
+                                                // SUMATIF
+                                                // =============================
+
                                                 return jenis.topik.map((topik: any) => {
 
+                                                    // Ambil hanya satu penilaian pertama
                                                     const item = topik.items[0];
 
                                                     return (
@@ -953,16 +911,26 @@ export default function RekapPenilaianPage() {
 
                                             })}
 
-                                            {/* SAS */}
+                                            {/* =============================
+                    SAS
+                ============================== */}
+
                                             <td className="text-center fw-bold bg-warning-subtle">
+
                                                 {sas
                                                     ? student.nilai[sas.id] ?? ""
                                                     : ""}
+
                                             </td>
 
-                                            {/* NILAI AKHIR */}
+                                            {/* =============================
+                    NILAI AKHIR
+                ============================== */}
+
                                             <td className="text-center fw-bold bg-success-subtle">
-                                                {nilaiAkhir.toFixed(2)}
+
+                                                {student.nilaiAkhir ?? "-"}
+
                                             </td>
 
                                         </tr>
@@ -970,6 +938,7 @@ export default function RekapPenilaianPage() {
                                     );
 
                                 })}
+
                             </tbody>
                         </table>
                     </div>
