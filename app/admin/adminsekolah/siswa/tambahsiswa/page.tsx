@@ -155,6 +155,7 @@ export default function AdminSiswaPage() {
           schoolId: user.schoolId,
           ownerId: user.uid,
           tahunAjaran,
+          status: "Aktif",
           createdAt: serverTimestamp(),
         };
 

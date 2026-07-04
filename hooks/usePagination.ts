@@ -1,41 +1,51 @@
-"use client";
+import { useMemo, useState, useEffect } from "react";
 
-import { useEffect, useState } from "react";
+type UsePaginationProps<T> = {
+    data: T[];
+    pageSize?: number;
+    resetDeps?: any[];
+};
 
-export function usePagination<T>(
-  data: T[],
-  itemsPerPage: number = 10
-) {
-  const [currentPage, setCurrentPage] = useState(1);
+export function usePagination<T>({
+    data,
+    pageSize: initialPageSize = 10,
+    resetDeps = [],
+}: UsePaginationProps<T>) {
+    const [currentPage, setCurrentPage] = useState(1);
+    const [pageSize, setPageSize] = useState(initialPageSize);
 
-  // reset halaman jika data berubah
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [data]);
+    useEffect(() => {
+        setCurrentPage(1);
+    }, resetDeps);
 
-  const totalPages = Math.ceil(
-    data.length / itemsPerPage
-  );
+    const totalPages = Math.max(
+        1,
+        Math.ceil(data.length / pageSize)
+    );
 
-  const startIndex =
-    (currentPage - 1) * itemsPerPage;
+    useEffect(() => {
+        if (currentPage > totalPages) {
+            setCurrentPage(totalPages);
+        }
+    }, [currentPage, totalPages]);
 
-  const endIndex =
-    startIndex + itemsPerPage;
+    const startIndex = (currentPage - 1) * pageSize;
 
-  const currentData = data.slice(
-    startIndex,
-    endIndex
-  );
+    const currentData = useMemo(() => {
+        return data.slice(
+            startIndex,
+            startIndex + pageSize
+        );
+    }, [data, startIndex, pageSize]);
 
-  return {
-    currentPage,
-    setCurrentPage,
-    totalPages,
-    startIndex,
-    endIndex,
-    currentData,
-    itemsPerPage,
-    totalData: data.length,
-  };
+    return {
+        currentPage,
+        pageSize,
+        totalPages,
+        startIndex,
+        currentData,
+
+        setCurrentPage,
+        setPageSize,
+    };
 }

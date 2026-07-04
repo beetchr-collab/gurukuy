@@ -8,10 +8,11 @@ import {
     where,
     doc,
     deleteDoc,
+    writeBatch,
+    getDocs,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { usePagination } from "@/hooks/usePagination";
-import Pagination from "@/components/Pagination";
 
 export default function AdminSiswaPage() {
     const { user } = useAuth();
@@ -56,6 +57,44 @@ export default function AdminSiswaPage() {
         await deleteDoc(doc(db, "students", id));
     };
 
+    // ================= DELETE ALL =================
+    const handleDeleteAll = async () => {
+        if (!user) return;
+
+        const confirmDelete = confirm(
+            "Yakin ingin menghapus seluruh data siswa sekolah ini?"
+        );
+
+        if (!confirmDelete) return;
+
+        try {
+            const q = query(
+                collection(db, "students"),
+                where("schoolId", "==", user.uid),
+                where("ownerId", "==", user.uid)
+            );
+
+            const snapshot = await getDocs(q);
+
+            if (snapshot.empty) {
+                alert("Tidak ada data siswa.");
+                return;
+            }
+
+            const batch = writeBatch(db);
+
+            snapshot.forEach((document) => {
+                batch.delete(doc(db, "students", document.id));
+            });
+
+            await batch.commit();
+
+            alert("Semua siswa berhasil dihapus.");
+        } catch (error) {
+            console.error(error);
+            alert("Gagal menghapus data.");
+        }
+    };
     // ================= FILTER SEARCH =================
     const filteredData = dataSiswa.filter((s) =>
         `${s.nama} ${s.nis} ${s.nisn}`
@@ -126,6 +165,15 @@ export default function AdminSiswaPage() {
                                 Tambah Siswa
                             </a>
 
+                            <button
+                                className="btn btn-danger"
+                                onClick={handleDeleteAll}
+                                disabled={dataSiswa.length === 0}
+                            >
+                                <i className="bi bi-trash3-fill me-2"></i>
+                                Hapus Semua
+                            </button>
+
                             <div className="dropdown">
                                 <button
                                     className="btn btn-outline-light dropdown-toggle"
@@ -156,14 +204,6 @@ export default function AdminSiswaPage() {
                         <h3 className="card-title">Daftar Siswa</h3>
                     </div>
                     <div className="card-body d-flex justify-content-between align-items-center">
-
-                        {/* TOMBOL TAMBAH */}
-                        <a
-                            href="/admin/adminsekolah/siswa/assignkelas"
-                            className="btn btn-success"
-                        >
-                            <i className="fas fa-plus"></i> Assign Clases
-                        </a>
 
                         {/* SEARCH */}
                         <input

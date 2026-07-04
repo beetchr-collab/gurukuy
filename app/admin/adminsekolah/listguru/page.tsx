@@ -14,7 +14,7 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { usePagination } from "@/hooks/usePagination";
-import Pagination from "@/components/Pagination";
+import Pagination from "@/components/panination/Pagination";
 
 export default function AdminGuruPage() {
   const { user } = useAuth();

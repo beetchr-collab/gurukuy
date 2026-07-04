@@ -22,6 +22,10 @@ import { getAttendanceRecap } from "@/services/presensi.service";
 import { AttendanceRecap } from "@/types/presensi";
 import { useAuth } from "@/context/AuthContext";
 
+// pagination
+import { usePagination } from "@/hooks/usePagination";
+import TableFooter from "@/components/pagination/TableFooter";
+
 // Interface untuk data siswa
 interface Student {
     id: string;
@@ -141,6 +145,28 @@ export default function AnggotaKelasPage() {
             String(student.nisn ?? "").includes(keyword)
         );
     });
+    // Urutkan berdasarkan nama
+    const sortedStudents = [...filteredStudents].sort((a, b) =>
+        a.nama.localeCompare(b.nama, "id", {
+            sensitivity: "base",
+            numeric: true,
+        })
+    );
+
+    // Pagination
+    const {
+        currentPage,
+        pageSize,
+        totalPages,
+        startIndex,
+        currentData,
+        setCurrentPage,
+        setPageSize,
+    } = usePagination({
+        data: sortedStudents,
+        pageSize: 10, // jumlah data default per halaman
+        resetDeps: [search],
+    });
 
     // Rekap Presensi
     const { user } = useAuth();
@@ -173,13 +199,13 @@ export default function AnggotaKelasPage() {
         );
     }
 
-
     const getProgressColor = (persentase: number) => {
         if (persentase >= 90) return "bg-success";
         if (persentase >= 75) return "bg-primary";
         if (persentase >= 60) return "bg-warning";
         return "bg-danger";
     };
+
 
     return (
         <main className="content-wrapper">
@@ -360,42 +386,41 @@ export default function AnggotaKelasPage() {
                         {loading && (
                             <p>Loading...</p>
                         )}
+
                         {!loading && (
-                            <table className="table table-bordered table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>No</th>
-                                        <th>NIS</th>
-                                        <th>NISN</th>
-                                        <th>Nama</th>
-                                        <th>L/P</th>
-                                        <th>% Kehadiran</th>
-                                        <th style={{ width: 120 }}>Aksi</th>
-                                    </tr>
-                                </thead>
-
-                                <tbody>
-                                    {filteredStudents.length === 0 && (
+                            <>
+                                <table className="table table-bordered table-striped">
+                                    <thead>
                                         <tr>
-                                            <td colSpan={7} className="text-center">
-                                                Tidak ada anggota kelas
-                                            </td>
+                                            <th>No</th>
+                                            <th>NIS</th>
+                                            <th>NISN</th>
+                                            <th>Nama</th>
+                                            <th>L/P</th>
+                                            <th>% Kehadiran</th>
+                                            <th style={{ width: 120 }}>Aksi</th>
                                         </tr>
-                                    )}
+                                    </thead>
 
-                                    {[...filteredStudents]
-                                        .sort((a, b) =>
-                                            a.nama.localeCompare(b.nama, "id", {
-                                                sensitivity: "base",
-                                                numeric: true,
-                                            })
-                                        )
-                                        .map((student, index) => (
+                                    <tbody>
+                                        {sortedStudents.length === 0 && (
+                                            <tr>
+                                                <td colSpan={7} className="text-center">
+                                                    Tidak ada anggota kelas
+                                                </td>
+                                            </tr>
+                                        )}
+
+                                        {currentData.map((student, index) => (
                                             <tr key={student.id}>
-                                                <td>{index + 1}</td>
+                                                <td>{startIndex + index + 1}</td>
+
                                                 <td>{student.nis}</td>
+
                                                 <td>{student.nisn}</td>
+
                                                 <td>{student.nama}</td>
+
                                                 <td>{student.jk}</td>
 
                                                 <td style={{ minWidth: 220 }}>
@@ -426,7 +451,10 @@ export default function AnggotaKelasPage() {
 
                                                                         <small
                                                                             className="fw-bold"
-                                                                            style={{ width: 45, textAlign: "right" }}
+                                                                            style={{
+                                                                                width: 45,
+                                                                                textAlign: "right",
+                                                                            }}
                                                                         >
                                                                             {recap?.persentase ?? 0}%
                                                                         </small>
@@ -466,13 +494,23 @@ export default function AnggotaKelasPage() {
                                                 </td>
                                             </tr>
                                         ))}
-                                </tbody>
-                            </table>
+                                    </tbody>
+                                </table>
 
+                                <TableFooter
+                                    currentPage={currentPage}
+                                    totalPages={totalPages}
+                                    pageSize={pageSize}
+                                    totalData={sortedStudents.length}
+                                    onPageChange={setCurrentPage}
+                                    onPageSizeChange={(size) => {
+                                        setPageSize(size);
+                                        setCurrentPage(1);
+                                    }}
+                                />
+                            </>
                         )}
-
                     </div>
-
                 </div>
 
             </div>

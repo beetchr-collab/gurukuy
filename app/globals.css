@@ -886,3 +886,43 @@ body {
     }
 
 }
+
+/* ===========================
+   Filter Rekap Penilaian
+=========================== */
+
+.filter-rekap-card{
+    border-radius:16px;
+}
+
+.filter-rekap-card .card-body{
+    padding:1.5rem;
+}
+
+.filter-select{
+    border-radius:12px;
+    min-height:46px;
+    transition:.25s ease;
+}
+
+.filter-select:focus{
+    border-color:#0d6efd;
+    box-shadow:0 0 0 .2rem rgba(13,110,253,.15);
+}
+
+.filter-rekap-card .form-label{
+    margin-bottom:.45rem;
+    font-size:.9rem;
+}
+
+@media (max-width:768px){
+
+    .filter-rekap-card .card-body{
+        padding:1rem;
+    }
+
+    .filter-select{
+        min-height:44px;
+    }
+
+}

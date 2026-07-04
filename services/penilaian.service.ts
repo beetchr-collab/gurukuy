@@ -9,6 +9,7 @@ import {
     query,
     orderBy,
     where,
+    writeBatch,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
@@ -402,4 +403,20 @@ export async function getPenilaianRekap(
     });
 
     return result;
+}
+
+export async function deletePenilaian(id: string) {
+    const batch = writeBatch(db);
+
+    const nilaiSnapshot = await getDocs(
+        collection(db, "penilaian", id, "nilai")
+    );
+
+    nilaiSnapshot.forEach((docSnap) => {
+        batch.delete(docSnap.ref);
+    });
+
+    batch.delete(doc(db, "penilaian", id));
+
+    await batch.commit();
 }
