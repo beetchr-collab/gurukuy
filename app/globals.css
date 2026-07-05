@@ -926,3 +926,116 @@ body {
     }
 
 }
+
+/* ==========================
+   Statistik Presensi
+========================== */
+
+.statpresensi-col{
+    min-width:0;
+}
+
+.statpresensi-card{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    padding:16px;
+    background:#fff;
+    border:1px solid #eef2f7;
+    border-radius:16px;
+    height:100%;
+    transition:all .25s ease;
+    box-shadow:0 2px 10px rgba(0,0,0,.04);
+}
+
+.statpresensi-card:hover{
+    transform:translateY(-3px);
+    box-shadow:0 10px 24px rgba(0,0,0,.08);
+}
+
+.statpresensi-icon{
+    width:54px;
+    height:54px;
+    border-radius:15px;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    color:#fff;
+    font-size:22px;
+    flex-shrink:0;
+}
+
+.statpresensi-content{
+    min-width:0;
+}
+
+.statpresensi-content h4{
+    margin:0;
+    font-size:1.55rem;
+    font-weight:700;
+    color:#212529;
+}
+
+.statpresensi-content span{
+    display:block;
+    margin-top:2px;
+    color:#6c757d;
+    font-size:.86rem;
+    white-space:nowrap;
+}
+
+/* ========= Warna ========= */
+
+.statpresensi-primary .statpresensi-icon{
+    background:linear-gradient(135deg,#0d6efd,#4b8df8);
+}
+
+.statpresensi-success .statpresensi-icon{
+    background:linear-gradient(135deg,#198754,#34c759);
+}
+
+.statpresensi-warning .statpresensi-icon{
+    background:linear-gradient(135deg,#ffc107,#ffcd39);
+    color:#212529;
+}
+
+.statpresensi-orange .statpresensi-icon{
+    background:linear-gradient(135deg,#fd7e14,#ff9f43);
+}
+
+.statpresensi-danger .statpresensi-icon{
+    background:linear-gradient(135deg,#dc3545,#ff5c75);
+}
+
+/* ========= Responsive ========= */
+
+@media (max-width:992px){
+
+    .statpresensi-card{
+        padding:14px;
+    }
+
+}
+
+@media (max-width:768px){
+
+    .statpresensi-card{
+        gap:10px;
+        padding:12px;
+    }
+
+    .statpresensi-icon{
+        width:46px;
+        height:46px;
+        font-size:18px;
+    }
+
+    .statpresensi-content h4{
+        font-size:1.2rem;
+    }
+
+    .statpresensi-content span{
+        font-size:.78rem;
+    }
+
+}

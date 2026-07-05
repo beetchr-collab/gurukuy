@@ -5,12 +5,18 @@ import {
     query,
     serverTimestamp,
     where,
+    orderBy,
 } from "firebase/firestore";
 import {
     Attendance,
     AttendanceRecap,
     AttendanceStudent,
 } from "@/types/presensi";
+
+export interface AttendanceClass {
+    id: string;
+    nama: string;
+}
 
 import { db } from "@/lib/firebase";
 
@@ -64,19 +70,19 @@ export async function getAttendanceRecap(
     );
 
     // Filter tanggal
-const filtered = docs.filter((item) => {
+    const filtered = docs.filter((item) => {
 
-    if (tanggalAwal && item.tanggal < tanggalAwal) {
-        return false;
-    }
+        if (tanggalAwal && item.tanggal < tanggalAwal) {
+            return false;
+        }
 
-    if (tanggalAkhir && item.tanggal > tanggalAkhir) {
-        return false;
-    }
+        if (tanggalAkhir && item.tanggal > tanggalAkhir) {
+            return false;
+        }
 
-    return true;
+        return true;
 
-});
+    });
 
     const rekap: Record<
         string,
@@ -146,7 +152,221 @@ const filtered = docs.filter((item) => {
             item.total === 0
                 ? 0
                 : Math.round(
-                      (item.hadir / item.total) * 100
-                  ),
+                    (item.hadir / item.total) * 100
+                ),
     }));
+}
+
+export interface AttendanceListItem {
+    attendanceId: string;
+
+    tanggal: string;
+
+    tahunAjaran: string;
+
+    kelasId: string;
+
+    kelas: string;
+
+
+    studentId: string;
+
+    nis: string;
+
+    nisn: string;
+
+    nama: string;
+
+    jk: string;
+
+    status: string;
+}
+
+/* ===========================
+   Daftar Presensi
+=========================== */
+
+export async function getAttendanceList(
+    schoolId: string,
+    tahunAjaran?: string,
+    kelasId?: string,
+    tanggalAwal?: string,
+    tanggalAkhir?: string
+): Promise<AttendanceListItem[]> {
+
+    const constraints = [
+        where("schoolId", "==", schoolId),
+    ];
+
+    if (tahunAjaran) {
+        constraints.push(
+            where("tahunAjaran", "==", tahunAjaran)
+        );
+    }
+
+    if (kelasId) {
+        constraints.push(
+            where("kelasId", "==", kelasId)
+        );
+    }
+
+    const q = query(
+        collection(db, "presensi"),
+        ...constraints
+    );
+
+    const snapshot = await getDocs(q);
+
+    const result: AttendanceListItem[] = [];
+
+    snapshot.docs.forEach((doc) => {
+
+        const data = doc.data() as Attendance;
+
+        // Filter tanggal
+        if (
+            tanggalAwal &&
+            data.tanggal < tanggalAwal
+        ) {
+            return;
+        }
+
+        if (
+            tanggalAkhir &&
+            data.tanggal > tanggalAkhir
+        ) {
+            return;
+        }
+
+        data.siswa.forEach((siswa: AttendanceStudent) => {
+
+            result.push({
+
+                attendanceId: doc.id,
+
+                tanggal: data.tanggal,
+
+                tahunAjaran: data.tahunAjaran,
+
+                kelasId: data.kelasId,
+
+                kelas: data.kelas,
+
+
+                studentId: siswa.studentId,
+
+                nis: siswa.nis,
+
+                nisn: siswa.nisn,
+
+                nama: siswa.nama,
+
+                jk: siswa.jk,
+
+                status: siswa.status,
+
+            });
+
+        });
+
+    });
+
+    result.sort((a, b) => {
+
+        if (a.tanggal < b.tanggal) return 1;
+
+        if (a.tanggal > b.tanggal) return -1;
+
+        return a.nama.localeCompare(b.nama);
+
+    });
+
+    return result;
+}
+
+// Mengambil data filter untuk daftar presensi
+export interface AttendanceFilterResult {
+    tahunAjaran: string[];
+    kelas: AttendanceClass[];
+    minDate: string;
+    maxDate: string;
+}
+
+export async function getAttendanceFilter(
+    ownerId: string
+): Promise<AttendanceFilterResult> {
+
+    try {
+
+        const q = query(
+            collection(db, "presensi"),
+            where("ownerId", "==", ownerId),
+            orderBy("tanggal", "desc")
+        );
+
+        const snapshot = await getDocs(q);
+
+        const tahunSet = new Set<string>();
+        const kelasMap = new Map<string, AttendanceClass>();
+        const dates: string[] = [];
+
+        snapshot.forEach((doc) => {
+
+            const data = doc.data();
+
+            if (data.tahunAjaran) {
+                tahunSet.add(data.tahunAjaran);
+            }
+
+            if (
+                data.kelasId &&
+                !kelasMap.has(data.kelasId)
+            ) {
+
+                kelasMap.set(data.kelasId, {
+                    id: data.kelasId,
+                    nama: data.kelas ?? "",
+                });
+
+            }
+
+            if (data.tanggal) {
+                dates.push(data.tanggal);
+            }
+
+        });
+
+        dates.sort();
+
+        return {
+
+            tahunAjaran: Array.from(tahunSet).sort((a, b) =>
+                b.localeCompare(a)
+            ),
+
+            kelas: Array.from(kelasMap.values()),
+
+            minDate: dates.length > 0 ? dates[0] : "",
+
+            maxDate: dates.length > 0 ? dates[dates.length - 1] : "",
+
+        };
+
+    } catch (error) {
+
+        console.error(error);
+
+        return {
+
+            tahunAjaran: [],
+
+            kelas: [],
+
+            minDate: "",
+
+            maxDate: "",
+
+        };
+
+    }
 }
