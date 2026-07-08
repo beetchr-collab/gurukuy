@@ -327,6 +327,17 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
+                <div className="row mb-2">
+                  <div className="col-sm-3 col-form-label">Kode Sekolah</div>
+                  <div className="col-sm-9">
+                    <input
+                      className="form-control"
+                      value={school.kodeSekolah}
+                      disabled
+                    />
+                  </div>
+                </div>
+
                 {/* 🔥 NOMOR WA ADMIN */}
                 <div className="row mb-2 align-items-center">
                   <div className="col-sm-3 col-form-label">WA Admin</div>
