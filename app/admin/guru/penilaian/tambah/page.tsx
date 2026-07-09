@@ -160,11 +160,33 @@ export default function TambahPenilaianPage() {
             console.log("Penilaian berhasil:", penilaianId);
 
             alert("Penilaian berhasil disimpan.");
+            // Reset form
+            resetForm();
 
         } catch (error) {
             console.error(error);
             alert("Gagal menyimpan penilaian.");
         }
+    };
+
+    // Reset form setelah berhasil simpan nilai
+    const resetForm = () => {
+        setForm({
+            topik: "",
+            subtopik: "",
+            jenisPenilaian: "",
+            kelasId: "",
+            mapel: "",
+            tahunAjaran: "",
+            kkm: "75",
+            deskripsi: "",
+            tanggalPenilaian: new Date().toISOString().split("T")[0],
+        });
+
+        setSelectedKelas("");
+        setStudents([]);
+        setScores({});
+        setTopikOptions([]);
     };
 
     // Isian tanggal otomatis
@@ -495,7 +517,7 @@ export default function TambahPenilaianPage() {
 
                     {/* Tabel Nilai */}
                     {selectedKelas && (
-                        <div className="card-body shadow-sm mt-4">
+                        <div className="card-body shadow-sm">
                             <div className="card-header">
                                 <h5 className="mb-0">
                                     Daftar Peserta Penilaian
@@ -503,45 +525,79 @@ export default function TambahPenilaianPage() {
                             </div>
                             <div className="card-body p-0">
                                 <div className="table-responsive">
-                                    <table className="table table-hover mb-0">
-                                        <thead>
+                                    <table className="table table-hover table-striped align-middle mb-0">
+                                        <thead className="table-light">
                                             <tr>
-                                                <th style={{ width: 60 }}>No</th>
+                                                <th style={{ width: "60px" }} className="text-center">
+                                                    No
+                                                </th>
                                                 <th>NIS</th>
                                                 <th>NISN</th>
-                                                <th>Nama</th>
-                                                <th>L/P</th>
-                                                <th style={{ width: 170 }}>Nilai</th>
+                                                <th style={{ minWidth: "220px" }}>Nama Siswa</th>
+                                                <th
+                                                    style={{ width: "70px" }}
+                                                    className="text-center"
+                                                >
+                                                    L/P
+                                                </th>
+                                                <th
+                                                    style={{ width: "130px" }}
+                                                    className="text-center"
+                                                >
+                                                    Nilai
+                                                </th>
+                                                <th className="text-center" style={{ width: 180 }}>
+                                                    Keterangan
+                                                </th>
                                             </tr>
                                         </thead>
+
                                         <tbody>
                                             {students.length === 0 ? (
                                                 <tr>
                                                     <td
-                                                        colSpan={4}
-                                                        className="text-center py-4"
+                                                        colSpan={7}
+                                                        className="text-center py-5 text-muted"
                                                     >
+                                                        <i className="fas fa-users-slash fa-2x mb-2 d-block"></i>
                                                         Tidak ada anggota kelas
                                                     </td>
                                                 </tr>
                                             ) : (
                                                 students.map((student, index) => (
                                                     <tr key={student.studentId}>
-                                                        <td>{index + 1}</td>
+                                                        <td className="text-center">
+                                                            {index + 1}
+                                                        </td>
+
                                                         <td>{student.nis}</td>
+
                                                         <td>{student.nisn}</td>
-                                                        <td>{student.nama}</td>
-                                                        <td>{student.jk}</td>
+
                                                         <td>
+                                                            <div className="fw-semibold">
+                                                                {student.nama}
+                                                            </div>
+                                                        </td>
+
+                                                        <td className="text-center">
+                                                            <span className={`badge ${student.jk === "L"
+                                                                ? "bg-primary"
+                                                                : "bg-danger"
+                                                                }`}>
+                                                                {student.jk}
+                                                            </span>
+                                                        </td>
+
+                                                        <td className="text-center">
                                                             <input
                                                                 type="number"
-                                                                className="form-control"
+                                                                className="form-control text-center"
                                                                 min={0}
                                                                 max={100}
+                                                                style={{ width: "80px", minWidth: "80px" }}
                                                                 value={
-                                                                    scores[
-                                                                    student.studentId
-                                                                    ] ?? ""
+                                                                    scores[student.studentId] ?? ""
                                                                 }
                                                                 onChange={(e) =>
                                                                     handleScoreChange(
@@ -551,14 +607,37 @@ export default function TambahPenilaianPage() {
                                                                 }
                                                             />
                                                         </td>
+                                                        <td className="text-center">
+                                                            {scores[student.studentId] === "" ||
+                                                                scores[student.studentId] === undefined ? (
+                                                                <span className="badge bg-secondary">
+                                                                    Belum Dinilai
+                                                                </span>
+                                                            ) : Number(scores[student.studentId]) >= Number(form.kkm) ? (
+                                                                <span className="badge bg-success">
+                                                                    Tuntas
+                                                                </span>
+                                                            ) : (
+                                                                <div>
+                                                                    <span className="badge bg-danger">
+                                                                        Belum Tuntas
+                                                                    </span>
+
+                                                                    <div className="small text-danger mt-1">
+                                                                        Kurang{" "}
+                                                                        {Number(form.kkm) -
+                                                                            Number(scores[student.studentId])} poin
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </td>
                                                     </tr>
                                                 ))
                                             )}
                                         </tbody>
                                     </table>
                                 </div>
-                            </div>
-                        </div>
+                            </div>                        </div>
                     )}
 
                     <div className="card-footer d-flex justify-content-end">

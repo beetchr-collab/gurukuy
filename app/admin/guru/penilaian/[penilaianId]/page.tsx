@@ -235,85 +235,162 @@ export default function InputNilaiPage() {
 
             {/* Tabel */}
 
-            <div className="card shadow-sm">
+            <div className="card shadow-sm border-0">
 
-                <div className="card-header">
+                {/* Header */}
+                <div className="card-header bg-white border-bottom">
 
-                    <div className="row">
+                    <div className="d-flex justify-content-between align-items-center flex-wrap gap-2">
 
-                        <div className="col-md-4">
+                        <h3 className="card-title mb-0 fw-semibold">
+                            <i className="fas fa-user-graduate text-primary me-2"></i>
+                            Daftar Nilai Siswa
+                        </h3>
 
-                            <input
-                                type="text"
-                                className="form-control"
-                                placeholder="Cari siswa..."
-                                value={keyword}
-                                onChange={(e) =>
-                                    setKeyword(e.target.value)
-                                }
-                            />
+                        <div style={{ maxWidth: 320, width: "100%" }}>
+                            <div className="input-group">
 
+                                <span className="input-group-text bg-white">
+                                    <i className="fas fa-search"></i>
+                                </span>
+
+                                <input
+                                    type="text"
+                                    className="form-control"
+                                    placeholder="Cari siswa..."
+                                    value={keyword}
+                                    onChange={(e) => setKeyword(e.target.value)}
+                                />
+
+                            </div>
                         </div>
 
                     </div>
 
                 </div>
 
-                <div className="card-body table-responsive p-0">
+                {/* Table */}
+                <div className="table-responsive">
 
-                    <table className="table table-hover">
+                    <table className="table table-hover table-striped align-middle mb-0">
 
-                        <thead>
+                        <thead className="table-light">
 
                             <tr>
+                                <th className="text-center" style={{ width: 60 }}>No</th>
 
-                                <th style={{ width: "60px" }}>No</th>
                                 <th>NIS</th>
+
                                 <th>NISN</th>
-                                <th>Nama</th>
 
-                                <th style={{ width: "80px" }}>JK</th>
+                                <th style={{ minWidth: 250 }}>Nama Siswa</th>
 
-                                <th style={{ width: "150px" }}>
-                                    Nilai
+                                <th className="text-center" style={{ width: 80 }}>
+                                    JK
                                 </th>
 
+                                <th className="text-center" style={{ width: 140 }}>
+                                    Nilai
+                                </th>
+                                <th className="text-center" style={{ width: 180 }}>
+                                    Keterangan
+                                </th>
                             </tr>
 
                         </thead>
 
                         <tbody>
 
-                            {filtered.map((item, index) => (
+                            {filtered.length === 0 ? (
 
-                                <tr key={item.studentId}>
+                                <tr>
 
-                                    <td>{index + 1}</td>
+                                    <td
+                                        colSpan={6}
+                                        className="text-center py-5 text-muted"
+                                    >
+                                        <i className="fas fa-users-slash fa-2x mb-3 d-block"></i>
 
-                                    <td>{item.nis}</td>
-                                    <td>{item.nisn}</td>
-                                    <td>{item.nama}</td>
-                                    <td>{item.jk}</td>
-                                    <td>
-                                        <input
-                                            type="number"
-                                            className="form-control text-center"
-                                            min={0}
-                                            max={100}
-                                            value={item.nilai}
-                                            onChange={(e) =>
-                                                handleChange(
-                                                    item.studentId,
-                                                    e.target.value
-                                                )
-                                            }
-                                        />
-
+                                        Tidak ada data siswa
                                     </td>
 
                                 </tr>
 
-                            ))}
+                            ) : (
+
+                                filtered.map((item, index) => (
+
+                                    <tr key={item.studentId}>
+
+                                        <td className="text-center">
+                                            {index + 1}
+                                        </td>
+
+                                        <td>{item.nis}</td>
+
+                                        <td>{item.nisn}</td>
+
+                                        <td>
+                                            <div className="fw-semibold">
+                                                {item.nama}
+                                            </div>
+                                        </td>
+
+                                        <td className="text-center">
+
+                                            <span className={`badge ${item.jk === "L"
+                                                ? "bg-primary"
+                                                : "bg-danger"
+                                                }`}>
+                                                {item.jk}
+                                            </span>
+
+                                        </td>
+
+                                        <td>
+
+                                            <input
+                                                type="number"
+                                                className="form-control text-center"
+                                                min={0}
+                                                max={100}
+                                                style={{ width: "80px", minWidth: "80px" }}
+                                                value={item.nilai}
+                                                onChange={(e) =>
+                                                    handleChange(
+                                                        item.studentId,
+                                                        e.target.value
+                                                    )
+                                                }
+                                            />
+
+                                        </td>
+                                        <td className="text-center">
+                                            {item.nilai === "" ? (
+                                                <span className="badge bg-secondary">
+                                                    Belum Dinilai
+                                                </span>
+                                            ) : Number(item.nilai) >= Number(penilaian?.kkm) ? (
+                                                <span className="badge bg-success">
+                                                    Tuntas
+                                                </span>
+                                            ) : (
+                                                <div>
+                                                    <span className="badge bg-danger">
+                                                        Belum Tuntas
+                                                    </span>
+                                                    <div className="small text-danger mt-1">
+                                                        Kurang {Number(penilaian?.kkm) - Number(item.nilai)} poin
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </td>
+
+                                    </tr>
+
+                                ))
+
+                            )}
 
                         </tbody>
 
@@ -321,29 +398,40 @@ export default function InputNilaiPage() {
 
                 </div>
 
-                <div className="card-footer text-right gap-2 d-flex justify-content-end">
-                    {/* Tombol Kembali */}
-                    <button
-                        className="btn btn-secondary mr-2"
-                        onClick={() => router.back()}
-                    >
-                        <i className="fas fa-arrow-left mr-2"></i>
-                        Kembali
-                    </button>
-                    {/* Save Button */}
-                    <button
-                        className="btn btn-primary"
-                        onClick={handleSave}
-                    >
-                        <i className="fas fa-save mr-2"></i>
+                {/* Footer */}
+                <div className="card-footer bg-white">
 
-                        Simpan Nilai
-                    </button>
+                    <div className="d-flex justify-content-between align-items-center flex-wrap gap-2">
+
+                        <small className="text-muted">
+                            Total Siswa : <strong>{filtered.length}</strong>
+                        </small>
+
+                        <div className="d-flex gap-2 flex-wrap">
+
+                            <button
+                                className="btn btn-outline-secondary"
+                                onClick={() => router.back()}
+                            >
+                                <i className="fas fa-arrow-left me-2"></i>
+                                Kembali
+                            </button>
+
+                            <button
+                                className="btn btn-primary"
+                                onClick={handleSave}
+                            >
+                                <i className="fas fa-save me-2"></i>
+                                Simpan Nilai
+                            </button>
+
+                        </div>
+
+                    </div>
 
                 </div>
 
             </div>
-
         </div>
     );
 }

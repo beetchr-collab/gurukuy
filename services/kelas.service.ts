@@ -6,6 +6,7 @@ import {
     doc,
     getDoc,
     orderBy,
+    getCountFromServer,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
@@ -67,4 +68,37 @@ export async function getClassById(
         console.error(error);
         return null;
     }
+}
+
+// Mengambil jumlah kelas berdasarkan ownerId dan tahun ajaran
+export async function getJumlahKelas(
+  ownerId: string,
+  tahunAjaran: string
+): Promise<number> {
+  try {
+    console.log("==================================");
+    console.log("OWNER ID :", ownerId);
+    console.log("TAHUN AJARAN :", tahunAjaran);
+
+    const q = query(
+      collection(db, "classes"),
+      where("ownerId", "==", ownerId.trim()),
+      where("tahunAjaran", "==", tahunAjaran.trim())
+    );
+
+    const snapshot = await getDocs(q);
+
+    console.log("JUMLAH DITEMUKAN :", snapshot.size);
+
+    snapshot.forEach((doc) => {
+      console.log("DATA KELAS :", doc.id, doc.data());
+    });
+
+    console.log("==================================");
+
+    return snapshot.size;
+  } catch (error) {
+    console.error("Error getJumlahKelas :", error);
+    return 0;
+  }
 }

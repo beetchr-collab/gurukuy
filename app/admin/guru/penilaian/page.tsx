@@ -499,189 +499,241 @@ export default function PenilaianPage() {
             </div>
 
             {/* Tabel */}
-            <div className="card shadow-sm">
+<div className="card shadow-sm border-0">
 
-                <div className="card-header">
-                    <h3 className="card-title">
-                        Daftar Penilaian
-                    </h3>
-                </div>
+    <div className="card-header bg-white border-bottom">
+        <div className="d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <h3 className="card-title fw-semibold mb-0">
+                <i className="fas fa-clipboard-list text-primary me-2"></i>
+                Daftar Penilaian
+            </h3>
 
-                <div className="">
-                    <div className="card-body table-responsive p-0">
+            <span className="badge bg-primary">
+                {filteredPenilaian.length} Penilaian
+            </span>
+        </div>
+    </div>
 
-                        <table className="table table-hover">
+    <div className="table-responsive">
 
-                            <thead>
+        <table className="table table-hover table-striped align-middle mb-0">
 
-                                <tr>
-                                    <th>No</th>
-                                    <th>Mata Pelajaran</th>
-                                    <th>Topik</th>
-                                    <th>Kelas</th>
-                                    <th>Jenis</th>
-                                    <th>Tanggal Penilaian</th>
-                                    <th style={{ width: "220px" }}>
-                                        Progress
-                                    </th>
-                                    <th style={{ width: "100px" }}>
-                                        Aksi
-                                    </th>
-                                </tr>
+            <thead className="table-light">
+                <tr>
+                    <th className="text-center" style={{ width: 60 }}>No</th>
 
-                            </thead>
+                    <th style={{ minWidth: 180 }}>
+                        Mata Pelajaran
+                    </th>
 
-                            <tbody>
+                    <th style={{ minWidth: 260 }}>
+                        Topik
+                    </th>
 
-                                {loading ? (
-                                    <tr>
-                                        <td colSpan={7} className="text-center">
-                                            Memuat data...
-                                        </td>
-                                    </tr>
-                                ) : currentData.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={7} className="text-center">
-                                            Belum ada data penilaian
-                                        </td>
-                                    </tr>
-                                ) : (
-                                    currentData.map((item, index) => (
-                                        <tr key={item.id}>
-                                            <td>{startIndex + index + 1}</td>
-                                            <td>{item.mapel}</td>
-                                            <td>
-                                                <strong>{item.topik}</strong>
-                                                <br />
-                                                <small className="text-muted">
-                                                    Sub Topik : {item.subtopik}
-                                                </small>
-                                            </td>
+                    <th>
+                        Kelas
+                    </th>
 
-                                            <td>{item.namaKelas}</td>
+                    <th>
+                        Jenis
+                    </th>
 
-                                            <td>{item.jenisPenilaian}</td>
+                    <th style={{ width: 140 }}>
+                        Tanggal
+                    </th>
 
-                                            <td>{item.tanggalPenilaian}</td>
+                    <th style={{ minWidth: 260 }}>
+                        Progress
+                    </th>
 
-                                            <td style={{ minWidth: 220 }}>
+                    <th className="text-center" style={{ width: 120 }}>
+                        Aksi
+                    </th>
+                </tr>
+            </thead>
 
-                                                {/* Progress */}
-                                                <div className="d-flex align-items-center mb-2">
+            <tbody>
 
-                                                    <div
-                                                        className="progress flex-grow-1 me-2"
-                                                        style={{
-                                                            height: "8px",
-                                                            borderRadius: "10px"
-                                                        }}
-                                                    >
-                                                        <div
-                                                            className={`progress-bar ${item.progress === 100
-                                                                ? "bg-success"
-                                                                : item.progress >= 75
-                                                                    ? "bg-primary"
-                                                                    : item.progress >= 50
-                                                                        ? "bg-warning"
-                                                                        : "bg-danger"
-                                                                }`}
-                                                            style={{
-                                                                width: `${item.progress}%`
-                                                            }}
-                                                        />
-                                                    </div>
+                {loading ? (
 
-                                                    <span
-                                                        className="fw-bold text-dark"
-                                                        style={{
-                                                            minWidth: 42,
-                                                            fontSize: ".85rem"
-                                                        }}
-                                                    >
-                                                        {item.progress}%
-                                                    </span>
+                    <tr>
+                        <td
+                            colSpan={8}
+                            className="text-center py-5"
+                        >
+                            <div className="spinner-border spinner-border-sm text-primary me-2"></div>
+                            Memuat data...
+                        </td>
+                    </tr>
 
-                                                </div>
+                ) : currentData.length === 0 ? (
 
-                                                {/* Status */}
-                                                <div className="d-flex justify-content-between align-items-center">
+                    <tr>
+                        <td
+                            colSpan={8}
+                            className="text-center py-5 text-muted"
+                        >
+                            <i className="fas fa-folder-open fa-2x mb-3 d-block"></i>
+                            Belum ada data penilaian
+                        </td>
+                    </tr>
 
-                                                    <span
-                                                        className={`badge rounded-pill px-2 py-1 ${item.progress === 100
-                                                            ? "bg-success"
-                                                            : "bg-warning text-dark"
-                                                            }`}
-                                                        style={{
-                                                            fontSize: ".70rem"
-                                                        }}
-                                                    >
-                                                        <i
-                                                            className={`fas ${item.progress === 100
-                                                                ? "fa-check-circle"
-                                                                : "fa-hourglass-half"
-                                                                } me-1`}
-                                                        />
+                ) : (
 
-                                                        {item.progress === 100
-                                                            ? "Selesai"
-                                                            : "Belum Selesai"}
+                    currentData.map((item, index) => (
 
-                                                    </span>
+                        <tr key={item.id}>
 
-                                                    <small
-                                                        className="text-muted fw-semibold"
-                                                    >
-                                                        {item.nilaiTerisi} / {item.totalSiswa} siswa
-                                                    </small>
+                            <td className="text-center">
+                                {startIndex + index + 1}
+                            </td>
 
-                                                </div>
+                            <td>
+                                <div className="fw-semibold">
+                                    {item.mapel}
+                                </div>
+                            </td>
 
-                                            </td>
-                                            <td>
-                                                <div className="btn-group gap-2">
+                            <td>
+                                <div className="fw-bold">
+                                    {item.topik}
+                                </div>
 
-                                                    <Link
-                                                        href={`/admin/guru/penilaian/${item.id}`}
-                                                        className="btn btn-info btn-sm"
-                                                    >
-                                                        <i className="fas fa-edit"></i>
-                                                    </Link>
+                                <small className="text-muted">
+                                    {item.subtopik}
+                                </small>
+                            </td>
 
-                                                    <button
-                                                        className="btn btn-danger btn-sm"
-                                                        onClick={() => handleDelete(item.id)}
-                                                    >
-                                                        <i className="fas fa-trash"></i>
-                                                    </button>
+                            <td>
+                                <span className="badge bg-info">
+                                    {item.namaKelas}
+                                </span>
+                            </td>
 
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))
-                                )}
-                            </tbody>
+                            <td>
 
-                        </table>
-                        <div className="card-footer">
-                            <TableFooter
-                                currentPage={currentPage}
-                                totalPages={totalPages}
-                                pageSize={pageSize}
-                                totalData={filteredPenilaian.length}
-                                onPageChange={setCurrentPage}
-                                onPageSizeChange={(size) => {
-                                    setPageSize(size);
-                                    setCurrentPage(1);
-                                }}
-                            />
-                        </div>
+                                <span className={`badge ${
+                                    item.jenisPenilaian === "Sumatif"
+                                        ? "bg-warning text-dark"
+                                        : "bg-success"
+                                }`}>
+                                    {item.jenisPenilaian}
+                                </span>
 
-                    </div>
+                            </td>
 
-                </div>
+                            <td>
+                                {item.tanggalPenilaian}
+                            </td>
 
-            </div>
+                            <td>
 
+                                <div className="d-flex align-items-center gap-2">
+
+                                    <div className="progress flex-grow-1 rounded-pill"
+                                        style={{ height: 8 }}>
+
+                                        <div
+                                            className={`progress-bar ${
+                                                item.progress === 100
+                                                    ? "bg-success"
+                                                    : item.progress >= 75
+                                                        ? "bg-primary"
+                                                        : item.progress >= 50
+                                                            ? "bg-warning"
+                                                            : "bg-danger"
+                                            }`}
+                                            style={{
+                                                width: `${item.progress}%`
+                                            }}
+                                        />
+
+                                    </div>
+
+                                    <span
+                                        className="fw-bold"
+                                        style={{ width: 42 }}
+                                    >
+                                        {item.progress}%
+                                    </span>
+
+                                </div>
+
+                                <div className="d-flex justify-content-between mt-2">
+
+                                    <small className="text-muted">
+                                        {item.nilaiTerisi} / {item.totalSiswa} siswa
+                                    </small>
+
+                                    <span
+                                        className={`badge ${
+                                            item.progress === 100
+                                                ? "bg-success"
+                                                : "bg-warning text-dark"
+                                        }`}
+                                    >
+                                        {item.progress === 100
+                                            ? "Selesai"
+                                            : "Proses"}
+                                    </span>
+
+                                </div>
+
+                            </td>
+
+                            <td>
+
+                                <div className="d-flex justify-content-center gap-2">
+
+                                    <Link
+                                        href={`/admin/guru/penilaian/${item.id}`}
+                                        className="btn btn-warning btn-sm rounded-circle"
+                                        title="Input Nilai"
+                                    >
+                                        <i className="fas fa-edit"></i>
+                                    </Link>
+
+                                    <button
+                                        className="btn btn-danger btn-sm rounded-circle"
+                                        title="Hapus"
+                                        onClick={() => handleDelete(item.id)}
+                                    >
+                                        <i className="fas fa-trash"></i>
+                                    </button>
+
+                                </div>
+
+                            </td>
+
+                        </tr>
+
+                    ))
+
+                )}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+    <div className="card-footer bg-white">
+
+        <TableFooter
+            currentPage={currentPage}
+            totalPages={totalPages}
+            pageSize={pageSize}
+            totalData={filteredPenilaian.length}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={(size) => {
+                setPageSize(size);
+                setCurrentPage(1);
+            }}
+        />
+
+    </div>
+
+</div>
         </div>
     );
 }

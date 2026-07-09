@@ -218,9 +218,9 @@ export default function RekapPenilaianPage() {
             } else {
                 // Default jika belum ada data
                 setFormData({
-                    formatif: 30,
+                    formatif: 40,
                     sumatif: 30,
-                    sas: 40,
+                    sas: 30,
                 });
             }
         } catch (error) {
@@ -474,9 +474,6 @@ export default function RekapPenilaianPage() {
             </div>
 
             {/* Form Bobot Penilaian */}
-            {/* ===========================
-    BOBOT PENILAIAN
-=========================== */}
             <div className="card shadow-sm border-0 mb-3">
 
                 <div className="card-header bg-white">
