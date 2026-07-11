@@ -479,76 +479,102 @@ export default function PresensiPage() {
                                                 <td>{student.nama}</td>
                                                 <td>{student.jk}</td>
                                                 <td className="text-center align-middle">
-                                                    <div className="icheck-success d-inline">
-                                                        <input
-                                                            type="radio"
-                                                            name={`presensi-${student.id}`}
-                                                            checked={attendance[student.id] === "Hadir"}
-                                                            onChange={() =>
-                                                                setAttendance((prev) => ({
-                                                                    ...prev,
-                                                                    [student.id]: "Hadir",
-                                                                }))
-                                                            }
-                                                        />
-                                                        <label htmlFor={`hadir-${student.id}`}></label>
-                                                    </div>
-                                                </td>
+    <div className="d-flex justify-content-center gap-2 flex-wrap">
 
-                                                <td className="text-center align-middle">
-                                                    <div className="icheck-primary d-inline">
-                                                        <input
-                                                            type="radio"
-                                                            name={`presensi-${student.id}`}
-                                                            checked={attendance[student.id] === "Izin"}
-                                                            onChange={() =>
-                                                                setAttendance((prev) => ({
-                                                                    ...prev,
-                                                                    [student.id]: "Izin",
-                                                                }))
-                                                            }
-                                                        />
-                                                        <label htmlFor={`izin-${student.id}`}></label>
-                                                    </div>
-                                                </td>
+        {/* Hadir */}
+        <div>
+            <input
+                type="radio"
+                className="btn-check"
+                id={`hadir-${student.id}`}
+                name={`presensi-${student.id}`}
+                checked={attendance[student.id] === "Hadir"}
+                onChange={() =>
+                    setAttendance((prev) => ({
+                        ...prev,
+                        [student.id]: "Hadir",
+                    }))
+                }
+            />
+            <label
+                className="btn btn-outline-success btn-presensi"
+                htmlFor={`hadir-${student.id}`}
+            >
+                H
+            </label>
+        </div>
 
-                                                <td className="text-center align-middle">
-                                                    <div className="icheck-warning d-inline">
-                                                        <input
-                                                            type="radio"
-                                                            id={`sakit-${student.id}`}
-                                                            name={`presensi-${student.id}`}
-                                                            value="Sakit"
-                                                            checked={attendance[student.id] === "Sakit"}
-                                                            onChange={() =>
-                                                                setAttendance((prev) => ({
-                                                                    ...prev,
-                                                                    [student.id]: "Sakit",
-                                                                }))
-                                                            }
-                                                        />
-                                                        <label htmlFor={`sakit-${student.id}`}></label>
-                                                    </div>
-                                                </td>
+        {/* Izin */}
+        <div>
+            <input
+                type="radio"
+                className="btn-check"
+                id={`izin-${student.id}`}
+                name={`presensi-${student.id}`}
+                checked={attendance[student.id] === "Izin"}
+                onChange={() =>
+                    setAttendance((prev) => ({
+                        ...prev,
+                        [student.id]: "Izin",
+                    }))
+                }
+            />
+            <label
+                className="btn btn-outline-primary btn-presensi"
+                htmlFor={`izin-${student.id}`}
+            >
+                I
+            </label>
+        </div>
 
-                                                <td className="text-center align-middle">
-                                                    <div className="icheck-danger d-inline">
-                                                        <input
-                                                            type="radio"
-                                                            id={`alpha-${student.id}`}
-                                                            name={`presensi-${student.id}`}
-                                                            value="Alpha"
-                                                            checked={attendance[student.id] === "Alpha"}
-                                                            onChange={() =>
-                                                                setAttendance((prev) => ({
-                                                                    ...prev,
-                                                                    [student.id]: "Alpha",
-                                                                }))
-                                                            }
-                                                        />
-                                                        <label htmlFor={`alpha-${student.id}`}></label>
-                                                    </div>
-                                                </td>
+        {/* Sakit */}
+        <div>
+            <input
+                type="radio"
+                className="btn-check"
+                id={`sakit-${student.id}`}
+                name={`presensi-${student.id}`}
+                checked={attendance[student.id] === "Sakit"}
+                onChange={() =>
+                    setAttendance((prev) => ({
+                        ...prev,
+                        [student.id]: "Sakit",
+                    }))
+                }
+            />
+            <label
+                className="btn btn-outline-warning btn-presensi"
+                htmlFor={`sakit-${student.id}`}
+            >
+                S
+            </label>
+        </div>
+
+        {/* Alpha */}
+        <div>
+            <input
+                type="radio"
+                className="btn-check"
+                id={`alpha-${student.id}`}
+                name={`presensi-${student.id}`}
+                checked={attendance[student.id] === "Alpha"}
+                onChange={() =>
+                    setAttendance((prev) => ({
+                        ...prev,
+                        [student.id]: "Alpha",
+                    }))
+                }
+            />
+            <label
+                className="btn btn-outline-danger btn-presensi"
+                htmlFor={`alpha-${student.id}`}
+            >
+                A
+            </label>
+        </div>
+
+    </div>
+</td>
                                             </tr>
                                         ))}
                                     </tbody>
