@@ -431,168 +431,279 @@ export default function PresensiPage() {
                     {/* Table Daftar Presensi */}
                     <div className="card shadow-sm">
 
-                        <div className="card-header">
+                        {/* Header */}
+                        <div className="card-header bg-white">
 
-                            <h3 className="card-title">
-                                Daftar Presensi Siswa
-                            </h3>
+                            <div className="d-flex justify-content-between align-items-center flex-wrap gap-2">
+
+                                <h3 className="card-title mb-0">
+                                    <i className="fas fa-user-check text-success me-2"></i>
+                                    Daftar Presensi Siswa
+                                </h3>
+
+                                <span className="badge bg-primary fs-6">
+                                    {filteredStudents.length} Siswa
+                                </span>
+
+                            </div>
 
                         </div>
 
+                        {/* Body */}
                         <div className="card-body p-0">
 
-                            {loading && (
-                                <p>Loading...</p>
-                            )}
-                            {!loading && (
-                                <table className="table table-bordered table-striped table-hover">
-                                    <thead>
-                                        <tr>
-                                            <th>No</th>
-                                            <th>NIS</th>
-                                            <th>NISN</th>
-                                            <th>Nama</th>
-                                            <th>Jenis Kelamin</th>
-                                            <th>Hadir</th>
-                                            <th>Izin</th>
-                                            <th>Sakit</th>
-                                            <th>Alpha</th>
-                                        </tr>
-                                    </thead>
+                            {loading ? (
 
-                                    <tbody>
-                                        {filteredStudents.length === 0 && (
-                                            <tr>
-                                                <td
-                                                    colSpan={6}
-                                                    className="text-center"
-                                                >
-                                                    Tidak ada anggota kelas
-                                                </td>
-                                            </tr>
-                                        )}
-                                        {filteredStudents.map((student, index) => (
-                                            <tr key={student.id}>
-                                                <td>{index + 1}</td>
-                                                <td>{student.nis}</td>
-                                                <td>{student.nisn}</td>
-                                                <td>{student.nama}</td>
-                                                <td>{student.jk}</td>
-                                                <td className="text-center align-middle">
-    <div className="d-flex justify-content-center gap-2 flex-wrap">
+                                <div className="text-center py-5">
 
-        {/* Hadir */}
-        <div>
-            <input
-                type="radio"
-                className="btn-check"
-                id={`hadir-${student.id}`}
-                name={`presensi-${student.id}`}
-                checked={attendance[student.id] === "Hadir"}
-                onChange={() =>
-                    setAttendance((prev) => ({
-                        ...prev,
-                        [student.id]: "Hadir",
-                    }))
-                }
-            />
-            <label
-                className="btn btn-outline-success btn-presensi"
-                htmlFor={`hadir-${student.id}`}
-            >
-                H
-            </label>
-        </div>
+                                    <div
+                                        className="spinner-border text-primary"
+                                        role="status"
+                                    />
 
-        {/* Izin */}
-        <div>
-            <input
-                type="radio"
-                className="btn-check"
-                id={`izin-${student.id}`}
-                name={`presensi-${student.id}`}
-                checked={attendance[student.id] === "Izin"}
-                onChange={() =>
-                    setAttendance((prev) => ({
-                        ...prev,
-                        [student.id]: "Izin",
-                    }))
-                }
-            />
-            <label
-                className="btn btn-outline-primary btn-presensi"
-                htmlFor={`izin-${student.id}`}
-            >
-                I
-            </label>
-        </div>
+                                    <div className="mt-3">
+                                        Memuat data...
+                                    </div>
 
-        {/* Sakit */}
-        <div>
-            <input
-                type="radio"
-                className="btn-check"
-                id={`sakit-${student.id}`}
-                name={`presensi-${student.id}`}
-                checked={attendance[student.id] === "Sakit"}
-                onChange={() =>
-                    setAttendance((prev) => ({
-                        ...prev,
-                        [student.id]: "Sakit",
-                    }))
-                }
-            />
-            <label
-                className="btn btn-outline-warning btn-presensi"
-                htmlFor={`sakit-${student.id}`}
-            >
-                S
-            </label>
-        </div>
-
-        {/* Alpha */}
-        <div>
-            <input
-                type="radio"
-                className="btn-check"
-                id={`alpha-${student.id}`}
-                name={`presensi-${student.id}`}
-                checked={attendance[student.id] === "Alpha"}
-                onChange={() =>
-                    setAttendance((prev) => ({
-                        ...prev,
-                        [student.id]: "Alpha",
-                    }))
-                }
-            />
-            <label
-                className="btn btn-outline-danger btn-presensi"
-                htmlFor={`alpha-${student.id}`}
-            >
-                A
-            </label>
-        </div>
-
-    </div>
-</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-
-                            )}
-
-                            <div className="card-footer">
-                                <div className="d-flex justify-content-end">
-                                    <button
-                                        className="btn btn-primary"
-                                        onClick={saveAttendance}
-                                    >
-                                        <i className="fas fa-save mr-2"></i>
-                                        Simpan Presensi
-                                    </button>
                                 </div>
+
+                            ) : (
+
+                                <div className="table-responsive">
+
+                                    <table className="table table-hover table-striped align-middle mb-0">
+
+                                        <thead className="table-light">
+
+                                            <tr>
+
+                                                <th
+                                                    className="text-center"
+                                                    style={{ width: 60 }}
+                                                >
+                                                    No
+                                                </th>
+
+                                                <th>NIS</th>
+
+                                                <th>NISN</th>
+
+                                                <th style={{ minWidth: 220 }}>
+                                                    Nama Siswa
+                                                </th>
+
+                                                <th
+                                                    className="text-center"
+                                                    style={{ width: 90 }}
+                                                >
+                                                    L/P
+                                                </th>
+
+                                                <th
+                                                    className="text-center"
+                                                    style={{ minWidth: 260 }}
+                                                >
+                                                    Kehadiran
+                                                </th>
+
+                                            </tr>
+
+                                        </thead>
+
+                                        <tbody>
+
+                                            {filteredStudents.length === 0 ? (
+
+                                                <tr>
+
+                                                    <td
+                                                        colSpan={6}
+                                                        className="text-center py-5 text-muted"
+                                                    >
+
+                                                        <i className="fas fa-users-slash fa-2x mb-3 d-block"></i>
+
+                                                        Tidak ada anggota kelas
+
+                                                    </td>
+
+                                                </tr>
+
+                                            ) : (
+
+                                                filteredStudents.map((student, index) => (
+
+                                                    <tr key={student.id}>
+
+                                                        <td className="text-center fw-semibold">
+                                                            {index + 1}
+                                                        </td>
+
+                                                        <td>{student.nis}</td>
+
+                                                        <td>{student.nisn}</td>
+
+                                                        <td>
+
+                                                            <div className="fw-semibold">
+                                                                {student.nama}
+                                                            </div>
+
+                                                        </td>
+
+                                                        <td className="text-center">
+
+                                                            <span
+                                                                className={`badge ${student.jk === "L"
+                                                                    ? "bg-primary"
+                                                                    : "bg-danger"
+                                                                    }`}
+                                                            >
+                                                                {student.jk}
+                                                            </span>
+
+                                                        </td>
+
+                                                        <td className="text-center align-middle">
+                                                            <div className="d-flex justify-content-center gap-2 flex-wrap">
+
+                                                                {/* Hadir */}
+                                                                <div>
+                                                                    <input
+                                                                        type="radio"
+                                                                        className="btn-check"
+                                                                        id={`hadir-${student.id}`}
+                                                                        name={`presensi-${student.id}`}
+                                                                        checked={attendance[student.id] === "Hadir"}
+                                                                        onChange={() =>
+                                                                            setAttendance((prev) => ({
+                                                                                ...prev,
+                                                                                [student.id]: "Hadir",
+                                                                            }))
+                                                                        }
+                                                                    />
+                                                                    <label
+                                                                        className="btn btn-outline-success btn-presensi"
+                                                                        htmlFor={`hadir-${student.id}`}
+                                                                    >
+                                                                        H
+                                                                    </label>
+                                                                </div>
+
+                                                                {/* Sakit */}
+                                                                <div>
+                                                                    <input
+                                                                        type="radio"
+                                                                        className="btn-check"
+                                                                        id={`sakit-${student.id}`}
+                                                                        name={`presensi-${student.id}`}
+                                                                        checked={attendance[student.id] === "Sakit"}
+                                                                        onChange={() =>
+                                                                            setAttendance((prev) => ({
+                                                                                ...prev,
+                                                                                [student.id]: "Sakit",
+                                                                            }))
+                                                                        }
+                                                                    />
+                                                                    <label
+                                                                        className="btn btn-outline-warning btn-presensi"
+                                                                        htmlFor={`sakit-${student.id}`}
+                                                                    >
+                                                                        S
+                                                                    </label>
+                                                                </div>
+
+                                                                {/* Izin */}
+                                                                <div>
+                                                                    <input
+                                                                        type="radio"
+                                                                        className="btn-check"
+                                                                        id={`izin-${student.id}`}
+                                                                        name={`presensi-${student.id}`}
+                                                                        checked={attendance[student.id] === "Izin"}
+                                                                        onChange={() =>
+                                                                            setAttendance((prev) => ({
+                                                                                ...prev,
+                                                                                [student.id]: "Izin",
+                                                                            }))
+                                                                        }
+                                                                    />
+                                                                    <label
+                                                                        className="btn btn-outline-primary btn-presensi"
+                                                                        htmlFor={`izin-${student.id}`}
+                                                                    >
+                                                                        I
+                                                                    </label>
+                                                                </div>
+
+                                                                {/* Alpha */}
+                                                                <div>
+                                                                    <input
+                                                                        type="radio"
+                                                                        className="btn-check"
+                                                                        id={`alpha-${student.id}`}
+                                                                        name={`presensi-${student.id}`}
+                                                                        checked={attendance[student.id] === "Alpha"}
+                                                                        onChange={() =>
+                                                                            setAttendance((prev) => ({
+                                                                                ...prev,
+                                                                                [student.id]: "Alpha",
+                                                                            }))
+                                                                        }
+                                                                    />
+                                                                    <label
+                                                                        className="btn btn-outline-danger btn-presensi"
+                                                                        htmlFor={`alpha-${student.id}`}
+                                                                    >
+                                                                        A
+                                                                    </label>
+                                                                </div>
+
+                                                            </div>
+                                                        </td>
+
+
+                                                    </tr>
+
+                                                ))
+
+                                            )}
+
+                                        </tbody>
+
+                                    </table>
+
+                                </div>
+
+                            )}
+
+                        </div>
+
+                        {/* Footer */}
+
+                        <div className="card-footer bg-white">
+
+                            <div className="d-flex justify-content-between align-items-center flex-wrap gap-2">
+
+                                <small className="text-muted">
+                                    Total Siswa :
+                                    <strong className="ms-1">
+                                        {filteredStudents.length}
+                                    </strong>
+                                </small>
+
+                                <button
+                                    className="btn btn-primary"
+                                    onClick={saveAttendance}
+                                >
+                                    <i className="fas fa-save me-2"></i>
+
+                                    Simpan Presensi
+
+                                </button>
+
                             </div>
+
                         </div>
 
                     </div>
