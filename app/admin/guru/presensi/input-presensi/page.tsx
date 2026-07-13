@@ -271,89 +271,88 @@ export default function PresensiPage() {
             <section className="content py-2">
                 <div className="container-fluid">
                     {/* Statistik Presensi */}
-                    <div className="row g-3 mb-4">
+                    <div className="card-body">
+                        <div className="row g-3 riwayat-presensi-statistik">
 
-                        {/* Total Siswa */}
-                        <div className="col-12 col-sm-6 col-lg col-xl">
-                            <div className="statpresensi-card statpresensi-primary">
+                            <div className="col-6 col-md-4 col-xl">
+                                <div className="riwayat-presensi-stat-card total">
+                                    <div>
+                                        <span className="riwayat-presensi-label">
+                                            Jumlah Siswa
+                                        </span>
+                                        <h3>{totalSiswa}</h3>
+                                    </div>
 
-                                <div className="statpresensi-icon bg-primary">
-                                    <i className="fas fa-users"></i>
+                                    <div className="riwayat-presensi-icon">
+                                        <i className="fas fa-calendar-check"></i>
+                                    </div>
                                 </div>
-
-                                <div className="statpresensi-content">
-                                    <h3>{totalSiswa}</h3>
-                                    <p>Total Siswa</p>
-                                </div>
-
                             </div>
-                        </div>
 
-                        {/* Hadir */}
-                        <div className="col-12 col-sm-6 col-lg col-xl">
-                            <div className="statpresensi-card statpresensi-success">
+                            <div className="col-6 col-md-4 col-xl">
+                                <div className="riwayat-presensi-stat-card hadir">
+                                    <div>
+                                        <span className="riwayat-presensi-label">
+                                            Hadir
+                                        </span>
+                                        <h3>{totalHadir}</h3>
+                                    </div>
 
-                                <div className="statpresensi-icon bg-success">
-                                    <i className="fas fa-check-circle"></i>
+                                    <div className="riwayat-presensi-icon">
+                                        <i className="fas fa-check-circle"></i>
+                                    </div>
                                 </div>
-
-                                <div className="statpresensi-content">
-                                    <h3>{totalHadir}</h3>
-                                    <p>Hadir</p>
-                                </div>
-
                             </div>
-                        </div>
 
-                        {/* Izin */}
-                        <div className="col-12 col-sm-6 col-lg col-xl">
-                            <div className="statpresensi-card statpresensi-warning">
+                            <div className="col-6 col-md-6 col-xl">
+                                <div className="riwayat-presensi-stat-card sakit">
+                                    <div>
+                                        <span className="riwayat-presensi-label">
+                                            Sakit
+                                        </span>
+                                        <h3>{totalSakit}</h3>
+                                    </div>
 
-                                <div className="statpresensi-icon bg-warning text-dark">
-                                    <i className="fas fa-user-clock"></i>
+                                    <div className="riwayat-presensi-icon">
+                                        <i className="fas fa-notes-medical"></i>
+                                    </div>
                                 </div>
-
-                                <div className="statpresensi-content">
-                                    <h3>{totalIzin}</h3>
-                                    <p>Izin</p>
-                                </div>
-
                             </div>
-                        </div>
 
-                        {/* Sakit */}
-                        <div className="col-12 col-sm-6 col-lg col-xl">
-                            <div className="statpresensi-card statpresensi-info">
+                            <div className="col-6 col-md-4 col-xl">
+                                <div className="riwayat-presensi-stat-card izin">
+                                    <div>
+                                        <span className="riwayat-presensi-label">
+                                            Izin
+                                        </span>
+                                        <h3>{totalIzin}</h3>
+                                    </div>
 
-                                <div className="statpresensi-icon bg-info">
-                                    <i className="fas fa-notes-medical"></i>
+                                    <div className="riwayat-presensi-icon">
+                                        <i className="fas fa-user-clock"></i>
+                                    </div>
                                 </div>
-
-                                <div className="statpresensi-content">
-                                    <h3>{totalSakit}</h3>
-                                    <p>Sakit</p>
-                                </div>
-
                             </div>
-                        </div>
 
-                        {/* Alpha */}
-                        <div className="col-12 col-sm-6 col-lg col-xl">
-                            <div className="statpresensi-card statpresensi-danger">
+                            <div className="col-12 col-md-6 col-xl">
+                                <div className="riwayat-presensi-stat-card alpha">
+                                    <div>
+                                        <span className="riwayat-presensi-label">
+                                            Alpha
+                                        </span>
+                                        <h3>{totalAlpha}</h3>
+                                    </div>
 
-                                <div className="statpresensi-icon bg-danger">
-                                    <i className="fas fa-times-circle"></i>
+                                    <div className="riwayat-presensi-icon">
+                                        <i className="fas fa-times-circle"></i>
+                                    </div>
                                 </div>
-
-                                <div className="statpresensi-content">
-                                    <h3>{totalAlpha}</h3>
-                                    <p>Alpha</p>
-                                </div>
-
                             </div>
-                        </div>
 
+                        </div>
                     </div>
+
+
 
                     {/* Filter */}
                     <div className="card shadow-sm border-0 mb-4 filter-rekap-card">

@@ -462,7 +462,6 @@ export default function ListPresensiPage() {
                                                         onClick={() => openEditModal(item)}
                                                     >
                                                         <i className="fas fa-edit me-1"></i>
-                                                        Edit
                                                     </button>
 
                                                 </td>
