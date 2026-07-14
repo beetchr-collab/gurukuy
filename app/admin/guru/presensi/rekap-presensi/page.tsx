@@ -257,15 +257,15 @@ export default function ListPresensiPage() {
 
                                     <tr>
 
-                                        <th style={{ minWidth: 60 }} className="text-center">
+                                        <th className="text-center">
                                             No
                                         </th>
 
-                                        <th style={{ minWidth: 90 }}>
+                                        <th>
                                             NIS
                                         </th>
 
-                                        <th style={{ minWidth: 120 }}>
+                                        <th>
                                             NISN
                                         </th>
 
@@ -277,26 +277,35 @@ export default function ListPresensiPage() {
                                             L/P
                                         </th>
 
-                                        <th className="text-center" style={{ minWidth: 90 }}>
+                                        <th className="text-center" style={{ minWidth: 60 }}>
                                             Hadir
                                         </th>
 
-                                        <th className="text-center" style={{ minWidth: 90 }}>
+                                        <th className="text-center" style={{ minWidth: 60 }}>
                                             Sakit
                                         </th>
 
-                                        <th className="text-center" style={{ minWidth: 90 }}>
+                                        <th className="text-center" style={{ minWidth: 60 }}>
                                             Izin
                                         </th>
 
-                                        <th className="text-center" style={{ minWidth: 90 }}>
+                                        <th className="text-center" style={{ minWidth: 60 }}>
                                             Alpha
                                         </th>
 
-                                        <th className="text-center" style={{ minWidth: 90 }}>
+                                        <th className="text-center" style={{ minWidth: 60 }}>
                                             Total
                                         </th>
-
+                                        <th
+                                            className="text-center"
+                                            style={{ minWidth: 150 }}
+                                        >
+                                            Presentase
+                                        </th>
+                                        <th
+                                            className="text-center"                                                                                  >
+                                            Detail
+                                        </th>
                                     </tr>
 
                                 </thead>
@@ -308,7 +317,7 @@ export default function ListPresensiPage() {
                                         <tr>
 
                                             <td
-                                                colSpan={10}
+                                                colSpan={12}
                                                 className="text-center py-5"
                                             >
 
@@ -379,7 +388,55 @@ export default function ListPresensiPage() {
                                                     </span>
 
                                                 </td>
+                                                <td className="text-center">
+                                                    {(() => {
+                                                        const presentase =
+                                                            item.total > 0
+                                                                ? Math.round((item.hadir / item.total) * 100)
+                                                                : 0;
 
+                                                        let color = "bg-danger";
+
+                                                        if (presentase >= 90) color = "bg-success";
+                                                        else if (presentase >= 75) color = "bg-primary";
+                                                        else if (presentase >= 60) color = "bg-warning";
+                                                        else color = "bg-danger";
+
+                                                        return (
+                                                            <div style={{ minWidth: 180 }}>
+                                                                <div className="d-flex justify-content-between small fw-semibold mb-1">
+                                                                    <span>{presentase}%</span>
+                                                                    <span>
+                                                                        {item.hadir}/{item.total}
+                                                                    </span>
+                                                                </div>
+
+                                                                <div
+                                                                    className="progress"
+                                                                    style={{
+                                                                        height: 10,
+                                                                        borderRadius: 20,
+                                                                        background: "#e9ecef",
+                                                                    }}
+                                                                >
+                                                                    <div
+                                                                        className={`progress-bar ${color}`}
+                                                                        role="progressbar"
+                                                                        style={{
+                                                                            width: `${presentase}%`,
+                                                                            borderRadius: 20,
+                                                                        }}
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })()}
+                                                </td>
+                                                <td className="text-center">
+                                                    <button type="button" className="btn btn-outline-info btn-sm">
+                                                        <i className="fas fa-circle-info"></i>
+                                                    </button>
+                                                </td>
                                             </tr>
 
                                         ))

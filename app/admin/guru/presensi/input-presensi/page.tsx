@@ -500,7 +500,7 @@ export default function PresensiPage() {
 
                                                 <th
                                                     className="text-center"
-                                                    style={{ minWidth: 260 }}
+                                                    style={{ minWidth: 220 }}
                                                 >
                                                     Kehadiran
                                                 </th>
@@ -564,7 +564,7 @@ export default function PresensiPage() {
                                                         </td>
 
                                                         <td className="text-center align-middle">
-                                                            <div className="d-flex justify-content-center gap-2 flex-wrap">
+                                                            <div className="btn-group" role="group">
 
                                                                 {/* Hadir */}
                                                                 <div>
