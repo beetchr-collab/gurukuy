@@ -214,8 +214,6 @@ export default function StudentAttendancePage() {
 
             <section className="content">
                 <div className="container-fluid">
-
-
                     {/* Informasi Siswa */}
                     <div className="card shadow-sm border-0 mb-3 riwayat-presensi-card">
                         <div className="card-header bg-white border-0 d-flex align-items-center">
@@ -313,9 +311,8 @@ export default function StudentAttendancePage() {
                             </div>
                         </div>
                     </div>
-
+                    
                     {/* Progress Kehadiran */}
-
                     <div className="card shadow-sm border-0 mb-3">
 
                         <div className="card-header bg-white border-0">

@@ -339,18 +339,18 @@ export async function updateAttendanceStatus(
 
 // Rekap Presensi Siswa
 export interface AttendanceRecapStudent {
-  studentId: string;
-  nis: string;
-  nisn: string;
-  nama: string;
-  jk: string;
+    studentId: string;
+    nis: string;
+    nisn: string;
+    nama: string;
+    jk: string;
 
-  hadir: number;
-  sakit: number;
-  izin: number;
-  alpha: number;
+    hadir: number;
+    sakit: number;
+    izin: number;
+    alpha: number;
 
-  total: number;
+    total: number;
 }
 
 export async function getAttendanceStudentRecap(
@@ -405,4 +405,148 @@ export async function getAttendanceStudentRecap(
     return Array.from(map.values()).sort((a, b) =>
         a.nama.localeCompare(b.nama)
     );
+}
+
+// Detail Presensi Siswa
+export interface StudentAttendanceHistory {
+    attendanceId: string;
+    tanggal: string;
+    tahunAjaran: string;
+    nama: string;
+    nis: number;
+    nisn: number;
+    jk: string;
+    kelasId: string;
+    kelas: string;
+    status: "Hadir" | "Izin" | "Sakit" | "Alpha";
+    keterangan?: string;
+}
+
+export interface StudentAttendanceDetail {
+    studentId: string;
+    nis: string;
+    nisn: string;
+    nama: string;
+    jk: string;
+    kelas: string;
+    kelasId: string;
+    hadir: number;
+    sakit: number;
+    izin: number;
+    alpha: number;
+
+    total: number;
+    persentase: number;
+
+    history: StudentAttendanceHistory[];
+}
+
+export async function getStudentAttendanceDetail(
+    schoolId: string,
+    studentId: string,
+    tahunAjaran?: string,
+    kelasId?: string
+): Promise<StudentAttendanceDetail | null> {
+
+    const constraints: any[] = [
+        where("schoolId", "==", schoolId)
+    ];
+
+    if (tahunAjaran) {
+        constraints.push(where("tahunAjaran", "==", tahunAjaran));
+    }
+
+    if (kelasId) {
+        constraints.push(where("kelasId", "==", kelasId));
+    }
+
+    constraints.push(orderBy("tanggal", "asc"));
+
+    const q = query(
+        collection(db, "presensi"),
+        ...constraints
+    );
+
+    const snapshot = await getDocs(q);
+
+    let detail: StudentAttendanceDetail | null = null;
+
+    for (const docSnap of snapshot.docs) {
+
+        const data = docSnap.data();
+
+        const siswa = data.siswa ?? [];
+
+        const item = siswa.find(
+            (x: any) => x.studentId === studentId
+        );
+
+        if (!item) continue;
+
+        if (!detail) {
+
+            detail = {
+                studentId: item.studentId,
+                nis: item.nis,
+                nisn: item.nisn,
+                nama: item.nama,
+                jk: item.jk,
+                kelas: data.kelas,
+                kelasId: data.kelasId,
+                hadir: 0,
+                sakit: 0,
+                izin: 0,
+                alpha: 0,
+
+                total: 0,
+                persentase: 0,
+
+                history: [],
+            };
+        }
+
+        switch (item.status) {
+            case "Hadir":
+                detail.hadir++;
+                break;
+            case "Sakit":
+                detail.sakit++;
+                break;
+            case "Izin":
+                detail.izin++;
+                break;
+            case "Alpha":
+                detail.alpha++;
+                break;
+        }
+
+        detail.total++;
+
+        detail.history.push({
+            attendanceId: docSnap.id,
+            tanggal: data.tanggal,
+            tahunAjaran: data.tahunAjaran,
+            nama: item.nama,
+            nis: item.nis,
+            nisn: item.nisn,
+            jk: item.jk,
+            kelasId: data.kelasId,
+            kelas: data.kelas,
+            status: item.status,
+            keterangan: item.keterangan ?? "",
+        });
+    }
+
+    if (!detail) {
+        return null;
+    }
+
+    detail.persentase =
+        detail.total === 0
+            ? 0
+            : Math.round(
+                (detail.hadir / detail.total) * 100
+            );
+
+    return detail;
 }

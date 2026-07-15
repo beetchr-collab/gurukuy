@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
+import Link from "next/link";
 import {
     KepalaSekolah,
     getKepalaSekolahBySchool,
@@ -433,9 +434,12 @@ export default function ListPresensiPage() {
                                                     })()}
                                                 </td>
                                                 <td className="text-center">
-                                                    <button type="button" className="btn btn-outline-info btn-sm">
+                                                    <Link
+                                                        href={`/admin/guru/presensi/detail-presensi/${item.studentId}?kelasId=${kelasId}&tahunAjaran=${tahunAjaran}`}
+                                                        className="btn btn-outline-info btn-sm"
+                                                    >
                                                         <i className="fas fa-circle-info"></i>
-                                                    </button>
+                                                    </Link>
                                                 </td>
                                             </tr>
 
