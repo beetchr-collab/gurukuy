@@ -275,6 +275,7 @@ export async function getAttendanceByFilter(
                 jk: siswa.jk,
                 status: siswa.status,
                 tanggal: data.tanggal,
+                keterangan: siswa.keterangan ?? "",
             });
 
         });
@@ -293,13 +294,15 @@ export interface AttendanceStudentRow {
     jk: string;
     status: string;
     tanggal: string;
+    keterangan?: string;
 }
 
 // Edit Presensi Siswa
 export async function updateAttendanceStatus(
     attendanceId: string,
     studentId: string,
-    status: "Hadir" | "Izin" | "Sakit" | "Alpha"
+    status: "Hadir" | "Izin" | "Sakit" | "Alpha",
+    keterangan: string = ""
 ) {
     try {
         const docRef = doc(db, "presensi", attendanceId);
@@ -319,6 +322,7 @@ export async function updateAttendanceStatus(
                 return {
                     ...item,
                     status,
+                    keterangan: status === "Izin" ? keterangan : "",
                 };
             }
 

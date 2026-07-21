@@ -169,6 +169,9 @@ export default function PresensiPage() {
         new Date().toISOString().split("T")[0]
     );
 
+    // Menampilkan form keterangan jika status Izin
+    const [keterangan, setKeterangan] = useState<Record<string, string>>({});
+
     // Fungsi untuk menyimpan presensi ke Firestore
     const saveAttendance = async () => {
 
@@ -197,6 +200,11 @@ export default function PresensiPage() {
                 nama: student.nama,
                 jk: student.jk,
                 status: attendance[student.id] || "Hadir",
+                // Keterangan hanya diisi jika status Izin
+                keterangan:
+                    attendance[student.id] === "Izin"
+                        ? keterangan[student.id] || ""
+                        : "",
             }));
 
             await addDoc(collection(db, "presensi"), {
@@ -659,6 +667,23 @@ export default function PresensiPage() {
                                                                 </div>
 
                                                             </div>
+                                                            {/* Form keterangan jika Izin */}
+                                                            {attendance[student.id] === "Izin" && (
+                                                                <div className="mt-2">
+                                                                    <input
+                                                                        type="text"
+                                                                        className="form-control form-control-sm"
+                                                                        placeholder="Alasan izin..."
+                                                                        value={keterangan[student.id] || ""}
+                                                                        onChange={(e) =>
+                                                                            setKeterangan((prev) => ({
+                                                                                ...prev,
+                                                                                [student.id]: e.target.value,
+                                                                            }))
+                                                                        }
+                                                                    />
+                                                                </div>
+                                                            )}
                                                         </td>
 
 

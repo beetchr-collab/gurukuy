@@ -114,15 +114,17 @@ export default function ListPresensiPage() {
         user,
     ]);
 
-    // Aksi Edit Presensi Siswa
+    // Aksi Edit Presensi Siswa Modals
     const [showEditModal, setShowEditModal] = useState(false);
     const [selectedStudent, setSelectedStudent] =
         useState<AttendanceStudentRow | null>(null);
     const [editStatus, setEditStatus] = useState("");
+    const [editKeterangan, setEditKeterangan] = useState("");
     // Membuka dan menutup modals
     const openEditModal = (student: AttendanceStudentRow) => {
         setSelectedStudent(student);
         setEditStatus(student.status);
+        setEditKeterangan(student.keterangan || "");
         setShowEditModal(true);
     };
     const closeEditModal = () => {
@@ -165,7 +167,8 @@ export default function ListPresensiPage() {
             await updateAttendanceStatus(
                 selectedStudent.attendanceId,
                 selectedStudent.studentId,
-                editStatus as "Hadir" | "Izin" | "Sakit" | "Alpha"
+                editStatus as "Hadir" | "Izin" | "Sakit" | "Alpha",
+                editStatus === "Izin" ? editKeterangan : ""
             );
 
             alert("Presensi berhasil diperbarui.");
@@ -358,7 +361,7 @@ export default function ListPresensiPage() {
 
                                 <thead className="table-primary">
 
-                                    <tr>
+                                    <tr className="text-center">
                                         <th style={{ minWidth: 60 }} className="text-center">
                                             No
                                         </th>
@@ -379,15 +382,16 @@ export default function ListPresensiPage() {
                                             Nama Siswa
                                         </th>
 
-                                        <th style={{ minWidth: 70 }} className="text-center">
+                                        <th style={{ minWidth: 70 }}>
                                             L/P
                                         </th>
 
-                                        <th style={{ minWidth: 120 }} className="text-center">
+                                        <th style={{ minWidth: 120 }}>
                                             Status
                                         </th>
+                                        <th style={{ minWidth: 200 }}>Keterangan Izin</th>
 
-                                        <th style={{ minWidth: 90 }} className="text-center">
+                                        <th style={{ minWidth: 90 }}>
                                             Aksi
                                         </th>
 
@@ -402,7 +406,7 @@ export default function ListPresensiPage() {
                                         <tr>
 
                                             <td
-                                                colSpan={8}
+                                                colSpan={9}
                                                 className="text-center py-5 text-muted"
                                             >
 
@@ -454,7 +458,7 @@ export default function ListPresensiPage() {
                                                     </span>
 
                                                 </td>
-
+                                                <td>{item.keterangan}</td>
                                                 <td className="text-center">
 
                                                     <button
@@ -582,9 +586,24 @@ export default function ListPresensiPage() {
                                             <option value="Sakit">Sakit</option>
                                             <option value="Alpha">Alpha</option>
                                         </select>
-
                                     </div>
+                                    {/* Keterangan Izin */}
+                                    {editStatus === "Izin" && (
+                                        <div className="mt-3">
+                                            <label className="form-label fw-semibold">
+                                                <i className="fas fa-comment-alt text-primary me-2"></i>
+                                                Keterangan Izin
+                                            </label>
 
+                                            <textarea
+                                                className="form-control"
+                                                rows={3}
+                                                placeholder="Masukkan alasan izin..."
+                                                value={editKeterangan}
+                                                onChange={(e) => setEditKeterangan(e.target.value)}
+                                            />
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Footer */}
