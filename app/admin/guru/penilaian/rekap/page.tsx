@@ -18,6 +18,7 @@ import {
     saveBobotPenilaian,
     getBobotPenilaian,
 } from "@/services/bobotpenilaian.service";
+import * as XLSX from "xlsx";
 
 export default function RekapPenilaianPage() {
 
@@ -218,9 +219,9 @@ export default function RekapPenilaianPage() {
             } else {
                 // Default jika belum ada data
                 setFormData({
-                    formatif: 40,
-                    sumatif: 30,
-                    sas: 30,
+                    formatif: 50,
+                    sumatif: 25,
+                    sas: 25,
                 });
             }
         } catch (error) {
@@ -279,6 +280,7 @@ export default function RekapPenilaianPage() {
             alert("Gagal menyimpan bobot.");
         }
     };
+
     // Fungsi untuk mendapatkan nomor dari subtopik, misalnya "TP1" akan menghasilkan 1, "TP2" akan menghasilkan 2, dan seterusnya. Jika tidak ada angka, akan mengembalikan 999.
     function getNomor(sub: string) {
 
@@ -296,7 +298,13 @@ export default function RekapPenilaianPage() {
         rekap.forEach((item) => {
 
             const lower = item.jenisPenilaian.toLowerCase();
-
+            // Asesmen Diagnostik ditampilkan sebagai kolom khusus
+            if (
+                lower.includes("sumatif akhir semester") ||
+                lower.includes("asesmen diagnostik")
+            ) {
+                return;
+            }
             if (lower.includes("sumatif akhir semester")) {
                 return; // abaikan SAS
             }
@@ -336,16 +344,51 @@ export default function RekapPenilaianPage() {
 
                     topik,
 
-                    items: items.sort(
-                        (a, b) =>
-                            getNomor(a.subtopik) -
-                            getNomor(b.subtopik)
-                    ),
+                    items: items.sort((a, b) => {
+                        const waktuA = a.createdAt?.toMillis?.() ?? 0;
+                        const waktuB = b.createdAt?.toMillis?.() ?? 0;
+
+                        return waktuA - waktuB;
+                    }),
 
                 })),
 
             }));
 
+    }, [rekap]);
+
+    // Mengelompokkan data rekap Asesmen Diagnostik
+    const groupedAsesmenDiagnostik = useMemo(() => {
+        const asesmen = rekap.filter((item) =>
+            item.jenisPenilaian
+                .toLowerCase()
+                .includes("asesmen diagnostik")
+        );
+
+        const topikMap = new Map<string, RekapNilai[]>();
+
+        asesmen.forEach((item) => {
+            if (!topikMap.has(item.topik)) {
+                topikMap.set(item.topik, []);
+            }
+
+            topikMap.get(item.topik)!.push(item);
+        });
+
+        return Array.from(topikMap.entries()).map(
+            ([topik, items]) => ({
+                topik,
+                items: items.sort((a, b) => {
+                    const waktuA =
+                        a.createdAt?.toMillis?.() ?? 0;
+
+                    const waktuB =
+                        b.createdAt?.toMillis?.() ?? 0;
+
+                    return waktuA - waktuB;
+                }),
+            })
+        );
     }, [rekap]);
 
     // Inisial tooltip
@@ -359,8 +402,520 @@ export default function RekapPenilaianPage() {
         });
     }, [groupedJenis]);
 
+    // Download Excel
+    const handleDownloadExcel = () => {
+        if (students.length === 0) {
+            alert("Belum ada data rekap untuk diunduh.");
+            return;
+        }
 
-    // Bobot Penilaian
+        // =====================================
+        // DATA PENILAIAN
+        // =====================================
+
+        const asesmenDiagnostik = rekap.filter((item) =>
+            item.jenisPenilaian
+                .toLowerCase()
+                .includes("asesmen diagnostik")
+        );
+
+        const formatifItems = rekap.filter((item) =>
+            item.jenisPenilaian
+                .toLowerCase()
+                .includes("formatif")
+        );
+
+        const sumatifItems = rekap.filter((item) =>
+            item.jenisPenilaian
+                .toLowerCase()
+                .includes("sumatif") &&
+            !item.jenisPenilaian
+                .toLowerCase()
+                .includes("sumatif akhir semester")
+        );
+
+        const sas = rekap.find((item) =>
+            item.jenisPenilaian
+                .toLowerCase()
+                .includes("sumatif akhir semester")
+        );
+
+        // =====================================
+        // GROUP BERDASARKAN TOPIK
+        // =====================================
+
+        const groupByTopik = (items: RekapNilai[]) => {
+            const map = new Map<string, RekapNilai[]>();
+
+            items.forEach((item) => {
+                if (!map.has(item.topik)) {
+                    map.set(item.topik, []);
+                }
+
+                map.get(item.topik)!.push(item);
+            });
+
+            return Array.from(map.entries()).map(
+                ([topik, items]) => ({
+                    topik,
+                    items,
+                })
+            );
+        };
+
+        const asesmenByTopik =
+            groupByTopik(asesmenDiagnostik);
+
+        const formatifByTopik =
+            groupByTopik(formatifItems);
+
+        const sumatifByTopik =
+            groupByTopik(sumatifItems);
+
+        // =====================================
+        // HEADER
+        // =====================================
+
+        const headerRow1: string[] = [];
+        const headerRow2: string[] = [];
+        const headerRow3: string[] = [];
+
+        // Kolom identitas
+        headerRow1.push(
+            "No",
+            "NIS",
+            "NISN",
+            "Nama",
+            "L/P"
+        );
+
+        headerRow2.push(
+            "",
+            "",
+            "",
+            "",
+            ""
+        );
+
+        headerRow3.push(
+            "",
+            "",
+            "",
+            "",
+            ""
+        );
+
+        // =====================================
+        // ASESMEN DIAGNOSTIK
+        // =====================================
+
+        asesmenByTopik.forEach((topik) => {
+            topik.items.forEach((item, index) => {
+                headerRow1.push(
+                    index === 0
+                        ? "Asesmen Diagnostik"
+                        : ""
+                );
+
+                headerRow2.push("");
+
+                headerRow3.push(
+                    `A${index + 1}`
+                );
+            });
+        });
+
+        // =====================================
+        // FORMATIF
+        // =====================================
+
+        formatifByTopik.forEach((topik) => {
+
+            topik.items.forEach((item, index) => {
+                headerRow1.push(
+                    index === 0
+                        ? "Formatif"
+                        : ""
+                );
+
+                headerRow2.push(
+                    index === 0
+                        ? topik.topik
+                        : ""
+                );
+
+                headerRow3.push(
+                    `TP${index + 1}`
+                );
+            });
+
+        });
+
+        // =====================================
+        // SUMATIF LINGKUP MATERI
+        // =====================================
+
+        sumatifByTopik.forEach((topik) => {
+
+            topik.items.forEach((item, index) => {
+                headerRow1.push(
+                    index === 0
+                        ? "Sumatif Lingkup Materi"
+                        : ""
+                );
+
+                headerRow2.push(
+                    index === 0
+                        ? topik.topik
+                        : ""
+                );
+
+                headerRow3.push(
+                    `LM${index + 1}`
+                );
+            });
+
+        });
+
+        // =====================================
+        // SAS
+        // =====================================
+
+        headerRow1.push(
+            "Sumatif Akhir Semester"
+        );
+
+        headerRow2.push("");
+
+        headerRow3.push("");
+
+        // =====================================
+        // NILAI AKHIR
+        // =====================================
+
+        headerRow1.push(
+            "Nilai Akhir"
+        );
+
+        headerRow2.push("");
+
+        headerRow3.push("");
+
+        // =====================================
+        // DATA SISWA
+        // =====================================
+
+        const dataRows = students.map(
+            (student, index) => {
+
+                const totalFormatif =
+                    formatifItems.reduce(
+                        (sum, item) =>
+                            sum +
+                            Number(
+                                student.nilai[item.id] ?? 0
+                            ),
+                        0
+                    );
+
+                const rataFormatif =
+                    formatifItems.length > 0
+                        ? totalFormatif /
+                        formatifItems.length
+                        : 0;
+
+                const totalSumatif =
+                    sumatifItems.reduce(
+                        (sum, item) =>
+                            sum +
+                            Number(
+                                student.nilai[item.id] ?? 0
+                            ),
+                        0
+                    );
+
+                const rataSumatif =
+                    sumatifItems.length > 0
+                        ? totalSumatif /
+                        sumatifItems.length
+                        : 0;
+
+                const nilaiSAS = sas
+                    ? Number(
+                        student.nilai[sas.id] ?? 0
+                    )
+                    : 0;
+
+                const nilaiAkhir =
+                    (rataFormatif *
+                        formData.formatif) /
+                    100 +
+
+                    (rataSumatif *
+                        formData.sumatif) /
+                    100 +
+
+                    (nilaiSAS *
+                        formData.sas) /
+                    100;
+
+                const row: (
+                    string | number
+                )[] = [
+                        index + 1,
+                        student.nis ?? "",
+                        student.nisn ?? "",
+                        student.nama,
+                        student.jk,
+                    ];
+
+                // ASESMEN DIAGNOSTIK
+                asesmenDiagnostik.forEach(
+                    (item) => {
+                        row.push(
+                            student.nilai[item.id] ?? ""
+                        );
+                    }
+                );
+
+                // FORMATIF
+                formatifItems.forEach(
+                    (item) => {
+                        row.push(
+                            student.nilai[item.id] ?? ""
+                        );
+                    }
+                );
+
+                // SUMATIF
+                sumatifItems.forEach(
+                    (item) => {
+                        row.push(
+                            student.nilai[item.id] ?? ""
+                        );
+                    }
+                );
+
+                // SAS
+                row.push(
+                    sas
+                        ? student.nilai[sas.id] ?? ""
+                        : ""
+                );
+
+                // NILAI AKHIR
+                row.push(
+                    Number(nilaiAkhir.toFixed(2))
+                );
+
+                return row;
+            }
+        );
+
+        // =====================================
+        // WORKSHEET
+        // =====================================
+
+        const worksheet =
+            XLSX.utils.aoa_to_sheet([
+                headerRow1,
+                headerRow2,
+                headerRow3,
+                ...dataRows,
+            ]);
+
+        // =====================================
+        // MERGE CELL
+        // =====================================
+
+        worksheet["!merges"] = [];
+
+        // Kolom identitas
+        for (let col = 0; col < 5; col++) {
+            worksheet["!merges"]!.push({
+                s: {
+                    r: 0,
+                    c: col,
+                },
+                e: {
+                    r: 2,
+                    c: col,
+                },
+            });
+        }
+
+        let currentCol = 5;
+
+        // ASESMEN DIAGNOSTIK
+        if (asesmenDiagnostik.length > 0) {
+            worksheet["!merges"]!.push({
+                s: {
+                    r: 0,
+                    c: currentCol,
+                },
+                e: {
+                    r: 2,
+                    c:
+                        currentCol +
+                        asesmenDiagnostik.length -
+                        1,
+                },
+            });
+
+            currentCol +=
+                asesmenDiagnostik.length;
+        }
+
+        // FORMATIF
+        formatifByTopik.forEach((topik) => {
+
+            const startCol = currentCol;
+
+            const endCol =
+                currentCol +
+                topik.items.length -
+                1;
+
+            // Merge jenis Formatif
+            worksheet["!merges"]!.push({
+                s: {
+                    r: 0,
+                    c: startCol,
+                },
+                e: {
+                    r: 0,
+                    c: endCol,
+                },
+            });
+
+            // Merge Topik
+            worksheet["!merges"]!.push({
+                s: {
+                    r: 1,
+                    c: startCol,
+                },
+                e: {
+                    r: 1,
+                    c: endCol,
+                },
+            });
+
+            currentCol =
+                endCol + 1;
+        });
+
+        // SUMATIF
+        sumatifByTopik.forEach((topik) => {
+
+            const startCol = currentCol;
+
+            const endCol =
+                currentCol +
+                topik.items.length -
+                1;
+
+            // Merge jenis Sumatif
+            worksheet["!merges"]!.push({
+                s: {
+                    r: 0,
+                    c: startCol,
+                },
+                e: {
+                    r: 0,
+                    c: endCol,
+                },
+            });
+
+            // Merge Topik
+            worksheet["!merges"]!.push({
+                s: {
+                    r: 1,
+                    c: startCol,
+                },
+                e: {
+                    r: 1,
+                    c: endCol,
+                },
+            });
+
+            currentCol =
+                endCol + 1;
+        });
+
+        // SAS
+        worksheet["!merges"]!.push({
+            s: {
+                r: 0,
+                c: currentCol,
+            },
+            e: {
+                r: 2,
+                c: currentCol,
+            },
+        });
+
+        currentCol++;
+
+        // Nilai Akhir
+        worksheet["!merges"]!.push({
+            s: {
+                r: 0,
+                c: currentCol,
+            },
+            e: {
+                r: 2,
+                c: currentCol,
+            },
+        });
+
+        // =====================================
+        // LEBAR KOLOM
+        // =====================================
+
+        worksheet["!cols"] = [
+            { wch: 6 },
+            { wch: 12 },
+            { wch: 16 },
+            { wch: 30 },
+            { wch: 8 },
+
+            ...Array(
+                headerRow1.length - 5
+            ).fill({
+                wch: 15,
+            }),
+        ];
+
+        // =====================================
+        // WORKBOOK
+        // =====================================
+
+        const workbook =
+            XLSX.utils.book_new();
+
+        XLSX.utils.book_append_sheet(
+            workbook,
+            worksheet,
+            "Rekap Nilai"
+        );
+
+        const namaFile = [
+            "Rekap-Nilai",
+            tahunAjaran.replace(
+                "/",
+                "-"
+            ),
+            mapel.replace(
+                /\s+/g,
+                "-"
+            ),
+        ].join("-");
+
+        XLSX.writeFile(
+            workbook,
+            `${namaFile}.xlsx`
+        );
+    };
 
     return (
 
@@ -381,7 +936,6 @@ export default function RekapPenilaianPage() {
                     </div>
                 </div>
             </div>
-
 
             {/* Filter Tahun Ajaran, Kelas, dan Mata Pelajaran */}
             <div className="card shadow-sm border-0 mb-3">
@@ -622,17 +1176,53 @@ export default function RekapPenilaianPage() {
 
             </div>
 
-
             {/* Tabel Rekap Penilaian */}
-            <div className="card">
+            <div className="card mb-2">
+                {/* Header Rekap Nilai */}
+                <div className="card-header bg-white border-0 px-3 px-md-4 py-3">
+                    <div className="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3">
+
+                        {/* Judul */}
+                        <div className="d-flex align-items-center">
+                            <div className="rekap-icon me-3">
+                                <i className="fas fa-table"></i>
+                            </div>
+
+                            <div>
+                                <h5 className="mb-0 fw-bold text-dark">
+                                    Rekap Nilai
+                                </h5>
+
+                                <small className="text-muted">
+                                    Rekapitulasi nilai siswa
+                                </small>
+                            </div>
+                        </div>
+
+                        {/* Tombol */}
+                        <button
+                            type="button"
+                            className="btn btn-success d-flex align-items-center justify-content-center gap-2"
+                            onClick={handleDownloadExcel}
+                            disabled={
+                                loading ||
+                                students.length === 0
+                            }
+                        >
+                            <i className="fas fa-file-excel"></i>
+                            <span>Download Excel</span>
+                        </button>
+
+                    </div>
+                </div>
+
+                {/*Tabel Rekap nilai*/}
                 <div className="card-body">
                     <div className="table-responsive">
                         <table className="table table-hover table-bordered align-middle mb-0">
                             <thead className="table-primary">
 
-                                {/* ============================
-        BARIS 1 : JENIS PENILAIAN
-    ============================= */}
+                                {/* BARIS 1 : JENIS PENILAIAN */}
                                 <tr>
 
                                     <th rowSpan={3} className="text-center align-middle">
@@ -654,6 +1244,20 @@ export default function RekapPenilaianPage() {
                                     <th rowSpan={3} className="text-center align-middle">
                                         L/P
                                     </th>
+                                    {/* ASESMEN DIAGNOSTIK */}
+                                    {groupedAsesmenDiagnostik.length > 0 && (
+                                        <th
+                                            colSpan={groupedAsesmenDiagnostik.reduce(
+                                                (total, topik) =>
+                                                    total + topik.items.length,
+                                                0
+                                            )}
+                                            rowSpan={2}
+                                            className="text-center bg-info-subtle"
+                                        >
+                                            Asesmen Diagnostik
+                                        </th>
+                                    )}
 
                                     {groupedJenis.map((jenis) => {
 
@@ -706,11 +1310,8 @@ export default function RekapPenilaianPage() {
 
                                 </tr>
 
-                                {/* ============================
-        BARIS 2 : TOPIK
-    ============================= */}
+                                {/* BARIS 2 : TOPIK */}
                                 <tr>
-
                                     {groupedJenis.flatMap((jenis) =>
 
                                         jenis.topik.map((topik: any) => (
@@ -733,10 +1334,26 @@ export default function RekapPenilaianPage() {
 
                                 </tr>
 
-                                {/* ============================
-        BARIS 3 : TP / LM
-    ============================= */}
+                                {/* BARIS 3 : TP / LM */}
                                 <tr>
+                                    {/* ASESMEN DIAGNOSTIK */}
+                                    {groupedAsesmenDiagnostik.flatMap((topik) =>
+                                        topik.items.map((item, index) => (
+                                            <th
+                                                key={item.id}
+                                                className="text-center bg-info-subtle"
+                                                style={{
+                                                    minWidth: 70,
+                                                    cursor: "help",
+                                                }}
+                                                data-bs-toggle="tooltip"
+                                                data-bs-placement="top"
+                                                title={item.subtopik}
+                                            >
+                                                A{index + 1}
+                                            </th>
+                                        ))
+                                    )}
 
                                     {groupedJenis.flatMap((jenis) => {
 
@@ -808,7 +1425,7 @@ export default function RekapPenilaianPage() {
 
                                         <td
                                             colSpan={
-                                                7 +
+                                                8 +
                                                 groupedJenis.reduce(
                                                     (total, jenis) =>
                                                         total +
@@ -834,6 +1451,18 @@ export default function RekapPenilaianPage() {
                                 )}
 
                                 {students.map((student, index) => {
+                                    // ==========================
+                                    // ASESMEN DIAGNOSTIK
+                                    // ==========================
+                                    const asesmenDiagnostik = rekap.find((item) =>
+                                        item.jenisPenilaian
+                                            .toLowerCase()
+                                            .includes("asesmen diagnostik")
+                                    );
+
+                                    const nilaiAsesmenDiagnostik = asesmenDiagnostik
+                                        ? student.nilai[asesmenDiagnostik.id] ?? ""
+                                        : "";
 
                                     // ==========================
                                     // FORMATIF
@@ -905,9 +1534,22 @@ export default function RekapPenilaianPage() {
 
                                             <td>{student.nisn}</td>
 
-                                            <td>{student.nama}</td>
+                                            <td style={{
+                                                whiteSpace: "nowrap",
+                                            }}>{student.nama}</td>
 
                                             <td>{student.jk}</td>
+                                            {/* ASESMEN DIAGNOSTIK */}
+                                            {groupedAsesmenDiagnostik.flatMap((topik) =>
+                                                topik.items.map((item) => (
+                                                    <td
+                                                        key={`${student.studentId}-${item.id}`}
+                                                        className="text-center bg-info-subtle"
+                                                    >
+                                                        {student.nilai[item.id] ?? ""}
+                                                    </td>
+                                                ))
+                                            )}
 
                                             {/* FORMATIF & SUMATIF */}
                                             {groupedJenis.flatMap((jenis) => {
@@ -973,6 +1615,149 @@ export default function RekapPenilaianPage() {
 
                 </div>
 
+            </div>
+
+            {/* Informasi Penilaian */}
+            <div className="card shadow-sm border-0 mb-3">
+                <div className="card-body">
+
+                    <div className="d-flex align-items-center mb-3">
+                        <div
+                            className="d-flex align-items-center justify-content-center rounded-circle bg-primary-subtle text-primary me-3"
+                            style={{
+                                width: "42px",
+                                height: "42px",
+                                minWidth: "42px",
+                            }}
+                        >
+                            <i className="fas fa-info-circle fs-5"></i>
+                        </div>
+
+                        <div>
+                            <h5 className="fw-bold mb-1">
+                                Informasi Penilaian
+                            </h5>
+
+                            <p className="text-muted small mb-0">
+                                Panduan singkat mengenai kode penilaian dan perhitungan nilai akhir.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="row g-3">
+
+                        {/* Asesmen Diagnostik */}
+                        <div className="col-12 col-md-6 col-xl-3">
+                            <div className="border rounded-3 p-3 h-100 bg-info-subtle">
+                                <div className="d-flex align-items-center mb-2">
+                                    <span className="badge bg-info text-dark fs-6 me-2">
+                                        A
+                                    </span>
+
+                                    <strong>
+                                        Asesmen Diagnostik
+                                    </strong>
+                                </div>
+
+                                <p className="small text-muted mb-0">
+                                    Digunakan untuk mengetahui kondisi awal,
+                                    pemahaman, dan kebutuhan belajar siswa.
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Tujuan Pembelajaran */}
+                        <div className="col-12 col-md-6 col-xl-3">
+                            <div className="border rounded-3 p-3 h-100 bg-primary-subtle">
+                                <div className="d-flex align-items-center mb-2">
+                                    <span className="badge bg-primary fs-6 me-2">
+                                        TP
+                                    </span>
+
+                                    <strong>
+                                        Tujuan Pembelajaran
+                                    </strong>
+                                </div>
+
+                                <p className="small text-muted mb-0">
+                                    Penilaian yang mengukur pencapaian
+                                    tujuan pembelajaran siswa.
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Lingkup Materi */}
+                        <div className="col-12 col-md-6 col-xl-3">
+                            <div className="border rounded-3 p-3 h-100 bg-warning-subtle">
+                                <div className="d-flex align-items-center mb-2">
+                                    <span className="badge bg-warning text-dark fs-6 me-2">
+                                        LM
+                                    </span>
+
+                                    <strong>
+                                        Lingkup Materi
+                                    </strong>
+                                </div>
+
+                                <p className="small text-muted mb-0">
+                                    Penilaian sumatif berdasarkan
+                                    lingkup materi yang telah dipelajari.
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Nilai Akhir */}
+                        <div className="col-12 col-md-6 col-xl-3">
+                            <div className="border rounded-3 p-3 h-100 bg-success-subtle">
+                                <div className="d-flex align-items-center mb-2">
+                                    <span className="badge bg-success fs-6 me-2">
+                                        <i className="fas fa-calculator"></i>
+                                    </span>
+
+                                    <strong>
+                                        Nilai Akhir
+                                    </strong>
+                                </div>
+
+                                <p className="small text-muted mb-2">
+                                    Nilai akhir dihitung dari:
+                                </p>
+
+                                <div className="d-flex flex-wrap gap-1">
+                                    <span className="badge bg-success">
+                                        Formatif
+                                    </span>
+
+                                    <span className="badge bg-success">
+                                        Sumatif LM
+                                    </span>
+
+                                    <span className="badge bg-success">
+                                        SAS
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    {/* Catatan Perhitungan */}
+                    <div className="alert alert-light border mt-3 mb-0">
+                        <div className="d-flex align-items-start">
+                            <i className="fas fa-lightbulb text-warning me-2 mt-1"></i>
+
+                            <div className="small">
+                                <strong>Catatan:</strong>{" "}
+                                Asesmen Diagnostik digunakan sebagai informasi
+                                pemetaan kemampuan awal siswa dan{" "}
+                                <strong>tidak masuk dalam perhitungan Nilai Akhir</strong>.
+                                Nilai Akhir hanya menggunakan nilai Formatif,
+                                Sumatif Lingkup Materi, dan Sumatif Akhir Semester.
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
             </div>
 
         </div>

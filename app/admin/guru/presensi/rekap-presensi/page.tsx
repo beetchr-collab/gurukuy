@@ -13,6 +13,7 @@ import {
     AttendanceRecapStudent,
     getAttendanceStudentRecap,
 } from "@/services/presensi.service";
+import * as XLSX from "xlsx";
 
 export default function ListPresensiPage() {
     const { user, loading: authLoading } = useAuth();
@@ -109,6 +110,70 @@ export default function ListPresensiPage() {
         loadRekap();
 
     }, [tahunAjaran, kelasId]);
+
+    // Download Rekap Presensi Excel
+    const handleDownloadExcel = () => {
+        if (rekap.length === 0) {
+            alert("Tidak ada data rekap presensi untuk diunduh.");
+            return;
+        }
+
+        const dataExcel = rekap.map((item, index) => {
+            const persentase =
+                item.total > 0
+                    ? Math.round((item.hadir / item.total) * 100)
+                    : 0;
+
+            return {
+                No: index + 1,
+                NIS: item.nis,
+                NISN: item.nisn,
+                "Nama Siswa": item.nama,
+                "L/P": item.jk,
+                Hadir: item.hadir,
+                Sakit: item.sakit,
+                Izin: item.izin,
+                Alpha: item.alpha,
+                Total: item.total,
+                "Persentase Kehadiran": `${persentase}%`,
+            };
+        });
+
+        const worksheet = XLSX.utils.json_to_sheet(dataExcel);
+
+        const workbook = XLSX.utils.book_new();
+
+        XLSX.utils.book_append_sheet(
+            workbook,
+            worksheet,
+            "Rekap Presensi"
+        );
+
+        // Lebar kolom
+        worksheet["!cols"] = [
+            { wch: 5 },   // No
+            { wch: 15 },  // NIS
+            { wch: 20 },  // NISN
+            { wch: 30 },  // Nama
+            { wch: 8 },   // L/P
+            { wch: 10 },  // Hadir
+            { wch: 10 },  // Sakit
+            { wch: 10 },  // Izin
+            { wch: 10 },  // Alpha
+            { wch: 10 },  // Total
+            { wch: 25 },  // Persentase
+        ];
+
+        const namaKelas =
+            kelasList.find((item) => item.kelasId === kelasId)?.kelas ||
+            "Kelas";
+
+        const fileName =
+            `Rekap-Presensi-${namaKelas}-${tahunAjaran}.xlsx`
+                .replace(/[\\/:*?"<>|]/g, "-");
+
+        XLSX.writeFile(workbook, fileName);
+    };
 
     return (
         <>
@@ -213,248 +278,263 @@ export default function ListPresensiPage() {
                 </div>
 
                 {/* ================= TABEL REKAP PRESENSI ================= */}
-                <div className="card shadow-sm border-0 rekap-presensi-card">
+                <div className="rekap-print-area">
+                    <div className="card shadow-sm border-0 rekap-presensi-card">
 
-                    <div className="card-header bg-white border-0">
+                        <div className="card-header bg-white border-0">
 
-                        <div className="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                            <div className="d-flex justify-content-between align-items-center flex-wrap gap-2">
 
-                            <div>
+                                <div>
 
-                                <h5 className="fw-bold mb-1">
-                                    <i className="fas fa-clipboard-list text-primary me-2"></i>
-                                    Rekap Presensi Siswa
-                                </h5>
+                                    <h5 className="fw-bold mb-1">
+                                        <i className="fas fa-clipboard-list text-primary me-2"></i>
+                                        Rekap Presensi Siswa
+                                    </h5>
 
-                                <small className="text-muted">
-                                    Rekap kehadiran siswa berdasarkan filter yang dipilih.
-                                </small>
+                                    <small className="text-muted">
+                                        Rekap kehadiran siswa berdasarkan filter yang dipilih.
+                                    </small>
+
+                                </div>
+                                <div className="d-flex align-items-center gap-2">
+                                    {/* Tombol Excel */}
+                                    <button
+                                        type="button"
+                                        className="btn btn-success btn-sm"
+                                        onClick={handleDownloadExcel}
+                                        disabled={rekap.length === 0}
+                                    >
+                                        <i className="fas fa-file-excel"></i>
+                                        Download
+                                    </button>
+
+                                    <span className="badge bg-primary rounded-pill px-3 py-2">
+                                        {rekap.length} Siswa
+                                    </span>
+
+                                </div>
 
                             </div>
 
-                            <span className="badge bg-primary rounded-pill px-3 py-2">
-                                {rekap.length} Siswa
-                            </span>
-
                         </div>
 
-                    </div>
+                        <div className="card-body p-0">
 
-                    <div className="card-body p-0">
+                            <div className="px-3 py-2 border-bottom bg-light small text-muted">
 
-                        <div className="px-3 py-2 border-bottom bg-light small text-muted">
+                                <i className="fas fa-arrows-alt-h me-2"></i>
 
-                            <i className="fas fa-arrows-alt-h me-2"></i>
+                                Geser ke kanan untuk melihat seluruh data.
 
-                            Geser ke kanan untuk melihat seluruh data.
+                            </div>
 
-                        </div>
+                            <div className="table-responsive">
 
-                        <div className="table-responsive">
+                                <table className="table table-hover align-middle mb-0 rekap-presensi-table">
 
-                            <table className="table table-hover align-middle mb-0 rekap-presensi-table">
-
-                                <thead className="table-primary">
-
-                                    <tr>
-
-                                        <th className="text-center">
-                                            No
-                                        </th>
-
-                                        <th>
-                                            NIS
-                                        </th>
-
-                                        <th>
-                                            NISN
-                                        </th>
-
-                                        <th style={{ minWidth: 220 }}>
-                                            Nama Siswa
-                                        </th>
-
-                                        <th style={{ minWidth: 70 }} className="text-center">
-                                            L/P
-                                        </th>
-
-                                        <th className="text-center" style={{ minWidth: 60 }}>
-                                            Hadir
-                                        </th>
-
-                                        <th className="text-center" style={{ minWidth: 60 }}>
-                                            Sakit
-                                        </th>
-
-                                        <th className="text-center" style={{ minWidth: 60 }}>
-                                            Izin
-                                        </th>
-
-                                        <th className="text-center" style={{ minWidth: 60 }}>
-                                            Alpha
-                                        </th>
-
-                                        <th className="text-center" style={{ minWidth: 60 }}>
-                                            Total
-                                        </th>
-                                        <th
-                                            className="text-center"
-                                            style={{ minWidth: 150 }}
-                                        >
-                                            Presentase
-                                        </th>
-                                        <th
-                                            className="text-center"                                                                                  >
-                                            Detail
-                                        </th>
-                                    </tr>
-
-                                </thead>
-
-                                <tbody>
-
-                                    {rekap.length === 0 ? (
+                                    <thead className="table-primary">
 
                                         <tr>
 
-                                            <td
-                                                colSpan={12}
-                                                className="text-center py-5"
+                                            <th className="text-center">
+                                                No
+                                            </th>
+
+                                            <th>
+                                                NIS
+                                            </th>
+
+                                            <th>
+                                                NISN
+                                            </th>
+
+                                            <th style={{ minWidth: 220 }}>
+                                                Nama Siswa
+                                            </th>
+
+                                            <th style={{ minWidth: 70 }} className="text-center">
+                                                L/P
+                                            </th>
+
+                                            <th className="text-center" style={{ minWidth: 60 }}>
+                                                Hadir
+                                            </th>
+
+                                            <th className="text-center" style={{ minWidth: 60 }}>
+                                                Sakit
+                                            </th>
+
+                                            <th className="text-center" style={{ minWidth: 60 }}>
+                                                Izin
+                                            </th>
+
+                                            <th className="text-center" style={{ minWidth: 60 }}>
+                                                Alpha
+                                            </th>
+
+                                            <th className="text-center" style={{ minWidth: 60 }}>
+                                                Total
+                                            </th>
+                                            <th
+                                                className="text-center"
+                                                style={{ minWidth: 150 }}
                                             >
-
-                                                <i className="fas fa-folder-open fa-3x text-secondary mb-3 d-block"></i>
-
-                                                <h6 className="mb-1">
-                                                    Belum Ada Data
-                                                </h6>
-
-                                                <small className="text-muted">
-                                                    Silakan pilih filter terlebih dahulu.
-                                                </small>
-
-                                            </td>
-
+                                                Presentase
+                                            </th>
+                                            <th
+                                                className="text-center"                                                                                  >
+                                                Detail
+                                            </th>
                                         </tr>
 
-                                    ) : (
+                                    </thead>
 
-                                        rekap.map((item, index) => (
+                                    <tbody>
 
-                                            <tr key={item.studentId}>
+                                        {rekap.length === 0 ? (
 
-                                                <td className="text-center fw-semibold">
-                                                    {index + 1}
-                                                </td>
+                                            <tr>
 
-                                                <td>{item.nis}</td>
+                                                <td
+                                                    colSpan={12}
+                                                    className="text-center py-5"
+                                                >
 
-                                                <td>{item.nisn}</td>
+                                                    <i className="fas fa-folder-open fa-3x text-secondary mb-3 d-block"></i>
 
-                                                <td className="fw-semibold">
-                                                    {item.nama}
-                                                </td>
+                                                    <h6 className="mb-1">
+                                                        Belum Ada Data
+                                                    </h6>
 
-                                                <td className="text-center">
-                                                    {item.jk}
-                                                </td>
-
-                                                <td className="text-center">
-                                                    <span className="badge bg-success rounded-pill px-3">
-                                                        {item.hadir}
-                                                    </span>
-                                                </td>
-
-                                                <td className="text-center">
-                                                    <span className="badge bg-info rounded-pill px-3">
-                                                        {item.sakit}
-                                                    </span>
-                                                </td>
-
-                                                <td className="text-center">
-                                                    <span className="badge bg-warning text-dark rounded-pill px-3">
-                                                        {item.izin}
-                                                    </span>
-                                                </td>
-
-                                                <td className="text-center">
-                                                    <span className="badge bg-danger rounded-pill px-3">
-                                                        {item.alpha}
-                                                    </span>
-                                                </td>
-
-                                                <td className="text-center">
-
-                                                    <span className="badge bg-primary rounded-pill px-3 py-2">
-                                                        {item.total}
-                                                    </span>
+                                                    <small className="text-muted">
+                                                        Silakan pilih filter terlebih dahulu.
+                                                    </small>
 
                                                 </td>
-                                                <td className="text-center">
-                                                    {(() => {
-                                                        const presentase =
-                                                            item.total > 0
-                                                                ? Math.round((item.hadir / item.total) * 100)
-                                                                : 0;
 
-                                                        let color = "bg-danger";
-
-                                                        if (presentase >= 90) color = "bg-success";
-                                                        else if (presentase >= 75) color = "bg-primary";
-                                                        else if (presentase >= 60) color = "bg-warning";
-                                                        else color = "bg-danger";
-
-                                                        return (
-                                                            <div style={{ minWidth: 180 }}>
-                                                                <div className="d-flex justify-content-between small fw-semibold mb-1">
-                                                                    <span>{presentase}%</span>
-                                                                    <span>
-                                                                        {item.hadir}/{item.total}
-                                                                    </span>
-                                                                </div>
-
-                                                                <div
-                                                                    className="progress"
-                                                                    style={{
-                                                                        height: 10,
-                                                                        borderRadius: 20,
-                                                                        background: "#e9ecef",
-                                                                    }}
-                                                                >
-                                                                    <div
-                                                                        className={`progress-bar ${color}`}
-                                                                        role="progressbar"
-                                                                        style={{
-                                                                            width: `${presentase}%`,
-                                                                            borderRadius: 20,
-                                                                        }}
-                                                                    />
-                                                                </div>
-                                                            </div>
-                                                        );
-                                                    })()}
-                                                </td>
-                                                <td className="text-center">
-                                                    <Link
-                                                        href={`/admin/guru/presensi/detail-presensi/${item.studentId}?kelasId=${kelasId}&tahunAjaran=${tahunAjaran}`}
-                                                        className="btn btn-outline-info btn-sm"
-                                                    >
-                                                        <i className="fas fa-circle-info"></i>
-                                                    </Link>
-                                                </td>
                                             </tr>
 
-                                        ))
+                                        ) : (
 
-                                    )}
+                                            rekap.map((item, index) => (
 
-                                </tbody>
+                                                <tr key={item.studentId}>
 
-                            </table>
+                                                    <td className="text-center fw-semibold">
+                                                        {index + 1}
+                                                    </td>
+
+                                                    <td>{item.nis}</td>
+
+                                                    <td>{item.nisn}</td>
+
+                                                    <td className="fw-semibold">
+                                                        {item.nama}
+                                                    </td>
+
+                                                    <td className="text-center">
+                                                        {item.jk}
+                                                    </td>
+
+                                                    <td className="text-center">
+                                                        <span className="badge bg-success rounded-pill px-3">
+                                                            {item.hadir}
+                                                        </span>
+                                                    </td>
+
+                                                    <td className="text-center">
+                                                        <span className="badge bg-info rounded-pill px-3">
+                                                            {item.sakit}
+                                                        </span>
+                                                    </td>
+
+                                                    <td className="text-center">
+                                                        <span className="badge bg-warning text-dark rounded-pill px-3">
+                                                            {item.izin}
+                                                        </span>
+                                                    </td>
+
+                                                    <td className="text-center">
+                                                        <span className="badge bg-danger rounded-pill px-3">
+                                                            {item.alpha}
+                                                        </span>
+                                                    </td>
+
+                                                    <td className="text-center">
+
+                                                        <span className="badge bg-primary rounded-pill px-3 py-2">
+                                                            {item.total}
+                                                        </span>
+
+                                                    </td>
+                                                    <td className="text-center">
+                                                        {(() => {
+                                                            const presentase =
+                                                                item.total > 0
+                                                                    ? Math.round((item.hadir / item.total) * 100)
+                                                                    : 0;
+
+                                                            let color = "bg-danger";
+
+                                                            if (presentase >= 90) color = "bg-success";
+                                                            else if (presentase >= 75) color = "bg-primary";
+                                                            else if (presentase >= 60) color = "bg-warning";
+                                                            else color = "bg-danger";
+
+                                                            return (
+                                                                <div style={{ minWidth: 180 }}>
+                                                                    <div className="d-flex justify-content-between small fw-semibold mb-1">
+                                                                        <span>{presentase}%</span>
+                                                                        <span>
+                                                                            {item.hadir}/{item.total}
+                                                                        </span>
+                                                                    </div>
+
+                                                                    <div
+                                                                        className="progress"
+                                                                        style={{
+                                                                            height: 10,
+                                                                            borderRadius: 20,
+                                                                            background: "#e9ecef",
+                                                                        }}
+                                                                    >
+                                                                        <div
+                                                                            className={`progress-bar ${color}`}
+                                                                            role="progressbar"
+                                                                            style={{
+                                                                                width: `${presentase}%`,
+                                                                                borderRadius: 20,
+                                                                            }}
+                                                                        />
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })()}
+                                                    </td>
+                                                    <td className="text-center">
+                                                        <Link
+                                                            href={`/admin/guru/presensi/detail-presensi/${item.studentId}?kelasId=${kelasId}&tahunAjaran=${tahunAjaran}`}
+                                                            className="btn btn-outline-info btn-sm"
+                                                        >
+                                                            <i className="fas fa-circle-info"></i>
+                                                        </Link>
+                                                    </td>
+                                                </tr>
+
+                                            ))
+
+                                        )}
+
+                                    </tbody>
+
+                                </table>
+
+                            </div>
 
                         </div>
 
                     </div>
-
                 </div>
             </div >
         </>

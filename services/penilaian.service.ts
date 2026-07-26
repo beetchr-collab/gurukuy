@@ -31,6 +31,7 @@ export interface PenilaianData {
 
     tanggalPenilaian: string;
     tahunAjaran: string;
+    createdAt?: any;
 }
 
 export interface NilaiSiswa {
@@ -299,6 +300,7 @@ export interface RekapNilai {
     topik: string;
     subtopik: string;
     jenisPenilaian: string;
+    createdAt?: any;
     nilai: NilaiSiswa[];
 }
 
@@ -342,6 +344,7 @@ export async function getPenilaianRekap(
             topik: data.topik,
             subtopik: data.subtopik,
             jenisPenilaian: data.jenisPenilaian,
+            createdAt: data.createdAt,
             nilai: nilaiSnapshot.docs.map((n) => ({
                 id: n.id,
                 ...(n.data() as Omit<NilaiSiswa, "id">),
@@ -382,10 +385,12 @@ export async function getPenilaianRekap(
         const jenisA = getUrutanJenis(a.jenisPenilaian);
         const jenisB = getUrutanJenis(b.jenisPenilaian);
 
+        // 1. Urutkan berdasarkan jenis penilaian
         if (jenisA !== jenisB) {
             return jenisA - jenisB;
         }
 
+        // 2. Urutkan berdasarkan topik
         const topikCompare = a.topik.localeCompare(
             b.topik,
             "id",
@@ -398,7 +403,12 @@ export async function getPenilaianRekap(
             return topikCompare;
         }
 
-        return nomorTP(a.subtopik) - nomorTP(b.subtopik);
+        // 3. Jika topiknya sama,
+        // urutkan subtopik berdasarkan waktu dibuat/input
+        const waktuA = a.createdAt?.toMillis?.() ?? 0;
+        const waktuB = b.createdAt?.toMillis?.() ?? 0;
+
+        return waktuA - waktuB;
 
     });
 
