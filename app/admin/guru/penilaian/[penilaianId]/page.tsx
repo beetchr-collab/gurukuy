@@ -8,18 +8,27 @@ import {
     getNilaiByPenilaian,
     saveNilai,
     NilaiSiswa,
+    updatePenilaian,
 } from "@/services/penilaian.service";
+import { useModal } from "@/components/modals/useModal";
 
 export default function InputNilaiPage() {
     const params = useParams();
     const penilaianId = params.penilaianId as string;
     const router = useRouter();
-
+    const { showModal } = useModal();
     const [penilaian, setPenilaian] = useState<any>(null);
 
     const [students, setStudents] = useState<NilaiSiswa[]>([]);
 
     const [keyword, setKeyword] = useState("");
+    const [showEditModal, setShowEditModal] = useState(false); // Update Informasi Penilaian
+    const [formEdit, setFormEdit] = useState({
+        namaKelas: "",
+        topik: "",
+        subtopik: "",
+        kkm: 75,
+    }); // Update Informasi Penilaian
 
     const [loading, setLoading] = useState(true);
 
@@ -92,346 +101,556 @@ export default function InputNilaiPage() {
         );
     }
 
+    // Update Informasi Penilaian
+    const openEditModal = () => {
+        setFormEdit({
+            namaKelas: penilaian.namaKelas,
+            topik: penilaian.topik,
+            subtopik: penilaian.subtopik,
+            kkm: penilaian.kkm,
+        });
+
+        setShowEditModal(true);
+    };
+
+    const handleUpdatePenilaian = async () => {
+        try {
+            await updatePenilaian(penilaianId, formEdit);
+
+            setPenilaian({
+                ...penilaian,
+                ...formEdit,
+            });
+
+            setShowEditModal(false);
+
+            showModal({
+                type: "success",
+                title: "Berhasil",
+                message: "Informasi penilaian berhasil diperbarui."
+            });
+
+        } catch (error) {
+            console.error(error);
+
+            showModal({
+                type: "error",
+                title: "Gagal",
+                message: "Informasi penilaian gagal diperbarui."
+            });
+        }
+    };
+
     return (
-        <div className="container-fluid py-2">
+        <>
+            <div className="container-fluid py-2">
 
-            {/* Header */}
+                {/* Header */}
 
-            <div className="mb-4">
+                <div className="mb-4">
 
-                <h3 className="h3 font-weight-bold">
-                    Daftar Nilai
-                </h3>
-            </div>
-
-            {/* Informasi Penilaian */}
-            <div className="card shadow-sm border-0 mb-4 infonilai-card">
-
-                <div className="card-header bg-white border-0 pb-0">
-                    <h5 className="fw-bold mb-0">
-                        <i className="fas fa-clipboard-check text-primary me-2"></i>
-                        Informasi Penilaian
-                    </h5>
+                    <h3 className="h3 font-weight-bold">
+                        Daftar Nilai
+                    </h3>
                 </div>
 
-                <div className="card-body">
+                {/* Informasi Penilaian */}
+                <div className="card shadow-sm border-0 mb-4 infonilai-card">
+                    {/* Header */}
+                    <div className="card-header bg-white border-0 py-3">
+                        <div className="d-flex justify-content-between align-items-center flex-wrap gap-2">
 
-                    <div className="row g-3">
+                            <div>
+                                <h5 className="fw-bold mb-1">
+                                    <i className="fas fa-clipboard-check text-primary me-2"></i>
+                                    Informasi Penilaian
+                                </h5>
 
-                        <div className="col-12 col-sm-6 col-lg-3">
-                            <div className="infonilai-info-item">
-                                <div className="infonilai-icon bg-primary">
-                                    <i className="fas fa-book"></i>
-                                </div>
+                                <small className="text-muted">
+                                    Informasi dasar penilaian yang digunakan untuk input nilai siswa.
+                                </small>
+                            </div>
 
-                                <div>
-                                    <small className="text-muted d-block">
-                                        Topik Penilaian
-                                    </small>
+                            <button
+                                type="button"
+                                className="btn btn-warning btn-sm shadow-sm d-flex align-items-center"
+                                onClick={openEditModal}
+                            >
+                                <i className="fas fa-edit me-2"></i>
+                                Edit Informasi
+                            </button>
 
-                                    <div className="fw-bold">
-                                        {penilaian?.topik ?? "-"}
+                        </div>
+                    </div>
+
+                    <div className="card-body">
+
+                        <div className="row g-3">
+
+                            <div className="col-12 col-sm-6 col-lg-3">
+                                <div className="infonilai-info-item">
+                                    <div className="infonilai-icon bg-primary">
+                                        <i className="fas fa-book"></i>
+                                    </div>
+
+                                    <div>
+                                        <small className="text-muted d-block">
+                                            Sub Topik Penilaian
+                                        </small>
+
+                                        <div className="fw-bold">
+                                            {penilaian?.subtopik ?? "-"}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <div className="col-12 col-sm-6 col-lg-3">
-                            <div className="infonilai-info-item">
-                                <div className="infonilai-icon bg-success">
-                                    <i className="fas fa-users"></i>
-                                </div>
+                            <div className="col-12 col-sm-6 col-lg-3">
+                                <div className="infonilai-info-item">
+                                    <div className="infonilai-icon bg-success">
+                                        <i className="fas fa-users"></i>
+                                    </div>
 
-                                <div>
-                                    <small className="text-muted d-block">
-                                        Kelas
-                                    </small>
+                                    <div>
+                                        <small className="text-muted d-block">
+                                            Kelas
+                                        </small>
 
-                                    <span className="badge bg-success">
-                                        {penilaian?.namaKelas ?? "-"}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="col-12 col-sm-6 col-lg-3">
-                            <div className="infonilai-info-item">
-                                <div className="infonilai-icon bg-warning text-dark">
-                                    <i className="fas fa-book-open"></i>
-                                </div>
-
-                                <div>
-                                    <small className="text-muted d-block">
-                                        Mata Pelajaran
-                                    </small>
-
-                                    <span className="badge bg-primary">
-                                        {penilaian?.mapel ?? "-"}
-                                    </span>
+                                        <span className="badge bg-success">
+                                            {penilaian?.namaKelas ?? "-"}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <div className="col-12 col-sm-6 col-lg-3">
-                            <div className="infonilai-info-item">
-                                <div className="infonilai-icon bg-danger">
-                                    <i className="fas fa-award"></i>
-                                </div>
+                            <div className="col-12 col-sm-6 col-lg-3">
+                                <div className="infonilai-info-item">
+                                    <div className="infonilai-icon bg-warning text-dark">
+                                        <i className="fas fa-book-open"></i>
+                                    </div>
 
-                                <div>
-                                    <small className="text-muted d-block">
-                                        KKM
-                                    </small>
+                                    <div>
+                                        <small className="text-muted d-block">
+                                            Mata Pelajaran
+                                        </small>
 
-                                    <span className="badge bg-danger fs-6">
-                                        {penilaian?.kkm ?? "-"}
-                                    </span>
+                                        <span className="badge bg-primary">
+                                            {penilaian?.mapel ?? "-"}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
+                            <div className="col-12 col-sm-6 col-lg-3">
+                                <div className="infonilai-info-item">
+                                    <div className="infonilai-icon bg-danger">
+                                        <i className="fas fa-award"></i>
+                                    </div>
+
+                                    <div>
+                                        <small className="text-muted d-block">
+                                            KKM
+                                        </small>
+
+                                        <span className="badge bg-danger fs-6">
+                                            {penilaian?.kkm ?? "-"}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
                     </div>
 
                 </div>
 
-            </div>
-            {/* Progress */}
+                {/* Progress */}
+                <div className="card shadow-sm mb-4">
 
-            <div className="card shadow-sm mb-4">
+                    <div className="card-body">
 
-                <div className="card-body">
+                        <div className="d-flex justify-content-between mb-2">
 
-                    <div className="d-flex justify-content-between mb-2">
+                            <strong>Progress Input Nilai</strong>
 
-                        <strong>Progress Input Nilai</strong>
+                            <span>
+                                {selesai} / {total} siswa
+                            </span>
 
-                        <span>
-                            {selesai} / {total} siswa
-                        </span>
+                        </div>
 
-                    </div>
-
-                    <div
-                        className="progress"
-                        style={{
-                            height: 10,
-                        }}
-                    >
                         <div
-                            className="progress-bar"
+                            className="progress"
                             style={{
-                                width: `${progress}%`,
+                                height: 10,
                             }}
-                        ></div>
-                    </div>
+                        >
+                            <div
+                                className="progress-bar"
+                                style={{
+                                    width: `${progress}%`,
+                                }}
+                            ></div>
+                        </div>
 
-                    <div className="text-right mt-2 font-weight-bold">
-                        {progress}%
-                    </div>
-
-                </div>
-
-            </div>
-
-            {/* Tabel */}
-
-            <div className="card shadow-sm border-0">
-
-                {/* Header */}
-                <div className="card-header bg-white border-bottom">
-
-                    <div className="d-flex justify-content-between align-items-center flex-wrap gap-2">
-
-                        <h3 className="card-title mb-0 fw-semibold">
-                            <i className="fas fa-user-graduate text-primary me-2"></i>
-                            Daftar Nilai Siswa
-                        </h3>
-
-                        <div style={{ maxWidth: 320, width: "100%" }}>
-                            <div className="input-group">
-
-                                <span className="input-group-text bg-white">
-                                    <i className="fas fa-search"></i>
-                                </span>
-
-                                <input
-                                    type="text"
-                                    className="form-control"
-                                    placeholder="Cari siswa..."
-                                    value={keyword}
-                                    onChange={(e) => setKeyword(e.target.value)}
-                                />
-
-                            </div>
+                        <div className="text-right mt-2 font-weight-bold">
+                            {progress}%
                         </div>
 
                     </div>
 
                 </div>
 
-                {/* Table */}
-                <div className="table-responsive">
+                {/* Tabel */}
 
-                    <table className="table table-hover table-striped align-middle mb-0">
+                <div className="card shadow-sm border-0">
 
-                        <thead className="table-light">
+                    {/* Header */}
+                    <div className="card-header bg-white border-bottom">
 
-                            <tr>
-                                <th className="text-center" style={{ width: 60 }}>No</th>
+                        <div className="d-flex justify-content-between align-items-center flex-wrap gap-2">
 
-                                <th>NIS</th>
+                            <h3 className="card-title mb-0 fw-semibold">
+                                <i className="fas fa-user-graduate text-primary me-2"></i>
+                                Daftar Nilai Siswa
+                            </h3>
 
-                                <th>NISN</th>
+                            <div style={{ maxWidth: 320, width: "100%" }}>
+                                <div className="input-group">
 
-                                <th style={{ minWidth: 250 }}>Nama Siswa</th>
+                                    <span className="input-group-text bg-white">
+                                        <i className="fas fa-search"></i>
+                                    </span>
 
-                                <th className="text-center" style={{ width: 80 }}>
-                                    JK
-                                </th>
+                                    <input
+                                        type="text"
+                                        className="form-control"
+                                        placeholder="Cari siswa..."
+                                        value={keyword}
+                                        onChange={(e) => setKeyword(e.target.value)}
+                                    />
 
-                                <th className="text-center" style={{ width: 140 }}>
-                                    Nilai
-                                </th>
-                                <th className="text-center" style={{ width: 180 }}>
-                                    Keterangan
-                                </th>
-                            </tr>
+                                </div>
+                            </div>
 
-                        </thead>
+                        </div>
 
-                        <tbody>
+                    </div>
 
-                            {filtered.length === 0 ? (
+                    {/* Table */}
+                    <div className="table-responsive">
+
+                        <table className="table table-hover table-striped align-middle mb-0">
+
+                            <thead className="table-light">
 
                                 <tr>
+                                    <th className="text-center" style={{ width: 60 }}>No</th>
 
-                                    <td
-                                        colSpan={6}
-                                        className="text-center py-5 text-muted"
-                                    >
-                                        <i className="fas fa-users-slash fa-2x mb-3 d-block"></i>
+                                    <th>NIS</th>
 
-                                        Tidak ada data siswa
-                                    </td>
+                                    <th>NISN</th>
 
+                                    <th style={{ minWidth: 250 }}>Nama Siswa</th>
+
+                                    <th className="text-center" style={{ width: 80 }}>
+                                        JK
+                                    </th>
+
+                                    <th className="text-center" style={{ width: 140 }}>
+                                        Nilai
+                                    </th>
+                                    <th className="text-center" style={{ width: 180 }}>
+                                        Keterangan
+                                    </th>
                                 </tr>
 
-                            ) : (
+                            </thead>
 
-                                filtered.map((item, index) => (
+                            <tbody>
 
-                                    <tr key={item.studentId}>
+                                {filtered.length === 0 ? (
 
-                                        <td className="text-center">
-                                            {index + 1}
-                                        </td>
+                                    <tr>
 
-                                        <td>{item.nis}</td>
+                                        <td
+                                            colSpan={6}
+                                            className="text-center py-5 text-muted"
+                                        >
+                                            <i className="fas fa-users-slash fa-2x mb-3 d-block"></i>
 
-                                        <td>{item.nisn}</td>
-
-                                        <td>
-                                            <div className="fw-semibold">
-                                                {item.nama}
-                                            </div>
-                                        </td>
-
-                                        <td className="text-center">
-
-                                            <span className={`badge ${item.jk === "L"
-                                                ? "bg-primary"
-                                                : "bg-danger"
-                                                }`}>
-                                                {item.jk}
-                                            </span>
-
-                                        </td>
-
-                                        <td>
-
-                                            <input
-                                                type="number"
-                                                className="form-control text-center"
-                                                min={0}
-                                                max={100}
-                                                style={{ width: "80px", minWidth: "80px" }}
-                                                value={item.nilai}
-                                                onChange={(e) =>
-                                                    handleChange(
-                                                        item.studentId,
-                                                        e.target.value
-                                                    )
-                                                }
-                                            />
-
-                                        </td>
-                                        <td className="text-center">
-                                            {item.nilai === "" ? (
-                                                <span className="badge bg-secondary">
-                                                    Belum Dinilai
-                                                </span>
-                                            ) : Number(item.nilai) >= Number(penilaian?.kkm) ? (
-                                                <span className="badge bg-success">
-                                                    Tuntas
-                                                </span>
-                                            ) : (
-                                                <div>
-                                                    <span className="badge bg-danger">
-                                                        Belum Tuntas
-                                                    </span>
-                                                    <div className="small text-danger mt-1">
-                                                        Kurang {Number(penilaian?.kkm) - Number(item.nilai)} poin
-                                                    </div>
-                                                </div>
-                                            )}
+                                            Tidak ada data siswa
                                         </td>
 
                                     </tr>
 
-                                ))
+                                ) : (
 
-                            )}
+                                    filtered.map((item, index) => (
 
-                        </tbody>
+                                        <tr key={item.studentId}>
 
-                    </table>
+                                            <td className="text-center">
+                                                {index + 1}
+                                            </td>
 
-                </div>
+                                            <td>{item.nis}</td>
 
-                {/* Footer */}
-                <div className="card-footer bg-white">
+                                            <td>{item.nisn}</td>
 
-                    <div className="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                            <td>
+                                                <div className="fw-semibold">
+                                                    {item.nama}
+                                                </div>
+                                            </td>
 
-                        <small className="text-muted">
-                            Total Siswa : <strong>{filtered.length}</strong>
-                        </small>
+                                            <td className="text-center">
 
-                        <div className="d-flex gap-2 flex-wrap">
+                                                <span className={`badge ${item.jk === "L"
+                                                    ? "bg-primary"
+                                                    : "bg-danger"
+                                                    }`}>
+                                                    {item.jk}
+                                                </span>
 
-                            <button
-                                className="btn btn-outline-secondary"
-                                onClick={() => router.back()}
-                            >
-                                <i className="fas fa-arrow-left me-2"></i>
-                                Kembali
-                            </button>
+                                            </td>
 
-                            <button
-                                className="btn btn-primary"
-                                onClick={handleSave}
-                            >
-                                <i className="fas fa-save me-2"></i>
-                                Simpan Nilai
-                            </button>
+                                            <td>
+
+                                                <input
+                                                    type="number"
+                                                    className="form-control text-center"
+                                                    min={0}
+                                                    max={100}
+                                                    style={{ width: "80px", minWidth: "80px" }}
+                                                    value={item.nilai}
+                                                    onChange={(e) =>
+                                                        handleChange(
+                                                            item.studentId,
+                                                            e.target.value
+                                                        )
+                                                    }
+                                                />
+
+                                            </td>
+                                            <td className="text-center">
+                                                {item.nilai === "" ? (
+                                                    <span className="badge bg-secondary">
+                                                        Belum Dinilai
+                                                    </span>
+                                                ) : Number(item.nilai) >= Number(penilaian?.kkm) ? (
+                                                    <span className="badge bg-success">
+                                                        Tuntas
+                                                    </span>
+                                                ) : (
+                                                    <div>
+                                                        <span className="badge bg-danger">
+                                                            Belum Tuntas
+                                                        </span>
+                                                        <div className="small text-danger mt-1">
+                                                            Kurang {Number(penilaian?.kkm) - Number(item.nilai)} poin
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </td>
+
+                                        </tr>
+
+                                    ))
+
+                                )}
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                    {/* Footer */}
+                    <div className="card-footer bg-white">
+
+                        <div className="d-flex justify-content-between align-items-center flex-wrap gap-2">
+
+                            <small className="text-muted">
+                                Total Siswa : <strong>{filtered.length}</strong>
+                            </small>
+
+                            <div className="d-flex gap-2 flex-wrap">
+
+                                <button
+                                    className="btn btn-outline-secondary"
+                                    onClick={() => router.back()}
+                                >
+                                    <i className="fas fa-arrow-left me-2"></i>
+                                    Kembali
+                                </button>
+
+                                <button
+                                    className="btn btn-primary"
+                                    onClick={handleSave}
+                                >
+                                    <i className="fas fa-save me-2"></i>
+                                    Simpan Nilai
+                                </button>
+
+                            </div>
 
                         </div>
 
                     </div>
 
                 </div>
-
             </div>
-        </div>
+
+            {/* Modal Edit Informasi Penilaian */}
+            {showEditModal && (
+                <>
+                    <div
+                        className="modal fade show"
+                        style={{ display: "block", backgroundColor: "rgba(0,0,0,.5)" }}
+                        tabIndex={-1}
+                    >
+                        <div className="modal-dialog modal-lg modal-dialog-centered">
+                            <div className="modal-content border-0 shadow-lg">
+
+                                {/* Header */}
+                                <div className="modal-header bg-warning">
+                                    <h5 className="modal-title fw-bold text-dark">
+                                        <i className="fas fa-edit me-2"></i>
+                                        Edit Informasi Penilaian
+                                    </h5>
+
+                                    <button
+                                        type="button"
+                                        className="btn-close"
+                                        onClick={() => setShowEditModal(false)}
+                                    />
+                                </div>
+
+                                {/* Body */}
+                                <div className="modal-body">
+
+                                    <div className="row g-3">
+
+                                        {/* Mata Pelajaran */}
+                                        <div className="col-md-6">
+                                            <label className="form-label fw-semibold">
+                                                Mata Pelajaran
+                                            </label>
+
+                                            <input
+                                                type="text"
+                                                className="form-control"
+                                                value={penilaian?.mapel ?? ""}
+                                                readOnly
+                                            />
+                                        </div>
+
+                                        {/* Kelas */}
+                                        <div className="col-md-6">
+                                            <label className="form-label fw-semibold">
+                                                Kelas
+                                            </label>
+
+                                            <input
+                                                type="text"
+                                                className="form-control"
+                                                value={penilaian?.namaKelas ?? ""}
+                                                readOnly
+                                            />
+                                        </div>
+                                        {/* Topik */}
+                                        <div className="col-md-12">
+                                            <label className="form-label fw-semibold">
+                                                Topik
+                                            </label>
+
+                                            <input
+                                                type="text"
+                                                className="form-control"
+                                                value={formEdit.topik}
+                                                onChange={(e) =>
+                                                    setFormEdit({
+                                                        ...formEdit,
+                                                        topik: e.target.value,
+                                                    })
+                                                }
+                                            />
+                                        </div>
+
+                                        {/* Subtopik */}
+                                        <div className="col-md-12">
+                                            <label className="form-label fw-semibold">
+                                                Sub Topik
+                                            </label>
+
+                                            <input
+                                                type="text"
+                                                className="form-control"
+                                                value={formEdit.subtopik}
+                                                onChange={(e) =>
+                                                    setFormEdit({
+                                                        ...formEdit,
+                                                        subtopik: e.target.value,
+                                                    })
+                                                }
+                                            />
+                                        </div>
+
+                                        {/* KKM */}
+                                        <div className="col-md-4">
+                                            <label className="form-label fw-semibold">
+                                                KKM
+                                            </label>
+
+                                            <input
+                                                type="number"
+                                                min={0}
+                                                max={100}
+                                                className="form-control"
+                                                value={formEdit.kkm}
+                                                onChange={(e) =>
+                                                    setFormEdit({
+                                                        ...formEdit,
+                                                        kkm: Number(e.target.value),
+                                                    })
+                                                }
+                                            />
+                                        </div>
+
+                                    </div>
+                                </div>
+
+                                {/* Footer */}
+                                <div className="modal-footer">
+
+                                    <button
+                                        className="btn btn-secondary"
+                                        onClick={() => setShowEditModal(false)}
+                                    >
+                                        <i className="fas fa-times me-2"></i>
+                                        Batal
+                                    </button>
+
+                                    <button
+                                        className="btn btn-primary"
+                                        onClick={handleUpdatePenilaian}
+                                    >
+                                        <i className="fas fa-save me-2"></i>
+                                        Simpan Perubahan
+                                    </button>
+
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Backdrop */}
+                    <div className="modal-backdrop fade show"></div>
+                </>
+            )}
+        </>
+
     );
 }

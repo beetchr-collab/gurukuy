@@ -32,10 +32,10 @@ export default function ListPresensiPage() {
         const loadData = async () => {
             try {
                 const result = await getKepalaSekolahBySchool(schoolId);
-                console.log("School ID :", schoolId);
-                console.log("Kepala Sekolah :", result);
-                if (result) {
+
+                if (result.length > 0) {
                     setKepalaSekolah(result);
+                    setTahunAjaran(result[0].tahunAjaran);
                 }
             } catch (err) {
                 console.error(err);
@@ -201,7 +201,7 @@ export default function ListPresensiPage() {
                 </div>
 
                 {/* ================= FILTER PRESENSI ================= */}
-                <div className="card shadow-sm border-0 mb-4 filterpresensi-card">
+                <div className="card card-primary card-outline mb-2">
 
                     <div className="card-header bg-white border-0 pb-0">
                         <h5 className="fw-bold mb-1">
@@ -227,7 +227,7 @@ export default function ListPresensiPage() {
                                 </label>
 
                                 <select
-                                    className="form-select filterpresensi-select"
+                                    className="form-select"
                                     value={tahunAjaran}
                                     onChange={(e) => setTahunAjaran(e.target.value)}
                                 >
@@ -254,7 +254,7 @@ export default function ListPresensiPage() {
                                 </label>
 
                                 <select
-                                    className="form-select filterpresensi-select"
+                                    className="form-select"
                                     value={kelasId}
                                     onChange={(e) => setKelasId(e.target.value)}
                                 >

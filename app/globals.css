@@ -622,67 +622,67 @@ body {
 
 /* Tombol Presensi */
 .btn-presensi {
-    width: 25px;
-    height: 25px;
+  width: 25px;
+  height: 25px;
 
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 
-    padding: 0;
-    margin: 0;
+  padding: 0;
+  margin: 0;
 
-    border-radius: 10px;
-    font-weight: 700;
-    font-size: 0.95rem;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 0.95rem;
 
-    transition: all .2s ease;
+  transition: all .2s ease;
 }
 
 /* Hover */
 .btn-presensi:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 .25rem .5rem rgba(0,0,0,.15);
+  transform: translateY(-2px);
+  box-shadow: 0 .25rem .5rem rgba(0, 0, 0, .15);
 }
 
 /* Saat dipilih */
-.btn-check:checked + .btn-outline-success {
-    background: #28a745;
-    border-color: #28a745;
-    color: #fff;
+.btn-check:checked+.btn-outline-success {
+  background: #28a745;
+  border-color: #28a745;
+  color: #fff;
 }
 
-.btn-check:checked + .btn-outline-primary {
-    background: #007bff;
-    border-color: #007bff;
-    color: #fff;
+.btn-check:checked+.btn-outline-primary {
+  background: #007bff;
+  border-color: #007bff;
+  color: #fff;
 }
 
-.btn-check:checked + .btn-outline-warning {
-    background: #ffc107;
-    border-color: #ffc107;
-    color: #212529;
+.btn-check:checked+.btn-outline-warning {
+  background: #ffc107;
+  border-color: #ffc107;
+  color: #212529;
 }
 
-.btn-check:checked + .btn-outline-danger {
-    background: #dc3545;
-    border-color: #dc3545;
-    color: #fff;
+.btn-check:checked+.btn-outline-danger {
+  background: #dc3545;
+  border-color: #dc3545;
+  color: #fff;
 }
 
 /* Fokus */
-.btn-check:focus + .btn {
-    box-shadow: none;
+.btn-check:focus+.btn {
+  box-shadow: none;
 }
 
 /* Responsive */
 @media (max-width: 768px) {
 
-    .btn-presensi {
-        width: 38px;
-        height: 38px;
-        font-size: .85rem;
-    }
+  .btn-presensi {
+    width: 38px;
+    height: 38px;
+    font-size: .85rem;
+  }
 
 }
 
@@ -882,76 +882,119 @@ body {
 =========================== */
 
 .infonilai-card {
-    border-radius: 16px;
-    overflow: hidden;
+  border-radius: 16px;
+  overflow: hidden;
 }
 
 .infonilai-info-item {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 14px;
-    border: 1px solid #eef1f4;
-    border-radius: 14px;
-    background: #fff;
-    transition: all .25s ease;
-    height: 100%;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfcfd 100%);
+  border: 1px solid rgba(13, 110, 253, 0.08);
+  border-radius: 18px;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.05);
+  transition: all .3s ease;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.infonilai-info-item::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 5px;
+  height: 100%;
+  background: linear-gradient(180deg, #0d6efd, #6f42c1);
+  opacity: 0;
+  transition: .3s;
 }
 
 .infonilai-info-item:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 18px rgba(0, 0, 0, .08);
-    border-color: #dbeafe;
+  transform: translateY(-6px);
+  box-shadow: 0 12px 28px rgba(13, 110, 253, .12);
+  border-color: rgba(13, 110, 253, .18);
+}
+
+.infonilai-info-item:hover::before {
+  opacity: 1;
 }
 
 .infonilai-icon {
-    width: 52px;
-    height: 52px;
-    border-radius: 14px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    color: #fff;
-    font-size: 20px;
-    flex-shrink: 0;
-    box-shadow: 0 4px 10px rgba(0,0,0,.08);
+  width: 58px;
+  height: 58px;
+  min-width: 58px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 22px;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, .12);
+}
+
+.infonilai-icon.bg-primary {
+  background: linear-gradient(135deg, #0d6efd, #4f8dfd) !important;
+}
+
+.infonilai-icon.bg-success {
+  background: linear-gradient(135deg, #198754, #34c38f) !important;
+}
+
+.infonilai-icon.bg-warning {
+  background: linear-gradient(135deg, #ffc107, #ffda6a) !important;
+  color: #212529 !important;
+}
+
+.infonilai-icon.bg-danger {
+  background: linear-gradient(135deg, #dc3545, #ff6b6b) !important;
 }
 
 .infonilai-info-item small {
-    font-size: .78rem;
-    color: #6c757d;
+  display: block;
+  font-size: .75rem;
+  font-weight: 600;
+  color: #6c757d;
+  margin-bottom: 4px;
+  letter-spacing: .3px;
+  text-transform: uppercase;
 }
 
 .infonilai-info-item .fw-bold {
-    font-size: .95rem;
-    line-height: 1.3;
+  font-size: 1rem;
+  color: #212529;
+  line-height: 1.4;
 }
 
 .infonilai-info-item .badge {
-    font-size: .75rem;
-    font-weight: 600;
-    padding: .45rem .8rem;
-    border-radius: 50rem;
+  font-size: .82rem;
+  font-weight: 600;
+  border-radius: 30px;
+  padding: .45rem .9rem;
+  letter-spacing: .3px;
 }
 
 /* Responsive */
 
 @media (max-width: 768px) {
 
-    .infonilai-info-item {
-        padding: 12px;
-        gap: 12px;
-    }
+  .infonilai-info-item {
+    padding: 12px;
+    gap: 12px;
+  }
 
-    .infonilai-icon {
-        width: 46px;
-        height: 46px;
-        font-size: 18px;
-    }
+  .infonilai-icon {
+    width: 46px;
+    height: 46px;
+    font-size: 18px;
+  }
 
-    .infonilai-info-item .fw-bold {
-        font-size: .9rem;
-    }
+  .infonilai-info-item .fw-bold {
+    font-size: .9rem;
+  }
 
 }
 
@@ -959,39 +1002,39 @@ body {
    Filter Rekap Penilaian
 =========================== */
 
-.filter-rekap-card{
-    border-radius:16px;
+.filter-rekap-card {
+  border-radius: 16px;
 }
 
-.filter-rekap-card .card-body{
-    padding:1.5rem;
+.filter-rekap-card .card-body {
+  padding: 1.5rem;
 }
 
-.filter-select{
-    border-radius:12px;
-    min-height:46px;
-    transition:.25s ease;
+.filter-select {
+  border-radius: 12px;
+  min-height: 46px;
+  transition: .25s ease;
 }
 
-.filter-select:focus{
-    border-color:#0d6efd;
-    box-shadow:0 0 0 .2rem rgba(13,110,253,.15);
+.filter-select:focus {
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 .2rem rgba(13, 110, 253, .15);
 }
 
-.filter-rekap-card .form-label{
-    margin-bottom:.45rem;
-    font-size:.9rem;
+.filter-rekap-card .form-label {
+  margin-bottom: .45rem;
+  font-size: .9rem;
 }
 
-@media (max-width:768px){
+@media (max-width:768px) {
 
-    .filter-rekap-card .card-body{
-        padding:1rem;
-    }
+  .filter-rekap-card .card-body {
+    padding: 1rem;
+  }
 
-    .filter-select{
-        min-height:44px;
-    }
+  .filter-select {
+    min-height: 44px;
+  }
 
 }
 
@@ -999,112 +1042,112 @@ body {
    Statistik Presensi
 ========================== */
 
-.statpresensi-col{
-    min-width:0;
+.statpresensi-col {
+  min-width: 0;
 }
 
-.statpresensi-card{
-    display:flex;
-    align-items:center;
-    gap:14px;
-    padding:16px;
-    background:#fff;
-    border:1px solid #eef2f7;
-    border-radius:16px;
-    height:100%;
-    transition:all .25s ease;
-    box-shadow:0 2px 10px rgba(0,0,0,.04);
+.statpresensi-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  background: #fff;
+  border: 1px solid #eef2f7;
+  border-radius: 16px;
+  height: 100%;
+  transition: all .25s ease;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, .04);
 }
 
-.statpresensi-card:hover{
-    transform:translateY(-3px);
-    box-shadow:0 10px 24px rgba(0,0,0,.08);
+.statpresensi-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, .08);
 }
 
-.statpresensi-icon{
-    width:54px;
-    height:54px;
-    border-radius:15px;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    color:#fff;
-    font-size:22px;
-    flex-shrink:0;
+.statpresensi-icon {
+  width: 54px;
+  height: 54px;
+  border-radius: 15px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #fff;
+  font-size: 22px;
+  flex-shrink: 0;
 }
 
-.statpresensi-content{
-    min-width:0;
+.statpresensi-content {
+  min-width: 0;
 }
 
-.statpresensi-content h4{
-    margin:0;
-    font-size:1.55rem;
-    font-weight:700;
-    color:#212529;
+.statpresensi-content h4 {
+  margin: 0;
+  font-size: 1.55rem;
+  font-weight: 700;
+  color: #212529;
 }
 
-.statpresensi-content span{
-    display:block;
-    margin-top:2px;
-    color:#6c757d;
-    font-size:.86rem;
-    white-space:nowrap;
+.statpresensi-content span {
+  display: block;
+  margin-top: 2px;
+  color: #6c757d;
+  font-size: .86rem;
+  white-space: nowrap;
 }
 
 /* ========= Warna ========= */
 
-.statpresensi-primary .statpresensi-icon{
-    background:linear-gradient(135deg,#0d6efd,#4b8df8);
+.statpresensi-primary .statpresensi-icon {
+  background: linear-gradient(135deg, #0d6efd, #4b8df8);
 }
 
-.statpresensi-success .statpresensi-icon{
-    background:linear-gradient(135deg,#198754,#34c759);
+.statpresensi-success .statpresensi-icon {
+  background: linear-gradient(135deg, #198754, #34c759);
 }
 
-.statpresensi-warning .statpresensi-icon{
-    background:linear-gradient(135deg,#ffc107,#ffcd39);
-    color:#212529;
+.statpresensi-warning .statpresensi-icon {
+  background: linear-gradient(135deg, #ffc107, #ffcd39);
+  color: #212529;
 }
 
-.statpresensi-orange .statpresensi-icon{
-    background:linear-gradient(135deg,#fd7e14,#ff9f43);
+.statpresensi-orange .statpresensi-icon {
+  background: linear-gradient(135deg, #fd7e14, #ff9f43);
 }
 
-.statpresensi-danger .statpresensi-icon{
-    background:linear-gradient(135deg,#dc3545,#ff5c75);
+.statpresensi-danger .statpresensi-icon {
+  background: linear-gradient(135deg, #dc3545, #ff5c75);
 }
 
 /* ========= Responsive ========= */
 
-@media (max-width:992px){
+@media (max-width:992px) {
 
-    .statpresensi-card{
-        padding:14px;
-    }
+  .statpresensi-card {
+    padding: 14px;
+  }
 
 }
 
-@media (max-width:768px){
+@media (max-width:768px) {
 
-    .statpresensi-card{
-        gap:10px;
-        padding:12px;
-    }
+  .statpresensi-card {
+    gap: 10px;
+    padding: 12px;
+  }
 
-    .statpresensi-icon{
-        width:46px;
-        height:46px;
-        font-size:18px;
-    }
+  .statpresensi-icon {
+    width: 46px;
+    height: 46px;
+    font-size: 18px;
+  }
 
-    .statpresensi-content h4{
-        font-size:1.2rem;
-    }
+  .statpresensi-content h4 {
+    font-size: 1.2rem;
+  }
 
-    .statpresensi-content span{
-        font-size:.78rem;
-    }
+  .statpresensi-content span {
+    font-size: .78rem;
+  }
 
 }
 
@@ -1112,45 +1155,45 @@ body {
    Filter Presensi
 ========================== */
 
-.filterpresensi-card{
-    border-radius:16px;
+.filterpresensi-card {
+  border-radius: 16px;
 }
 
-.filterpresensi-card .card-body{
-    padding:1.5rem;
+.filterpresensi-card .card-body {
+  padding: 1.5rem;
 }
 
-.filterpresensi-card .form-label{
-    font-size:.9rem;
-    margin-bottom:.45rem;
+.filterpresensi-card .form-label {
+  font-size: .9rem;
+  margin-bottom: .45rem;
 }
 
 .filterpresensi-select,
-.filterpresensi-input{
-    min-height:48px;
-    border-radius:12px;
-    transition:all .25s ease;
+.filterpresensi-input {
+  min-height: 48px;
+  border-radius: 12px;
+  transition: all .25s ease;
 }
 
 .filterpresensi-select:focus,
-.filterpresensi-input:focus{
-    border-color:#0d6efd;
-    box-shadow:0 0 0 .2rem rgba(13,110,253,.15);
+.filterpresensi-input:focus {
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 .2rem rgba(13, 110, 253, .15);
 }
 
-.filterpresensi-input:disabled{
-    background:#f8f9fa;
-    cursor:not-allowed;
+.filterpresensi-input:disabled {
+  background: #f8f9fa;
+  cursor: not-allowed;
 }
 
-@media (max-width:768px){
+@media (max-width:768px) {
 
-    .filterpresensi-card .card-body{
-        padding:1rem;
-    }
+  .filterpresensi-card .card-body {
+    padding: 1rem;
+  }
 
-    .filterpresensi-select,
-    .filterpresensi-input{
-        min-height:44px;
-    }
+  .filterpresensi-select,
+  .filterpresensi-input {
+    min-height: 44px;
+  }
 }

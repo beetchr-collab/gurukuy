@@ -10,6 +10,7 @@ import {
 } from "firebase/firestore";
 
 import { db } from "@/lib/firebase";
+import { Timestamp } from "firebase/firestore";
 
 export interface PenilaianData {
     id: string;
@@ -28,6 +29,7 @@ export interface PenilaianData {
     tanggalPenilaian: string;
 
     tahunAjaran?: string;
+    createdAt: Timestamp;
 }
 
 const COLLECTION_NAME = "penilaian";
@@ -42,7 +44,7 @@ export async function getPenilaianDataByOwner(
         const q = query(
             collection(db, COLLECTION_NAME),
             where("ownerId", "==", ownerId),
-            orderBy("tanggalPenilaian", "desc")
+            orderBy("createdAt", "desc")
         );
 
         const snapshot = await getDocs(q);

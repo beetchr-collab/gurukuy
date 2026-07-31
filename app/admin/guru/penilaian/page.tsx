@@ -110,6 +110,11 @@ export default function PenilaianPage() {
 
     }, [tahunAjaran, kelasId]);
 
+    // Filter Progres
+    const [statusProgress, setStatusProgress] = useState<
+        "semua" | "proses" | "selesai"
+    >("semua");
+
     // Ambil data Penilaian dari Firebase
     useEffect(() => {
         loadData();
@@ -153,6 +158,13 @@ export default function PenilaianPage() {
                 })
             );
 
+            result.sort((a, b) => {
+                const timeA = a.createdAt?.toMillis() ?? 0;
+                const timeB = b.createdAt?.toMillis() ?? 0;
+
+                return timeB - timeA;
+            });
+
             setPenilaian(result);
 
         } catch (error) {
@@ -193,10 +205,18 @@ export default function PenilaianPage() {
         const sesuaiMapel =
             !mapel || item.mapel === mapel;
 
+        const sesuaiProgress =
+            statusProgress === "semua"
+                ? true
+                : statusProgress === "selesai"
+                    ? item.progress === 100
+                    : item.progress < 100;
+
         return (
             sesuaiTahun &&
             sesuaiKelas &&
-            sesuaiMapel
+            sesuaiMapel &&
+            sesuaiProgress
         );
     });
 
@@ -238,7 +258,6 @@ export default function PenilaianPage() {
         }
     }
 
-
     // Pagination
     const {
         currentPage,
@@ -253,6 +272,8 @@ export default function PenilaianPage() {
         pageSize: 5, // jumlah data default per halaman
         resetDeps: [tahunAjaran, kelasId, mapel], // reset ke halaman 1 saat filter berubah
     });
+
+
 
 
     return (
@@ -499,241 +520,249 @@ export default function PenilaianPage() {
             </div>
 
             {/* Tabel */}
-<div className="card shadow-sm border-0">
+            <div className="card shadow-sm border-0">
 
-    <div className="card-header bg-white border-bottom">
-        <div className="d-flex justify-content-between align-items-center flex-wrap gap-2">
-            <h3 className="card-title fw-semibold mb-0">
-                <i className="fas fa-clipboard-list text-primary me-2"></i>
-                Daftar Penilaian
-            </h3>
+                <div className="card-header bg-white border-bottom">
+                    <div className="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <h3 className="card-title fw-semibold mb-0">
+                            <i className="fas fa-clipboard-list text-primary me-2"></i>
+                            Daftar Penilaian
+                        </h3>
+                        <div className="d-flex align-items-center gap-2 flex-wrap">
+                            <select
+                                className="form-select form-select-sm"
+                                style={{ width: 170 }}
+                                value={statusProgress}
+                                onChange={(e) =>
+                                    setStatusProgress(
+                                        e.target.value as "semua" | "proses" | "selesai"
+                                    )
+                                }
+                            >
+                                <option value="semua">Semua Progress</option>
+                                <option value="proses">Proses</option>
+                                <option value="selesai">Selesai</option>
+                            </select>
+                            <span className="badge bg-primary">
+                                {filteredPenilaian.length} Penilaian
+                            </span>
+                        </div>
 
-            <span className="badge bg-primary">
-                {filteredPenilaian.length} Penilaian
-            </span>
-        </div>
-    </div>
+                    </div>
+                </div>
 
-    <div className="table-responsive">
+                <div className="table-responsive">
 
-        <table className="table table-hover table-striped align-middle mb-0">
+                    <table className="table table-hover table-striped align-middle mb-0">
 
-            <thead className="table-light">
-                <tr>
-                    <th className="text-center" style={{ width: 60 }}>No</th>
+                        <thead className="table-light">
+                            <tr>
+                                <th className="text-center" style={{ width: 60 }}>No</th>
 
-                    <th style={{ minWidth: 180 }}>
-                        Mata Pelajaran
-                    </th>
+                                <th style={{ minWidth: 180 }}>
+                                    Mata Pelajaran
+                                </th>
 
-                    <th style={{ minWidth: 260 }}>
-                        Topik
-                    </th>
+                                <th style={{ minWidth: 260 }}>
+                                    Topik
+                                </th>
 
-                    <th>
-                        Kelas
-                    </th>
+                                <th>
+                                    Kelas
+                                </th>
 
-                    <th>
-                        Jenis
-                    </th>
+                                <th>
+                                    Jenis
+                                </th>
 
-                    <th style={{ width: 140 }}>
-                        Tanggal
-                    </th>
+                                <th style={{ width: 140 }}>
+                                    Tanggal
+                                </th>
 
-                    <th style={{ minWidth: 260 }}>
-                        Progress
-                    </th>
+                                <th style={{ minWidth: 260 }}>
+                                    Progress
+                                </th>
 
-                    <th className="text-center" style={{ width: 120 }}>
-                        Aksi
-                    </th>
-                </tr>
-            </thead>
+                                <th className="text-center" style={{ width: 120 }}>
+                                    Aksi
+                                </th>
+                            </tr>
+                        </thead>
 
-            <tbody>
+                        <tbody>
 
-                {loading ? (
+                            {loading ? (
 
-                    <tr>
-                        <td
-                            colSpan={8}
-                            className="text-center py-5"
-                        >
-                            <div className="spinner-border spinner-border-sm text-primary me-2"></div>
-                            Memuat data...
-                        </td>
-                    </tr>
-
-                ) : currentData.length === 0 ? (
-
-                    <tr>
-                        <td
-                            colSpan={8}
-                            className="text-center py-5 text-muted"
-                        >
-                            <i className="fas fa-folder-open fa-2x mb-3 d-block"></i>
-                            Belum ada data penilaian
-                        </td>
-                    </tr>
-
-                ) : (
-
-                    currentData.map((item, index) => (
-
-                        <tr key={item.id}>
-
-                            <td className="text-center">
-                                {startIndex + index + 1}
-                            </td>
-
-                            <td>
-                                <div className="fw-semibold">
-                                    {item.mapel}
-                                </div>
-                            </td>
-
-                            <td>
-                                <div className="fw-bold">
-                                    {item.topik}
-                                </div>
-
-                                <small className="text-muted">
-                                    {item.subtopik}
-                                </small>
-                            </td>
-
-                            <td>
-                                <span className="badge bg-info">
-                                    {item.namaKelas}
-                                </span>
-                            </td>
-
-                            <td>
-
-                                <span className={`badge ${
-                                    item.jenisPenilaian === "Sumatif"
-                                        ? "bg-warning text-dark"
-                                        : "bg-success"
-                                }`}>
-                                    {item.jenisPenilaian}
-                                </span>
-
-                            </td>
-
-                            <td>
-                                {item.tanggalPenilaian}
-                            </td>
-
-                            <td>
-
-                                <div className="d-flex align-items-center gap-2">
-
-                                    <div className="progress flex-grow-1 rounded-pill"
-                                        style={{ height: 8 }}>
-
-                                        <div
-                                            className={`progress-bar ${
-                                                item.progress === 100
-                                                    ? "bg-success"
-                                                    : item.progress >= 75
-                                                        ? "bg-primary"
-                                                        : item.progress >= 50
-                                                            ? "bg-warning"
-                                                            : "bg-danger"
-                                            }`}
-                                            style={{
-                                                width: `${item.progress}%`
-                                            }}
-                                        />
-
-                                    </div>
-
-                                    <span
-                                        className="fw-bold"
-                                        style={{ width: 42 }}
+                                <tr>
+                                    <td
+                                        colSpan={8}
+                                        className="text-center py-5"
                                     >
-                                        {item.progress}%
-                                    </span>
+                                        <div className="spinner-border spinner-border-sm text-primary me-2"></div>
+                                        Memuat data...
+                                    </td>
+                                </tr>
 
-                                </div>
+                            ) : currentData.length === 0 ? (
 
-                                <div className="d-flex justify-content-between mt-2">
-
-                                    <small className="text-muted">
-                                        {item.nilaiTerisi} / {item.totalSiswa} siswa
-                                    </small>
-
-                                    <span
-                                        className={`badge ${
-                                            item.progress === 100
-                                                ? "bg-success"
-                                                : "bg-warning text-dark"
-                                        }`}
+                                <tr>
+                                    <td
+                                        colSpan={8}
+                                        className="text-center py-5 text-muted"
                                     >
-                                        {item.progress === 100
-                                            ? "Selesai"
-                                            : "Proses"}
-                                    </span>
+                                        <i className="fas fa-folder-open fa-2x mb-3 d-block"></i>
+                                        Belum ada data penilaian
+                                    </td>
+                                </tr>
 
-                                </div>
+                            ) : (
 
-                            </td>
+                                currentData.map((item, index) => (
 
-                            <td>
+                                    <tr key={item.id}>
 
-                                <div className="d-flex justify-content-center gap-2">
+                                        <td className="text-center">
+                                            {startIndex + index + 1}
+                                        </td>
 
-                                    <Link
-                                        href={`/admin/guru/penilaian/${item.id}`}
-                                        className="btn btn-warning btn-sm rounded-circle"
-                                        title="Input Nilai"
-                                    >
-                                        <i className="fas fa-edit"></i>
-                                    </Link>
+                                        <td>
+                                            <div className="fw-semibold">
+                                                {item.mapel}
+                                            </div>
+                                        </td>
 
-                                    <button
-                                        className="btn btn-danger btn-sm rounded-circle"
-                                        title="Hapus"
-                                        onClick={() => handleDelete(item.id)}
-                                    >
-                                        <i className="fas fa-trash"></i>
-                                    </button>
+                                        <td>
+                                            <div className="fw-bold">
+                                                {item.topik}
+                                            </div>
 
-                                </div>
+                                            <small className="text-muted">
+                                                {item.subtopik}
+                                            </small>
+                                        </td>
 
-                            </td>
+                                        <td>
+                                            <span className="badge bg-info">
+                                                {item.namaKelas}
+                                            </span>
+                                        </td>
 
-                        </tr>
+                                        <td>
 
-                    ))
+                                            <span className={`badge ${item.jenisPenilaian === "Sumatif"
+                                                ? "bg-warning text-dark"
+                                                : "bg-success"
+                                                }`}>
+                                                {item.jenisPenilaian}
+                                            </span>
 
-                )}
+                                        </td>
 
-            </tbody>
+                                        <td>
+                                            {item.tanggalPenilaian}
+                                        </td>
 
-        </table>
+                                        <td>
 
-    </div>
+                                            <div className="d-flex align-items-center gap-2">
 
-    <div className="card-footer bg-white">
+                                                <div className="progress flex-grow-1 rounded-pill"
+                                                    style={{ height: 8 }}>
 
-        <TableFooter
-            currentPage={currentPage}
-            totalPages={totalPages}
-            pageSize={pageSize}
-            totalData={filteredPenilaian.length}
-            onPageChange={setCurrentPage}
-            onPageSizeChange={(size) => {
-                setPageSize(size);
-                setCurrentPage(1);
-            }}
-        />
+                                                    <div
+                                                        className={`progress-bar ${item.progress === 100
+                                                            ? "bg-success"
+                                                            : item.progress >= 75
+                                                                ? "bg-primary"
+                                                                : item.progress >= 50
+                                                                    ? "bg-warning"
+                                                                    : "bg-danger"
+                                                            }`}
+                                                        style={{
+                                                            width: `${item.progress}%`
+                                                        }}
+                                                    />
 
-    </div>
+                                                </div>
 
-</div>
+                                                <span
+                                                    className="fw-bold"
+                                                    style={{ width: 42 }}
+                                                >
+                                                    {item.progress}%
+                                                </span>
+
+                                            </div>
+
+                                            <div className="d-flex justify-content-between mt-2">
+
+                                                <small className="text-muted">
+                                                    {item.nilaiTerisi} / {item.totalSiswa} siswa
+                                                </small>
+
+                                                <span
+                                                    className={`badge ${item.progress === 100
+                                                        ? "bg-success"
+                                                        : "bg-warning text-dark"
+                                                        }`}
+                                                >
+                                                    {item.progress === 100
+                                                        ? "Selesai"
+                                                        : "Proses"}
+                                                </span>
+
+                                            </div>
+
+                                        </td>
+
+                                        <td>
+                                            <div className="btn-group btn-group-sm">
+                                                <Link
+                                                    href={`/admin/guru/penilaian/${item.id}`}
+                                                    className="btn btn-outline-warning"
+                                                    title="Input Nilai"
+                                                >
+                                                    <i className="fas fa-edit"></i>
+                                                </Link>
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-outline-danger"
+                                                    onClick={() => handleDelete(item.id)}
+                                                >
+                                                    <i className="bi bi-trash" aria-hidden="true"> </i>
+                                                </button>
+                                            </div>
+                                        </td>
+
+                                    </tr>
+
+                                ))
+
+                            )}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+                <div className="card-footer bg-white">
+
+                    <TableFooter
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        pageSize={pageSize}
+                        totalData={filteredPenilaian.length}
+                        onPageChange={setCurrentPage}
+                        onPageSizeChange={(size) => {
+                            setPageSize(size);
+                            setCurrentPage(1);
+                        }}
+                    />
+
+                </div>
+
+            </div>
         </div>
     );
 }

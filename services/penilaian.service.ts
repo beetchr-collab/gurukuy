@@ -10,6 +10,7 @@ import {
     orderBy,
     where,
     writeBatch,
+    updateDoc,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
@@ -429,4 +430,22 @@ export async function deletePenilaian(id: string) {
     batch.delete(doc(db, "penilaian", id));
 
     await batch.commit();
+}
+
+// Update Informasi Penilaian
+export interface UpdatePenilaianPayload {
+    topik: string;
+    subtopik: string;
+    namaKelas: string;
+    kkm: number;
+}
+
+export async function updatePenilaian(
+    penilaianId: string,
+    data: UpdatePenilaianPayload
+) {
+    await updateDoc(doc(db, "penilaian", penilaianId), {
+        ...data,
+        updatedAt: new Date(),
+    });
 }
