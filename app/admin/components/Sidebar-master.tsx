@@ -59,15 +59,39 @@ export default function Sidebar() {
 
             {/* DASHBOARD — SUPERADMIN */}
             {user?.role === "superadmin" && (
-              <li className="nav-item">
-                <Link
-                  href="/admin/dashboard"
-                  className={`nav-link ${isActive("/admin/dashboard") ? "active" : ""}`}
-                >
-                  <i className="nav-icon fas fa-home"></i>
-                  <p>Menu Utama</p>
-                </Link>
-              </li>
+              <>
+                <li className="nav-item">
+                  <Link
+                    href="/admin/superadmin/dashboard"
+                    className={`nav-link ${isActive("/admin/superadmin/dashboard") ? "active bg-warning text-white" : ""}`}
+                  >
+                    <i className="nav-icon fas fa-chalkboard-teacher"></i>
+                    <p>Dashboard</p>
+                  </Link>
+                </li>
+
+                <li className="nav-header">MENU UTAMA</li>
+                <li className="nav-item">
+                  <Link
+                    href="/admin/superadmin/daftar-sekolah"
+                    className={`nav-link ${isActive("/admin/superadmin/daftar-sekolah") ? "active bg-warning text-white" : ""}`}
+                  >
+                    <i className="nav-icon fas fa-school"></i>
+                    <p>Daftar Sekolah</p>
+                  </Link>
+                </li>
+
+                <li className="nav-item">
+                  <Link
+                    href="/admin/superadmin/daftar-user"
+                    className={`nav-link ${isActive("/admin/superadmin/daftar-user") ? "active bg-warning text-white" : ""}`}
+                  >
+                    <i className="nav-icon fas fa-users"></i>
+                    <p>Daftar Users</p>
+                  </Link>
+                </li>
+
+              </>
             )}
 
             {/* DASHBOARD — ADMIN */}
@@ -215,8 +239,8 @@ export default function Sidebar() {
 
                       <i
                         className={`fas ${openMenu === "presensi"
-                            ? "fa-angle-down"
-                            : "fa-angle-right"
+                          ? "fa-angle-down"
+                          : "fa-angle-right"
                           } ms-auto`}
                       ></i>
                     </p>
@@ -227,8 +251,8 @@ export default function Sidebar() {
                       <Link
                         href="/admin/guru/presensi/input-presensi"
                         className={`nav-link ${isActive("/admin/guru/presensi/input-presensi")
-                            ? "active bg-primary text-white"
-                            : ""
+                          ? "active bg-primary text-white"
+                          : ""
                           }`}
                       >
                         <i className="nav-icon fas fa-user-edit"></i>
@@ -240,8 +264,8 @@ export default function Sidebar() {
                       <Link
                         href="/admin/guru/presensi/list-presensi"
                         className={`nav-link ${isActive("/admin/guru/presensi/list-presensi")
-                            ? "active bg-primary text-white"
-                            : ""
+                          ? "active bg-primary text-white"
+                          : ""
                           }`}
                       >
                         <i className="nav-icon fas fa-list-check"></i>
@@ -253,8 +277,8 @@ export default function Sidebar() {
                       <Link
                         href="/admin/guru/presensi/rekap-presensi"
                         className={`nav-link ${isActive("/admin/guru/presensi/rekap-presensi")
-                            ? "active bg-primary text-white"
-                            : ""
+                          ? "active bg-primary text-white"
+                          : ""
                           }`}
                       >
                         <i className="nav-icon fas fa-calendar-check"></i>

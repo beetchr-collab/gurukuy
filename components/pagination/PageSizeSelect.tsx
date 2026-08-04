@@ -14,7 +14,7 @@ type PageSizeSelectProps = {
 export default function PageSizeSelect({
     pageSize,
     onPageSizeChange,
-    options = [5, 10, 25, 50, 100],
+    options = [10, 25, 50, 100],
     label = "Tampilkan",
     className = "",
 }: PageSizeSelectProps) {

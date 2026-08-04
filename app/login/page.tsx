@@ -39,7 +39,7 @@ export default function LoginPage() {
       }
 
       const data = userDoc.data();
-      const role = data.role;
+      const role = String(data.role || '').trim().toLowerCase();
       const username = data.username;
 
       // 3. Simpan ke localStorage (agar navbar bisa baca cepat)
@@ -54,11 +54,17 @@ export default function LoginPage() {
       );
 
       // 4. Redirect berdasarkan role
-      if (role === 'superadmin') router.push('/admin/dashboard');
-      else if (role === 'admin') router.push('/admin/adminsekolah/dashboard');
-      else if (role === 'guru') router.push('/admin/guru/dashboard');
-      else if (role === 'siswa') router.push('/siswa/dashboard');
-      else throw new Error('Role tidak valid');
+      if (role === 'superadmin') {
+        router.push('/admin/superadmin/dashboard');
+      } else if (role === 'admin') {
+        router.push('/admin/adminsekolah/dashboard');
+      } else if (role === 'guru') {
+        router.push('/admin/guru/dashboard');
+      } else if (role === 'siswa') {
+        router.push('/siswa/dashboard');
+      } else {
+        throw new Error(`Role tidak valid: ${role || 'kosong'}`);
+      }
 
     } catch (err: any) {
       setError(err.message || 'Login gagal');
@@ -130,10 +136,16 @@ export default function LoginPage() {
         })
       );
       // ✅ redirect sesuai role
-      if (userData.role === 'admin') {
+      if (userData.role === 'superadmin') {
+        router.push('/admin/superadmin/dashboard');
+      } else if (userData.role === 'admin') {
         router.push('/admin/adminsekolah/dashboard');
       } else if (userData.role === 'guru') {
         router.push('/admin/guru/dashboard');
+      } else if (userData.role === 'siswa') {
+        router.push('/siswa/dashboard');
+      } else {
+        throw new Error(`Role tidak valid: ${userData.role}`);
       }
 
     } catch (err: any) {

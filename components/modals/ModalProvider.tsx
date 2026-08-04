@@ -30,6 +30,10 @@ export default function ModalProvider({
 
   const hideModal = () => {
     setShow(false);
+
+    setTimeout(() => {
+      setOptions(null);
+    }, 200);
   };
 
   const value = useMemo(

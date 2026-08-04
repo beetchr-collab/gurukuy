@@ -16,7 +16,7 @@ export default function Pagination({
     totalPages,
     onPageChange,
     showInfo = true,
-    maxVisiblePages = 5,
+    maxVisiblePages = 10,
     className = "",
 }: PaginationProps) {
     if (totalPages <= 1) return null;

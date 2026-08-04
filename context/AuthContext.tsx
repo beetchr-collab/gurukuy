@@ -30,6 +30,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const normalizeRole = (value: any) => {
+      const normalized = String(value || '').trim().toLowerCase();
+      return ['superadmin', 'admin', 'guru', 'siswa'].includes(normalized)
+        ? (normalized as UserData['role'])
+        : null;
+    };
+
     const unsub = onAuthStateChanged(auth, async (firebaseUser: User | null) => {
       if (!firebaseUser) {
         setUser(null);
@@ -38,24 +45,32 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
 
       // ambil data user di firestore
-      const docRef = doc(db, "users", firebaseUser.uid);
+      const docRef = doc(db, 'users', firebaseUser.uid);
       const snapshot = await getDoc(docRef);
 
       if (snapshot.exists()) {
         const data = snapshot.data();
         const rawPhoto = firebaseUser.photoURL || data.photo || null;
+        const role = normalizeRole(data.role);
 
-        setUser({
-          uid: firebaseUser.uid,
-          email: firebaseUser.email,
-          role: data.role,
-          username: data.username,
-          photo: rawPhoto
-            ? rawPhoto.replace(/"/g, '') + '?sz=100'
-            : 'node_modules/admin-lte/dist/assest/img/default-avatar.png', //menghapus tanda kutip
-          ownerId: data.ownerId,
-          schoolId: data?.schoolId,
-        });
+        if (role) {
+          setUser({
+            uid: firebaseUser.uid,
+            email: firebaseUser.email,
+            role,
+            username: data.username,
+            photo: rawPhoto
+              ? rawPhoto.replace(/"/g, '') + '?sz=100'
+              : 'node_modules/admin-lte/dist/assest/img/default-avatar.png', //menghapus tanda kutip
+            ownerId: data.ownerId,
+            schoolId: data?.schoolId,
+          });
+        } else {
+          console.warn('AuthContext: role tidak valid untuk user', firebaseUser.uid, data.role);
+          setUser(null);
+        }
+      } else {
+        setUser(null);
       }
 
       setLoading(false);
