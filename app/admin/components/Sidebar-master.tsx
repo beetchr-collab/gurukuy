@@ -49,12 +49,10 @@ export default function Sidebar() {
 
       {/* SIDEBAR */}
       <div className="sidebar-wrapper">
-        <nav>
+        <nav className="mt-2" aria-label="Main navigation">
           <ul
             className="nav sidebar-menu flex-column"
-            data-lte-toggle="treeview"
             role="menu"
-            data-accordion="false"
           >
 
             {/* DASHBOARD — SUPERADMIN */}
@@ -88,6 +86,16 @@ export default function Sidebar() {
                   >
                     <i className="nav-icon fas fa-users"></i>
                     <p>Daftar Users</p>
+                  </Link>
+                </li>
+
+                <li className="nav-item">
+                  <Link
+                    href="/admin/superadmin/login_history"
+                    className={`nav-link ${isActive("/admin/superadmin/login_history") ? "active bg-warning text-white" : ""}`}
+                  >
+                    <i className="nav-icon fas fa-history"></i>
+                    <p>Login History</p>
                   </Link>
                 </li>
 
@@ -354,7 +362,6 @@ export default function Sidebar() {
 
                   </ul>
                 </li>
-
 
                 <li className="nav-item">
                   <Link

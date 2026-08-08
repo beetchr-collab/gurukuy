@@ -9,7 +9,7 @@ export default function RoleGuard({
   role,
 }: {
   children: React.ReactNode;
-  role: "superadmin" | "admin" | "guru" | "siswa";
+  role?: "superadmin" | "admin" | "guru" | "siswa";
 }) {
   const { user, loading } = useAuth();
   const router = useRouter();
@@ -18,7 +18,7 @@ export default function RoleGuard({
     if (!loading) {
       if (!user) {
         router.push("/login");
-      } else if (user.role !== role) {
+      } else if (role && user.role !== role) {
         router.push("/login");
       }
     }

@@ -63,6 +63,13 @@ export default function UsersPage() {
     );
   });
 
+  const parseTimestamp = (value: any): Date | null => {
+    if (!value) return null;
+    if (value?.toDate) return value.toDate();
+    if (value instanceof Date) return value;
+    return new Date(value);
+  };
+
   // Pagination
   const {
     currentPage,
@@ -155,6 +162,7 @@ export default function UsersPage() {
                   <th>Email</th>
                   <th>username</th>
                   <th>role</th>
+                  <th>Terakhir Login</th>
                   <th>Status</th>
                   <th>Dibuat</th>
                   <th>Aksi</th>
@@ -163,7 +171,7 @@ export default function UsersPage() {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={8} className="text-center py-5">
+                    <td colSpan={10} className="text-center py-5">
                       <div className="spinner-border text-primary" role="status">
                         <span className="visually-hidden">Loading...</span>
                       </div>
@@ -171,7 +179,7 @@ export default function UsersPage() {
                   </tr>
                 ) : filteredUsers.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="text-center text-muted py-4">
+                    <td colSpan={10} className="text-center text-muted py-4">
                       <i className="fas fa-search fa-2x mb-2 d-block"></i>
                       User tidak ditemukan.
                     </td>
@@ -197,6 +205,36 @@ export default function UsersPage() {
                           user.role === "guru" ? "bg-success" : "bg-secondary"}`}>
                           {user.role}
                         </span>
+                      </td>
+
+                      <td>
+                        {user.lastLogin ? (
+                          (() => {
+                            const date = parseTimestamp(user.lastLogin);
+                            return date ? (
+                              <div className="d-flex flex-column">
+                                <span className="fw-semibold">
+                                  {date.toLocaleDateString("id-ID", {
+                                    day: "2-digit",
+                                    month: "short",
+                                    year: "numeric",
+                                  })}
+                                </span>
+                                <small className="text-muted">
+                                  <i className="far fa-clock me-1"></i>
+                                  {date.toLocaleTimeString("id-ID", {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })}
+                                </small>
+                              </div>
+                            ) : (
+                              <span className="text-muted">-</span>
+                            );
+                          })()
+                        ) : (
+                          <span className="text-muted">-</span>
+                        )}
                       </td>
 
                       <td>

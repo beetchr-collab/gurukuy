@@ -10,7 +10,7 @@ import {
     getStudentAttendanceDetail,
     StudentAttendanceDetail,
     updateAttendanceStatus,
-     StudentAttendanceHistory,
+    StudentAttendanceHistory,
 } from "@/services/presensi.service";
 
 export default function DetailPresensiPage() {
@@ -27,17 +27,21 @@ export default function DetailPresensiPage() {
         useState<StudentAttendanceDetail | null>(null);
 
     const [startDate, setStartDate] = useState("");
-
     const [endDate, setEndDate] = useState("");
-// Aksi Edit Presensi Siswa Modals
+    const [filterYear, setFilterYear] = useState("");
+    const [filterMonth, setFilterMonth] = useState("");
+    // Hasil data setelah difilter
+    const [histories, setHistories] = useState<StudentAttendanceHistory[]>([]);
+
+    // Aksi Edit Presensi Siswa Modals
     const [showEditModal, setShowEditModal] = useState(false);
     const [selectedStudent, setSelectedStudent] =
-        useState<StudentAttendanceHistory  | null>(null);
+        useState<StudentAttendanceHistory | null>(null);
     const [editStatus, setEditStatus] = useState("");
     const [editKeterangan, setEditKeterangan] = useState("");
 
     // Membuka dan menutup modals
-    const openEditModal = (student: StudentAttendanceHistory ) => {
+    const openEditModal = (student: StudentAttendanceHistory) => {
         setSelectedStudent(student);
         setEditStatus(student.status);
         setEditKeterangan(student.keterangan || "");
@@ -48,30 +52,58 @@ export default function DetailPresensiPage() {
         setSelectedStudent(null);
     };
 
-const saveAttendance = async () => {
-    if (!selectedStudent) return;
+    const months = [
+        { value: "01", label: "Januari" },
+        { value: "02", label: "Februari" },
+        { value: "03", label: "Maret" },
+        { value: "04", label: "April" },
+        { value: "05", label: "Mei" },
+        { value: "06", label: "Juni" },
+        { value: "07", label: "Juli" },
+        { value: "08", label: "Agustus" },
+        { value: "09", label: "September" },
+        { value: "10", label: "Oktober" },
+        { value: "11", label: "November" },
+        { value: "12", label: "Desember" },
+    ];
 
-    try {
-        await updateAttendanceStatus(
-            selectedStudent.attendanceId,
-            studentId,
-            editStatus as "Hadir" | "Izin" | "Sakit" | "Alpha",
-            editStatus === "Izin"
-                ? editKeterangan
-                : ""
+    const availableYears = useMemo(() => {
+        if (!detail?.history) return [];
+
+        const years = detail.history
+            .map((item) => item.tanggal?.substring(0, 4))
+            .filter(Boolean);
+
+        return Array.from(new Set(years)).sort((a, b) =>
+            b.localeCompare(a)
         );
+    }, [detail]);
 
-        alert("Presensi berhasil diperbarui.");
 
-        closeEditModal();
+    const saveAttendance = async () => {
+        if (!selectedStudent) return;
 
-        await loadData();
+        try {
+            await updateAttendanceStatus(
+                selectedStudent.attendanceId,
+                studentId,
+                editStatus as "Hadir" | "Izin" | "Sakit" | "Alpha",
+                editStatus === "Izin"
+                    ? editKeterangan
+                    : ""
+            );
 
-    } catch (error) {
-        console.error(error);
-        alert("Gagal mengubah presensi.");
-    }
-};
+            alert("Presensi berhasil diperbarui.");
+
+            closeEditModal();
+
+            await loadData();
+
+        } catch (error) {
+            console.error(error);
+            alert("Gagal mengubah presensi.");
+        }
+    };
     async function loadData() {
 
         if (!user?.schoolId || !studentId) return;
@@ -105,31 +137,62 @@ const saveAttendance = async () => {
 
     }, [user, studentId]);
 
-    const histories = useMemo(() => {
+    // =====================================================
+    // USE EFFECT KHUSUS FILTER RIWAYAT PRESENSI
+    // =====================================================
+    useEffect(() => {
+        if (!detail?.history) {
+            setHistories([]);
+            return;
+        }
 
-        if (!detail) return [];
+        let filtered = [...detail.history];
 
-        return detail.history.filter((item) => {
+        // ===============================
+        // FILTER TAHUN
+        // ===============================
+        if (filterYear) {
+            filtered = filtered.filter((item) => {
+                return item.tanggal?.substring(0, 4) === filterYear;
+            });
+        }
 
-            if (
-                startDate &&
-                item.tanggal < startDate
-            ) {
-                return false;
-            }
+        // ===============================
+        // FILTER BULAN
+        // ===============================
+        if (filterMonth) {
+            filtered = filtered.filter((item) => {
+                return item.tanggal?.substring(5, 7) === filterMonth;
+            });
+        }
 
-            if (
-                endDate &&
-                item.tanggal > endDate
-            ) {
-                return false;
-            }
+        // ===============================
+        // FILTER TANGGAL AWAL
+        // ===============================
+        if (startDate) {
+            filtered = filtered.filter((item) => {
+                return item.tanggal >= startDate;
+            });
+        }
 
-            return true;
+        // ===============================
+        // FILTER TANGGAL AKHIR
+        // ===============================
+        if (endDate) {
+            filtered = filtered.filter((item) => {
+                return item.tanggal <= endDate;
+            });
+        }
 
-        });
+        setHistories(filtered);
 
-    }, [detail, startDate, endDate]);
+    }, [
+        detail,
+        filterYear,
+        filterMonth,
+        startDate,
+        endDate,
+    ]);
 
     if (loading) {
 
@@ -201,7 +264,8 @@ const saveAttendance = async () => {
 
     }
 
-    
+
+
     return (
         <>
             <div className="content-wrapper py-2">
@@ -448,76 +512,274 @@ const saveAttendance = async () => {
                             </div>
                         </div>
 
-                        {/* Filter Data berdasarkan Tanggal */}
+                        {/* Filter Riwayat Presensi */}
                         <div className="card shadow-sm border-0 mb-4">
+
+                            {/* Header */}
                             <div className="card-header bg-white">
+
                                 <div className="d-flex justify-content-between align-items-center flex-wrap gap-2">
+
                                     <h3 className="card-title mb-0">
                                         <i className="fas fa-filter text-primary me-2"></i>
                                         Filter Riwayat Presensi
                                     </h3>
+
                                     <span className="badge bg-primary">
-                                        Filter Data
+                                        {histories.length} Data
                                     </span>
+
                                 </div>
+
                             </div>
+
+
                             <div className="card-body">
-                                <div className="row g-3">
-                                    {/* Tanggal Awal */}
-                                    <div className="col-12 col-md-5">
-                                        <label className="form-label fw-semibold">
-                                            <i className="fas fa-calendar-day text-success me-2"></i>
-                                            Tanggal Awal
-                                        </label>
-                                        <input
-                                            type="date"
-                                            className="form-control"
-                                            value={startDate}
-                                            onChange={(e) =>
-                                                setStartDate(e.target.value)
-                                            }
-                                        />
-                                    </div>
-                                    {/* Tanggal Akhir */}
-                                    <div className="col-12 col-md-5">
-                                        <label className="form-label fw-semibold">
-                                            <i className="fas fa-calendar-check text-danger me-2"></i>
-                                            Tanggal Akhir
-                                        </label>
-                                        <input
-                                            type="date"
-                                            className="form-control"
-                                            value={endDate}
-                                            onChange={(e) =>
-                                                setEndDate(e.target.value)
-                                            }
-                                        />
+
+                                <div className="row g-4">
+
+                                    {/* =================================================
+                KOLOM KIRI
+                FILTER RENTANG TANGGAL
+            ================================================= */}
+                                    <div className="col-12 col-lg-6">
+
+                                        <div className="border rounded-3 p-3 h-100">
+
+                                            <h6 className="fw-bold mb-3">
+                                                <i className="fas fa-calendar-alt text-warning me-2"></i>
+                                                Filter Rentang Tanggal
+                                            </h6>
+
+
+                                            <div className="row g-3">
+
+                                                {/* Tanggal Awal */}
+                                                <div className="col-12 col-md-6">
+
+                                                    <label className="form-label fw-semibold">
+                                                        <i className="fas fa-calendar-day text-success me-2"></i>
+                                                        Tanggal Awal
+                                                    </label>
+
+                                                    <input
+                                                        type="date"
+                                                        className="form-control"
+                                                        value={startDate}
+                                                        onChange={(e) =>
+                                                            setStartDate(e.target.value)
+                                                        }
+                                                    />
+
+                                                </div>
+
+
+                                                {/* Tanggal Akhir */}
+                                                <div className="col-12 col-md-6">
+
+                                                    <label className="form-label fw-semibold">
+                                                        <i className="fas fa-calendar-check text-danger me-2"></i>
+                                                        Tanggal Akhir
+                                                    </label>
+
+                                                    <input
+                                                        type="date"
+                                                        className="form-control"
+                                                        value={endDate}
+                                                        onChange={(e) =>
+                                                            setEndDate(e.target.value)
+                                                        }
+                                                    />
+
+                                                </div>
+
+                                            </div>
+
+                                        </div>
+
                                     </div>
 
-                                    {/* Tombol */}
-                                    <div className="col-12 col-md-2 d-grid">
-                                        <label className="form-label d-none d-md-block">
-                                            &nbsp;
-                                        </label>
-                                        <button
-                                            type="button"
-                                            className="btn btn-outline-secondary"
-                                            onClick={() => {
-                                                setStartDate("");
-                                                setEndDate("");
 
-                                            }}
-                                        >
-                                            <i className="fas fa-rotate-left me-2"></i>
-                                            Reset
-                                        </button>
+                                    {/* =================================================
+                KOLOM KANAN
+                FILTER TAHUN & BULAN
+            ================================================= */}
+                                    <div className="col-12 col-lg-6">
+
+                                        <div className="border rounded-3 p-3 h-100">
+
+                                            <h6 className="fw-bold mb-3">
+                                                <i className="fas fa-calendar-alt text-primary me-2"></i>
+                                                Filter Tahun & Bulan
+                                            </h6>
+
+
+                                            <div className="row g-3">
+
+                                                {/* Tahun */}
+                                                <div className="col-12 col-md-6">
+
+                                                    <label className="form-label fw-semibold">
+                                                        <i className="fas fa-calendar text-primary me-2"></i>
+                                                        Tahun
+                                                    </label>
+
+                                                    <select
+                                                        className="form-select"
+                                                        value={filterYear}
+                                                        onChange={(e) =>
+                                                            setFilterYear(e.target.value)
+                                                        }
+                                                    >
+
+                                                        <option value="">
+                                                            Semua Tahun
+                                                        </option>
+
+                                                        {availableYears.map((year) => (
+
+                                                            <option
+                                                                key={year}
+                                                                value={year}
+                                                            >
+                                                                {year}
+                                                            </option>
+
+                                                        ))}
+
+                                                    </select>
+
+                                                </div>
+
+
+                                                {/* Bulan */}
+                                                <div className="col-12 col-md-6">
+
+                                                    <label className="form-label fw-semibold">
+                                                        <i className="fas fa-calendar-days text-success me-2"></i>
+                                                        Bulan
+                                                    </label>
+
+                                                    <select
+                                                        className="form-select"
+                                                        value={filterMonth}
+                                                        onChange={(e) =>
+                                                            setFilterMonth(e.target.value)
+                                                        }
+                                                    >
+
+                                                        <option value="">
+                                                            Semua Bulan
+                                                        </option>
+
+                                                        {months.map((month) => (
+
+                                                            <option
+                                                                key={month.value}
+                                                                value={month.value}
+                                                            >
+                                                                {month.label}
+                                                            </option>
+
+                                                        ))}
+
+                                                    </select>
+
+                                                </div>
+
+                                            </div>
+
+                                        </div>
+
                                     </div>
+
                                 </div>
+
+
+                                {/* =================================================
+            FOOTER FILTER
+        ================================================= */}
+                                <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-4">
+
+                                    {/* Informasi Filter Aktif */}
+                                    <div className="d-flex flex-wrap gap-2">
+
+                                        {(filterYear ||
+                                            filterMonth ||
+                                            startDate ||
+                                            endDate) ? (
+
+                                            <>
+                                                <span className="text-muted fw-semibold">
+                                                    <i className="fas fa-filter me-1"></i>
+                                                    Filter aktif:
+                                                </span>
+
+                                                {filterYear && (
+                                                    <span className="badge bg-primary">
+                                                        Tahun: {filterYear}
+                                                    </span>
+                                                )}
+
+                                                {filterMonth && (
+                                                    <span className="badge bg-success">
+                                                        Bulan:{" "}
+                                                        {
+                                                            months.find(
+                                                                (month) =>
+                                                                    month.value === filterMonth
+                                                            )?.label
+                                                        }
+                                                    </span>
+                                                )}
+
+                                                {startDate && (
+                                                    <span className="badge bg-warning text-dark">
+                                                        Mulai: {startDate}
+                                                    </span>
+                                                )}
+
+                                                {endDate && (
+                                                    <span className="badge bg-danger">
+                                                        Sampai: {endDate}
+                                                    </span>
+                                                )}
+                                            </>
+
+                                        ) : (
+
+                                            <span className="text-muted">
+                                                <i className="fas fa-info-circle me-1"></i>
+                                                Tidak ada filter aktif
+                                            </span>
+
+                                        )}
+
+                                    </div>
+
+
+                                    {/* Reset */}
+                                    <button
+                                        type="button"
+                                        className="btn btn-outline-secondary"
+                                        onClick={() => {
+                                            setFilterYear("");
+                                            setFilterMonth("");
+                                            setStartDate("");
+                                            setEndDate("");
+                                        }}
+                                    >
+                                        <i className="fas fa-rotate-left me-2"></i>
+                                        Reset Filter
+                                    </button>
+
+                                </div>
+
                             </div>
+
                         </div>
 
                         {/* Riwayat Presensi */}
-
                         <div className="card shadow-sm border-0">
 
                             {/* Header */}

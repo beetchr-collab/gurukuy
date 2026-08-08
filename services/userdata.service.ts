@@ -1,6 +1,8 @@
 import {
+  addDoc,
   collection,
   getDocs,
+  limit,
   orderBy,
   query,
   Timestamp,
@@ -66,3 +68,49 @@ export async function updateUserRole(
     role,
   });
 }
+
+export interface LoginHistoryData {
+  id: string;
+  uid: string;
+  username: string;
+  schoolId?: string;
+  role: "superadmin" | "admin" | "guru" | "siswa";
+  loginAt?: Timestamp | Date;
+  ipAddress?: string;
+  browser?: string;
+  device?: string;
+}
+
+export async function addLoginHistory(data: Omit<LoginHistoryData, "id">) {
+  try {
+    await addDoc(collection(db, "login_history"), {
+      ...data,
+      loginAt: data.loginAt || new Date(),
+    });
+  } catch (error) {
+    console.error("Error menambahkan login history:", error);
+    throw error;
+  }
+}
+
+export async function getLoginHistory(
+  limitCount = 50
+): Promise<LoginHistoryData[]> {
+  try {
+    const q = query(
+      collection(db, "login_history"),
+      orderBy("loginAt", "desc"),
+      limit(limitCount)
+    );
+
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...(doc.data() as Omit<LoginHistoryData, "id">),
+    }));
+  } catch (error) {
+    console.error("Error mengambil login history:", error);
+    return [];
+  }
+}
+

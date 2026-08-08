@@ -8,6 +8,7 @@ import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import styles from './login.module.css';
 import { serverTimestamp } from "firebase/firestore";
+import { addLoginHistory } from '@/services/userdata.service';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -39,8 +40,16 @@ export default function LoginPage() {
       }
 
       const data = userDoc.data();
-      const role = String(data.role || '').trim().toLowerCase();
+      const roleRaw = String(data.role || '').trim().toLowerCase();
       const username = data.username;
+      const validRoles = ["superadmin", "admin", "guru", "siswa"] as const;
+      const role = validRoles.includes(roleRaw as typeof validRoles[number])
+        ? (roleRaw as typeof validRoles[number])
+        : null;
+
+      if (!role) {
+        throw new Error('Role tidak valid. Hubungi administrator.');
+      }
 
       // 3. Simpan ke localStorage (agar navbar bisa baca cepat)
       localStorage.setItem(
@@ -52,6 +61,22 @@ export default function LoginPage() {
           email: userCredential.user.email,
         })
       );
+      localStorage.setItem('lastActivity', Date.now().toString());
+
+      await updateDoc(doc(db, "users", uid), {
+        lastLogin: new Date(),
+      });
+
+      await addLoginHistory({
+        uid,
+        username,
+        schoolId: data.schoolId || "",
+        role,
+        loginAt: new Date(),
+        ipAddress: "",
+        browser: typeof navigator !== "undefined" ? navigator.userAgent : "",
+        device: typeof navigator !== "undefined" ? navigator.platform : "",
+      });
 
       // 4. Redirect berdasarkan role
       if (role === 'superadmin') {
@@ -124,6 +149,17 @@ export default function LoginPage() {
         });
       }
 
+      await addLoginHistory({
+        uid,
+        username: userData.username,
+        schoolId: userData.schoolId || "",
+        role: userData.role,
+        loginAt: new Date(),
+        ipAddress: "",
+        browser: typeof navigator !== "undefined" ? navigator.userAgent : "",
+        device: typeof navigator !== "undefined" ? navigator.platform : "",
+      });
+
       // ✅ SIMPAN KE LOCAL STORAGE (AMBIL DARI FIRESTORE)
       localStorage.setItem(
         "user",
@@ -135,6 +171,7 @@ export default function LoginPage() {
           photo: userData.photo,
         })
       );
+      localStorage.setItem('lastActivity', Date.now().toString());
       // ✅ redirect sesuai role
       if (userData.role === 'superadmin') {
         router.push('/admin/superadmin/dashboard');

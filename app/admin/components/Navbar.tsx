@@ -2,13 +2,9 @@
 
 import { useAuth } from "@/context/AuthContext";
 import { useEffect } from "react";
-import { usePathname, useRouter } from "next/navigation";
-import { signOut } from "firebase/auth";
-import { auth } from "@/lib/firebase";
 
 export default function Navbar() {
-    const { user } = useAuth();
-    const router = useRouter();
+    const { user, logout } = useAuth();
 
     const toggleSidebar = () => {
         const body = document.body;
@@ -50,16 +46,7 @@ export default function Navbar() {
     }, [user]);
 
     const handleLogout = async () => {
-        await signOut(auth);
-        router.push("/login");
-
-        // 🔥 auto close sidebar di mobile saat klik menu
-        const closeSidebarMobile = () => {
-            if (window.innerWidth < 992) {
-                document.body.classList.remove("sidebar-open");
-                document.body.classList.remove("sidebar-collapse");
-            }
-        }
+        await logout();
     };
 
     return (
