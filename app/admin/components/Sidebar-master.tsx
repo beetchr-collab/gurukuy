@@ -293,6 +293,19 @@ export default function Sidebar() {
                         <p>Rekap Presensi</p>
                       </Link>
                     </li>
+
+                    <li className="nav-item">
+                      <Link
+                        href="/admin/guru/presensi/rekap-bulanan"
+                        className={`nav-link ${isActive("/admin/guru/presensi/rekap-bulanan")
+                          ? "active bg-primary text-white"
+                          : ""
+                          }`}
+                      >
+                        <i className="nav-icon fas fa-calendar"></i>
+                        <p>Rekap Bulanan</p>
+                      </Link>
+                    </li>
                   </ul>
                 </li>
 

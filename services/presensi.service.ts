@@ -554,3 +554,171 @@ export async function getStudentAttendanceDetail(
 
     return detail;
 }
+
+// Rekap Presensi Bulanan
+export interface MonthlyAttendanceStudent {
+    studentId: string;
+    nis: string;
+    nisn: string;
+    nama: string;
+    jk: string;
+
+    // tanggal => status
+    attendance: Record<
+        string,
+        "Hadir" | "Izin" | "Sakit" | "Alpha"
+    >;
+}
+
+export interface MonthlyAttendanceResult {
+    kelasId: string;
+    kelas: string;
+    tahunAjaran: string;
+    tahun: number;
+    bulan: number;
+
+    students: MonthlyAttendanceStudent[];
+}
+
+/**
+ * Mengambil rekap presensi bulanan berdasarkan:
+ * - sekolah
+ * - tahun ajaran
+ * - kelas
+ * - tahun
+ * - bulan
+ *
+ * tanggal di Firestore diasumsikan:
+ * YYYY-MM-DD
+ */
+export async function getMonthlyAttendanceByFilter(
+    schoolId: string,
+    tahunAjaran: string,
+    kelasId: string,
+    tahun: number,
+    bulan: number
+): Promise<MonthlyAttendanceResult> {
+
+    // Bulan menggunakan 1 - 12
+    const monthString = String(bulan).padStart(2, "0");
+
+    const startDate =
+        `${tahun}-${monthString}-01`;
+
+    // Jumlah hari dalam bulan
+    const lastDay =
+        new Date(tahun, bulan, 0).getDate();
+
+    const endDate =
+        `${tahun}-${monthString}-${String(lastDay).padStart(2, "0")}`;
+
+    const q = query(
+        collection(db, "presensi"),
+        where("schoolId", "==", schoolId),
+        where("tahunAjaran", "==", tahunAjaran),
+        where("kelasId", "==", kelasId),
+        where("tanggal", ">=", startDate),
+        where("tanggal", "<=", endDate),
+        orderBy("tanggal", "asc")
+    );
+
+    const snapshot = await getDocs(q);
+
+    /*
+     * Map siswa
+     *
+     * studentId => data siswa
+     */
+    const studentMap =
+        new Map<string, MonthlyAttendanceStudent>();
+
+    let namaKelas = "";
+
+    snapshot.forEach((docSnap) => {
+
+        const data = docSnap.data();
+
+        namaKelas =
+            data.kelas ||
+            data.namaKelas ||
+            namaKelas;
+
+        const tanggal =
+            typeof data.tanggal === "string"
+                ? data.tanggal.substring(0, 10)
+                : "";
+
+        if (!tanggal) {
+            return;
+        }
+
+        const siswa =
+            data.siswa || data.students || [];
+
+        siswa.forEach((item: any) => {
+
+            if (!item.studentId) {
+                return;
+            }
+
+            if (!studentMap.has(item.studentId)) {
+
+                studentMap.set(
+                    item.studentId,
+                    {
+                        studentId: item.studentId,
+
+                        nis:
+                            item.nis?.toString() || "",
+
+                        nisn:
+                            item.nisn?.toString() || "",
+
+                        nama:
+                            item.nama ||
+                            item.namaSiswa ||
+                            "",
+
+                        jk:
+                            item.jk ||
+                            item.jenisKelamin ||
+                            "",
+
+                        attendance: {},
+                    }
+                );
+            }
+
+            const student =
+                studentMap.get(item.studentId)!;
+
+            if (
+                item.status === "Hadir" ||
+                item.status === "Izin" ||
+                item.status === "Sakit" ||
+                item.status === "Alpha"
+            ) {
+                student.attendance[tanggal] =
+                    item.status;
+            }
+        });
+    });
+
+    const students =
+        Array.from(studentMap.values())
+            .sort((a, b) =>
+                a.nama.localeCompare(
+                    b.nama,
+                    "id"
+                )
+            );
+
+    return {
+        kelasId,
+        kelas: namaKelas,
+        tahunAjaran,
+        tahun,
+        bulan,
+        students,
+    };
+}

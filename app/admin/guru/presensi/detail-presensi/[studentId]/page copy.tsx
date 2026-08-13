@@ -5,9 +5,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 
 import { useAuth } from "@/context/AuthContext";
-import { usePagination } from "@/hooks/usePagination";
-import Pagination from "@/components/pagination/Pagination";
-import PageSizeSelect from "@/components/pagination/PageSizeSelect";
 
 import {
     getStudentAttendanceDetail,
@@ -35,20 +32,6 @@ export default function DetailPresensiPage() {
     const [filterMonth, setFilterMonth] = useState("");
     // Hasil data setelah difilter
     const [histories, setHistories] = useState<StudentAttendanceHistory[]>([]);
-
-    const {
-        currentPage,
-        pageSize,
-        totalPages,
-        startIndex,
-        currentData,
-        setCurrentPage,
-        setPageSize,
-    } = usePagination({
-        data: histories,
-        pageSize: 10,
-        resetDeps: [histories],
-    });
 
     // Aksi Edit Presensi Siswa Modals
     const [showEditModal, setShowEditModal] = useState(false);
@@ -427,21 +410,6 @@ export default function DetailPresensiPage() {
                                         </div>
                                     </div>
 
-                                    <div className="col-6 col-md-6 col-xl">
-                                        <div className="riwayat-presensi-stat-card sakit">
-                                            <div>
-                                                <span className="riwayat-presensi-label">
-                                                    Sakit
-                                                </span>
-                                                <h3>{detail.sakit}</h3>
-                                            </div>
-
-                                            <div className="riwayat-presensi-icon">
-                                                <i className="fas fa-notes-medical"></i>
-                                            </div>
-                                        </div>
-                                    </div>
-
                                     <div className="col-6 col-md-4 col-xl">
                                         <div className="riwayat-presensi-stat-card izin">
                                             <div>
@@ -453,6 +421,21 @@ export default function DetailPresensiPage() {
 
                                             <div className="riwayat-presensi-icon">
                                                 <i className="fas fa-user-clock"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="col-6 col-md-6 col-xl">
+                                        <div className="riwayat-presensi-stat-card sakit">
+                                            <div>
+                                                <span className="riwayat-presensi-label">
+                                                    Sakit
+                                                </span>
+                                                <h3>{detail.sakit}</h3>
+                                            </div>
+
+                                            <div className="riwayat-presensi-icon">
+                                                <i className="fas fa-notes-medical"></i>
                                             </div>
                                         </div>
                                     </div>
@@ -540,9 +523,6 @@ export default function DetailPresensiPage() {
                                     <h3 className="card-title mb-0">
                                         <i className="fas fa-filter text-primary me-2"></i>
                                         Filter Riwayat Presensi
-                                        <small className="text-muted d-block">
-                                            (Pilih salah satu filter atau gabungkan filter)
-                                        </small>
                                     </h3>
 
                                     <span className="badge bg-primary">
@@ -620,7 +600,10 @@ export default function DetailPresensiPage() {
                                     </div>
 
 
-                                    {/* KOLOM KANAN FILTER TAHUN & BULAN */}
+                                    {/* =================================================
+                KOLOM KANAN
+                FILTER TAHUN & BULAN
+            ================================================= */}
                                     <div className="col-12 col-lg-6">
 
                                         <div className="border rounded-3 p-3 h-100">
@@ -713,7 +696,9 @@ export default function DetailPresensiPage() {
                                 </div>
 
 
-                                {/* FOOTER FILTER */}
+                                {/* =================================================
+            FOOTER FILTER
+        ================================================= */}
                                 <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-4">
 
                                     {/* Informasi Filter Aktif */}
@@ -776,7 +761,7 @@ export default function DetailPresensiPage() {
                                     {/* Reset */}
                                     <button
                                         type="button"
-                                        className="btn btn-sm btn-outline-secondary"
+                                        className="btn btn-outline-secondary"
                                         onClick={() => {
                                             setFilterYear("");
                                             setFilterMonth("");
@@ -811,6 +796,7 @@ export default function DetailPresensiPage() {
                                     </h3>
 
                                     <span className="badge bg-primary fs-6">
+
                                         {histories.length} Hari
 
                                     </span>
@@ -886,13 +872,13 @@ export default function DetailPresensiPage() {
 
                                             ) : (
 
-                                                currentData.map((item, index) => (
+                                                histories.map((item, index) => (
 
                                                     <tr key={item.attendanceId}>
 
                                                         <td className="text-center fw-semibold">
 
-                                                            {startIndex + index + 1}
+                                                            {index + 1}
 
                                                         </td>
 
@@ -1005,24 +991,21 @@ export default function DetailPresensiPage() {
 
                             <div className="card-footer bg-white">
 
-                                <div className="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
-                                    <div className="d-flex flex-column flex-sm-row align-items-center gap-3 w-100 justify-content-between">
-                                        <PageSizeSelect
-                                            pageSize={pageSize}
-                                            onPageSizeChange={(size) => {
-                                                setPageSize(size);
-                                                setCurrentPage(1);
-                                            }}
-                                            className="me-3"
-                                        />
+                                <div className="d-flex justify-content-between align-items-center flex-wrap">
 
-                                        <Pagination
-                                            currentPage={currentPage}
-                                            totalPages={totalPages}
-                                            onPageChange={setCurrentPage}
-                                            className="w-100"
-                                        />
-                                    </div>
+                                    <small className="text-muted">
+
+                                        <i className="fas fa-info-circle me-1"></i>
+
+                                        Total Riwayat
+
+                                    </small>
+
+                                    <span className="badge bg-secondary fs-6">
+
+                                        {histories.length} Hari
+
+                                    </span>
 
                                 </div>
 

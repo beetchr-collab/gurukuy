@@ -686,6 +686,858 @@ body {
 
 }
 
+/* ============================================================
+   REKAP PRESENSI BULANAN
+   MODERN + RESPONSIVE
+   ============================================================ */
+
+
+/* ============================================================
+   TABLE WRAPPER
+   ============================================================ */
+
+.attendance-table-wrapper {
+  width: 100%;
+  overflow: hidden;
+  background: #ffffff;
+  border-radius: 0 0 12px 12px;
+}
+
+
+/* ============================================================
+   HORIZONTAL SCROLL
+   ============================================================ */
+
+.attendance-table-wrapper .table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: visible;
+
+  -webkit-overflow-scrolling: touch;
+
+  scrollbar-width: thin;
+}
+
+
+/* Chrome / Edge / Safari */
+
+.attendance-table-wrapper .table-responsive::-webkit-scrollbar {
+  height: 8px;
+}
+
+.attendance-table-wrapper .table-responsive::-webkit-scrollbar-track {
+  background: #f1f3f5;
+}
+
+.attendance-table-wrapper .table-responsive::-webkit-scrollbar-thumb {
+  background: #c5cad0;
+  border-radius: 20px;
+}
+
+.attendance-table-wrapper .table-responsive::-webkit-scrollbar-thumb:hover {
+  background: #9da4ab;
+}
+
+
+/* ============================================================
+   TABLE
+   ============================================================ */
+
+.monthly-attendance-table {
+  width: max-content;
+  min-width: 100%;
+
+  margin: 0;
+
+  border-collapse: separate;
+  border-spacing: 0;
+
+  background: #ffffff;
+
+  font-size: 13px;
+}
+
+
+/* Semua cell */
+
+.monthly-attendance-table th,
+.monthly-attendance-table td {
+  border-right: 1px solid #e9ecef;
+  border-bottom: 1px solid #e9ecef;
+}
+
+
+/* ============================================================
+   HEADER UTAMA
+   ============================================================ */
+
+.monthly-attendance-table thead th {
+  position: sticky;
+  top: 0;
+
+  vertical-align: middle;
+
+  z-index: 10;
+}
+
+
+/* Header identitas */
+
+.attendance-header {
+  height: 48px;
+
+  padding: 8px 10px !important;
+
+  background: #f8f9fa !important;
+
+  color: #495057;
+
+  font-size: 11px;
+  font-weight: 700;
+
+  letter-spacing: .04em;
+
+  white-space: nowrap;
+
+  vertical-align: middle !important;
+}
+
+
+/* Header bulan */
+
+.attendance-header-month {
+  height: 48px;
+
+  padding: 8px 15px !important;
+
+  background: #0d6efd !important;
+
+  color: #ffffff !important;
+
+  font-size: 14px;
+  font-weight: 700;
+
+  letter-spacing: .06em;
+
+  white-space: nowrap;
+
+  vertical-align: middle !important;
+}
+
+
+/* ============================================================
+   HEADER HARI
+   ============================================================ */
+
+.day-header {
+  width: 42px;
+  min-width: 42px;
+
+  height: 48px;
+
+  padding: 5px 3px !important;
+
+  background: #f8f9fa !important;
+
+  color: #495057;
+
+  text-align: center;
+
+  vertical-align: middle !important;
+
+  white-space: nowrap;
+
+  font-weight: 600;
+}
+
+
+.day-name {
+  display: block;
+
+  font-size: 10px;
+
+  line-height: 14px;
+
+  color: #6c757d;
+
+  font-weight: 600;
+}
+
+
+.day-number {
+  display: inline-flex;
+
+  align-items: center;
+  justify-content: center;
+
+  width: 23px;
+  height: 23px;
+
+  margin-top: 2px;
+
+  border-radius: 50%;
+
+  font-size: 11px;
+
+  font-weight: 700;
+}
+
+
+/* ============================================================
+   HARI MINGGU
+   ============================================================ */
+
+.day-header.sunday {
+  background: #fff1f2 !important;
+
+  color: #dc3545 !important;
+}
+
+
+.day-header.sunday .day-name {
+  color: #dc3545;
+}
+
+
+.day-header.sunday .day-number {
+  background: #dc3545;
+
+  color: #ffffff;
+}
+
+
+/* ============================================================
+   STICKY COLUMN
+   ============================================================ */
+
+.sticky-col {
+  position: sticky !important;
+
+  background: #ffffff;
+
+  z-index: 8;
+}
+
+
+/* Header sticky harus berada di atas body */
+
+.monthly-attendance-table thead .sticky-col {
+  z-index: 30;
+}
+
+
+/* ============================================================
+   UKURAN STICKY COLUMN
+   ============================================================ */
+
+.sticky-no {
+  left: 0;
+
+  width: 48px;
+  min-width: 48px;
+}
+
+
+.sticky-nis {
+  left: 48px;
+
+  width: 90px;
+  min-width: 90px;
+}
+
+
+.sticky-nisn {
+  left: 138px;
+
+  width: 120px;
+  min-width: 120px;
+}
+
+
+.sticky-nama {
+  left: 258px;
+
+  width: 220px;
+  min-width: 220px;
+}
+
+
+.sticky-jk {
+  left: 478px;
+
+  width: 55px;
+  min-width: 55px;
+}
+
+
+/* ============================================================
+   SHADOW PADA KOLOM STICKY TERAKHIR
+   ============================================================ */
+
+.sticky-jk {
+  box-shadow:
+    5px 0 10px -8px rgba(0, 0, 0, .45);
+}
+
+
+/* ============================================================
+   BODY ROW
+   ============================================================ */
+
+.monthly-attendance-table tbody tr {
+  transition:
+    background-color .15s ease,
+    box-shadow .15s ease;
+}
+
+
+/* Hover */
+
+.monthly-attendance-table tbody tr:hover {
+  background: #f8fbff;
+}
+
+
+/* Sticky cell ikut hover */
+
+.monthly-attendance-table tbody tr:hover .student-cell {
+  background: #f8fbff !important;
+}
+
+
+/* ============================================================
+   STUDENT CELL
+   ============================================================ */
+
+.student-cell {
+  height: 46px;
+
+  padding: 7px 10px !important;
+
+  background: #ffffff;
+
+  vertical-align: middle;
+
+  white-space: nowrap;
+}
+
+
+/* Nama */
+
+.student-name {
+  max-width: 220px;
+
+  overflow: hidden;
+
+  text-overflow: ellipsis;
+
+  font-weight: 600;
+
+  color: #343a40;
+}
+
+
+/* Nomor */
+
+.sticky-no {
+  color: #6c757d;
+
+  font-weight: 600;
+}
+
+
+/* ============================================================
+   GENDER BADGE
+   ============================================================ */
+
+.gender-badge {
+  display: inline-flex;
+
+  align-items: center;
+  justify-content: center;
+
+  width: 28px;
+  height: 28px;
+
+  border-radius: 8px;
+
+  font-size: 11px;
+
+  font-weight: 800;
+}
+
+
+.gender-l {
+  background: #e7f1ff;
+
+  color: #0d6efd;
+}
+
+
+.gender-p {
+  background: #fce7f3;
+
+  color: #db2777;
+}
+
+
+/* ============================================================
+   ATTENDANCE CELL
+   ============================================================ */
+
+.attendance-cell {
+  width: 42px;
+  min-width: 42px;
+
+  height: 46px;
+
+  padding: 4px !important;
+
+  text-align: center;
+
+  vertical-align: middle;
+
+  font-size: 11px;
+
+  font-weight: 700;
+
+  transition:
+    background-color .15s ease,
+    transform .15s ease;
+}
+
+
+/* Hover */
+
+.attendance-cell:hover {
+  position: relative;
+
+  z-index: 3;
+
+  transform: scale(1.05);
+}
+
+
+/* ============================================================
+   STATUS BADGE
+   ============================================================ */
+
+.attendance-status {
+  display: inline-flex;
+
+  align-items: center;
+  justify-content: center;
+
+  width: 28px;
+  height: 28px;
+
+  border-radius: 8px;
+
+  font-size: 11px;
+
+  font-weight: 800;
+}
+
+
+/* ============================================================
+   STATUS HADIR
+   ============================================================ */
+
+.attendance-cell.status-hadir {
+  background: #f0fdf4;
+}
+
+
+.attendance-cell.status-hadir .attendance-status {
+  background: #dcfce7;
+
+  color: #15803d;
+}
+
+
+/* ============================================================
+   STATUS IZIN
+   ============================================================ */
+
+.attendance-cell.status-izin {
+  background: #fffbeb;
+}
+
+
+.attendance-cell.status-izin .attendance-status {
+  background: #fef3c7;
+
+  color: #b45309;
+}
+
+
+/* ============================================================
+   STATUS SAKIT
+   ============================================================ */
+
+.attendance-cell.status-sakit {
+  background: #eff6ff;
+}
+
+
+.attendance-cell.status-sakit .attendance-status {
+  background: #dbeafe;
+
+  color: #1d4ed8;
+}
+
+
+/* ============================================================
+   STATUS ALPHA
+   ============================================================ */
+
+.attendance-cell.status-alpha {
+  background: #fff1f2;
+}
+
+
+.attendance-cell.status-alpha .attendance-status {
+  background: #fee2e2;
+
+  color: #dc2626;
+}
+
+
+/* ============================================================
+   MINGGU DI BODY
+   ============================================================ */
+
+.sunday-cell {
+  background: #fff7f7 !important;
+
+  border-left-color: #f5c2c7 !important;
+
+  border-right-color: #f5c2c7 !important;
+}
+
+
+.sunday-cell .attendance-status {
+  opacity: .9;
+}
+
+
+/* ============================================================
+   BELUM ADA PRESENSI
+   ============================================================ */
+
+.attendance-cell:not(.status-hadir):not(.status-izin):not(.status-sakit):not(.status-alpha) {
+  background: #fafafa;
+}
+
+
+.attendance-cell:not(.status-hadir):not(.status-izin):not(.status-sakit):not(.status-alpha) .attendance-status {
+  background: #f1f3f5;
+
+  color: #adb5bd;
+}
+
+
+/* ============================================================
+   EMPTY STATE
+   ============================================================ */
+
+.empty-attendance {
+  height: 260px;
+
+  padding: 40px !important;
+
+  text-align: center;
+
+  color: #6c757d;
+}
+
+
+.empty-attendance-content {
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+
+  justify-content: center;
+}
+
+
+.empty-attendance-icon {
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  width: 58px;
+  height: 58px;
+
+  margin-bottom: 12px;
+
+  border-radius: 16px;
+
+  background: #f1f5f9;
+
+  color: #94a3b8;
+
+  font-size: 25px;
+}
+
+
+.empty-attendance-title {
+  margin-bottom: 4px;
+
+  color: #495057;
+
+  font-size: 14px;
+
+  font-weight: 700;
+}
+
+
+.empty-attendance-text {
+  color: #868e96;
+
+  font-size: 12px;
+}
+
+
+/* ============================================================
+   TABLET
+   ============================================================ */
+
+@media (max-width: 992px) {
+
+  .monthly-attendance-table {
+    font-size: 12px;
+  }
+
+
+  .sticky-no {
+    width: 46px;
+    min-width: 46px;
+  }
+
+
+  .sticky-nis {
+    left: 46px;
+
+    width: 82px;
+    min-width: 82px;
+  }
+
+
+  .sticky-nisn {
+    left: 128px;
+
+    width: 105px;
+    min-width: 105px;
+  }
+
+
+  .sticky-nama {
+    left: 233px;
+
+    width: 180px;
+    min-width: 180px;
+  }
+
+
+  .sticky-jk {
+    left: 413px;
+
+    width: 50px;
+    min-width: 50px;
+  }
+
+
+  .day-header,
+  .attendance-cell {
+    width: 38px;
+    min-width: 38px;
+  }
+
+
+  .attendance-status {
+    width: 26px;
+    height: 26px;
+  }
+}
+
+
+/* ============================================================
+   MOBILE
+   ============================================================ */
+
+@media (max-width: 576px) {
+
+  .attendance-table-wrapper {
+    border-radius: 0;
+  }
+
+
+  .monthly-attendance-table {
+    font-size: 11px;
+  }
+
+
+  .attendance-header {
+    height: 44px;
+
+    font-size: 10px;
+  }
+
+
+  .attendance-header-month {
+    height: 44px;
+
+    font-size: 12px;
+  }
+
+
+  .sticky-no {
+    width: 42px;
+    min-width: 42px;
+  }
+
+
+  .sticky-nis {
+    left: 42px;
+
+    width: 75px;
+    min-width: 75px;
+  }
+
+
+  .sticky-nisn {
+    left: 117px;
+
+    width: 95px;
+    min-width: 95px;
+  }
+
+
+  .sticky-nama {
+    left: 212px;
+
+    width: 165px;
+    min-width: 165px;
+  }
+
+
+  .sticky-jk {
+    left: 377px;
+
+    width: 45px;
+    min-width: 45px;
+  }
+
+
+  .day-header,
+  .attendance-cell {
+    width: 36px;
+    min-width: 36px;
+  }
+
+
+  .day-name {
+    font-size: 9px;
+  }
+
+
+  .day-number {
+    width: 20px;
+    height: 20px;
+
+    font-size: 10px;
+  }
+
+
+  .student-cell {
+    height: 42px;
+
+    padding: 6px 8px !important;
+  }
+
+
+  .attendance-cell {
+    height: 42px;
+  }
+
+
+  .attendance-status {
+    width: 24px;
+    height: 24px;
+
+    border-radius: 7px;
+
+    font-size: 10px;
+  }
+
+
+  .gender-badge {
+    width: 24px;
+    height: 24px;
+
+    border-radius: 7px;
+
+    font-size: 10px;
+  }
+}
+
+
+/* ============================================================
+   VERY SMALL SCREEN
+   ============================================================ */
+
+@media (max-width: 400px) {
+
+  .sticky-no {
+    width: 38px;
+    min-width: 38px;
+  }
+
+
+  .sticky-nis {
+    left: 38px;
+
+    width: 68px;
+    min-width: 68px;
+  }
+
+
+  .sticky-nisn {
+    left: 106px;
+
+    width: 88px;
+    min-width: 88px;
+  }
+
+
+  .sticky-nama {
+    left: 194px;
+
+    width: 150px;
+    min-width: 150px;
+  }
+
+
+  .sticky-jk {
+    left: 344px;
+
+    width: 42px;
+    min-width: 42px;
+  }
+
+
+  .day-header,
+  .attendance-cell {
+    width: 34px;
+    min-width: 34px;
+  }
+}
+
+
 /* ===========================
    Riwayat Presensi - Statistik
 =========================== */
@@ -779,7 +1631,6 @@ body {
   }
 
 }
-
 
 
 /* ===========================
