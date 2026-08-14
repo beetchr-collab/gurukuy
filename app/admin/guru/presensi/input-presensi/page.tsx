@@ -7,6 +7,7 @@ import {
     getActiveTahunAjaran,
     TahunAjaran,
 } from "@/services/tahunajaran.service";
+import { useModal } from "@/components/modals/useModal";
 import {
     collection,
     getDocs,
@@ -44,6 +45,7 @@ export default function PresensiPage() {
     const [tahunAjaran, setTahunAjaran] =
         useState<TahunAjaran | null>(null);
     const { user } = useAuth();
+    const { showModal } = useModal();
 
     useEffect(() => {
         if (!user?.schoolId) return;
@@ -192,6 +194,28 @@ export default function PresensiPage() {
             const selectedKelas = kelasList.find(
                 (item) => item.id === selectedKelasId
             );
+
+            // Cek apakah presensi untuk tanggal dan kelas yang sama sudah ada
+            const existingQuery = query(
+                collection(db, "presensi"),
+                where("schoolId", "==", user.schoolId),
+                where("kelasId", "==", selectedKelasId),
+                where("tanggal", "==", tanggal)
+            );
+
+            const existingSnapshot = await getDocs(existingQuery);
+
+            if (!existingSnapshot.empty) {
+                showModal({
+                    title: "Presensi Sudah Ada",
+                    message: `Presensi pada tanggal ${tanggal} untuk kelas tersebut sudah diinput.`,
+                    type: "warning",
+                    hideCancelButton: true,
+                    confirmText: "Tutup",
+                });
+
+                return;
+            }
 
             const dataSiswa = students.map((student) => ({
                 studentId: student.id,

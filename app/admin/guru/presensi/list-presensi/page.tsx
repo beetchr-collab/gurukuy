@@ -13,7 +13,9 @@ import {
     getAttendanceByFilter,
     AttendanceStudentRow,
     updateAttendanceStatus,
+    deleteAttendanceStudents,
 } from "@/services/presensi.service";
+import { useModal } from "@/components/modals/useModal";
 
 export default function ListPresensiPage() {
     const { user, loading: authLoading } = useAuth();
@@ -76,6 +78,9 @@ export default function ListPresensiPage() {
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
     const [attendance, setAttendance] = useState<AttendanceStudentRow[]>([]);
+    const [selectedRows, setSelectedRows] = useState<Record<string, boolean>>({});
+    const [selectAll, setSelectAll] = useState(false);
+    const modal = useModal();
     useEffect(() => {
         const schoolId = user?.schoolId;
         if (
@@ -156,6 +161,76 @@ export default function ListPresensiPage() {
         } catch (error) {
             console.error(error);
         }
+    };
+
+    const toggleRowSelection = (item: AttendanceStudentRow) => {
+        const key = `${item.attendanceId}_${item.studentId}`;
+
+        setSelectedRows((prev) => {
+            const next = { ...prev };
+            if (next[key]) {
+                delete next[key];
+            } else {
+                next[key] = true;
+            }
+            return next;
+        });
+    };
+
+    const handleSelectAll = (checked: boolean) => {
+        setSelectAll(checked);
+
+        if (checked) {
+            const all: Record<string, boolean> = {};
+            attendance.forEach((it) => {
+                all[`${it.attendanceId}_${it.studentId}`] = true;
+            });
+            setSelectedRows(all);
+        } else {
+            setSelectedRows({});
+        }
+    };
+
+    const handleDeleteSelected = () => {
+        const items = Object.keys(selectedRows)
+            .filter((k) => selectedRows[k])
+            .map((k) => {
+                const [attendanceId, studentId] = k.split("_");
+                return { attendanceId, studentId };
+            });
+
+        if (items.length === 0) return;
+
+        modal.showModal({
+            title: "Hapus Data Terpilih",
+            message: `Yakin ingin menghapus ${items.length} data presensi terpilih?`,
+            type: "warning",
+            confirmText: "Ya, Hapus",
+            onConfirm: async () => {
+                try {
+                    await deleteAttendanceStudents(items);
+                    await loadAttendance();
+                    setSelectedRows({});
+                    setSelectAll(false);
+
+                    modal.showModal({
+                        title: "Berhasil",
+                        message: "Data presensi berhasil dihapus.",
+                        type: "success",
+                        hideCancelButton: true,
+                    });
+                } catch (err) {
+                    console.error(err);
+                    modal.showModal({
+                        title: "Gagal",
+                        message: "Gagal menghapus data presensi.",
+                        type: "error",
+                        hideCancelButton: true,
+                    });
+                    throw err;
+                }
+            },
+        });
     };
 
     const saveAttendance = async () => {
@@ -340,9 +415,20 @@ export default function ListPresensiPage() {
                                 </small>
                             </div>
 
-                            <span className="badge bg-primary rounded-pill px-3 py-2">
-                                {attendance.length} Data
-                            </span>
+                            <div className="d-flex align-items-center gap-2">
+                                <button
+                                    className="btn btn-danger btn-sm"
+                                    disabled={Object.keys(selectedRows).filter(k => selectedRows[k]).length === 0}
+                                    onClick={handleDeleteSelected}
+                                >
+                                    <i className="fas fa-trash-alt me-1"></i>
+                                    Hapus
+                                </button>
+
+                                <span className="badge bg-primary rounded-pill px-3 py-2">
+                                    {attendance.length} Data
+                                </span>
+                            </div>
 
                         </div>
 
@@ -362,6 +448,15 @@ export default function ListPresensiPage() {
                                 <thead className="table-primary">
 
                                     <tr className="text-center">
+                                        <th style={{ minWidth: 50 }} className="text-center">
+                                            <input
+                                                type="checkbox"
+                                                className="form-check-input"
+                                                checked={selectAll}
+                                                onChange={(e) => handleSelectAll(e.target.checked)}
+                                            />
+                                        </th>
+
                                         <th style={{ minWidth: 60 }} className="text-center">
                                             No
                                         </th>
@@ -406,9 +501,9 @@ export default function ListPresensiPage() {
                                         <tr>
 
                                             <td
-                                                colSpan={9}
-                                                className="text-center py-5 text-muted"
-                                            >
+                                                    colSpan={10}
+                                                    className="text-center py-5 text-muted"
+                                                >
 
                                                 <i className="fas fa-folder-open fa-2x mb-3 d-block"></i>
 
@@ -424,9 +519,18 @@ export default function ListPresensiPage() {
 
                                             <tr key={`${item.studentId}-${index}`}>
 
-                                                <td className="text-center fw-semibold">
-                                                    {index + 1}
-                                                </td>
+                                                    <td className="text-center">
+                                                        <input
+                                                            type="checkbox"
+                                                            className="form-check-input"
+                                                            checked={!!selectedRows[`${item.attendanceId}_${item.studentId}`]}
+                                                            onChange={() => toggleRowSelection(item)}
+                                                        />
+                                                    </td>
+
+                                                    <td className="text-center fw-semibold">
+                                                        {index + 1}
+                                                    </td>
 
                                                 <td>{item.tanggal}</td>
 

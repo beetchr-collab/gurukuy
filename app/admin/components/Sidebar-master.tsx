@@ -302,7 +302,7 @@ export default function Sidebar() {
                           : ""
                           }`}
                       >
-                        <i className="nav-icon fas fa-calendar"></i>
+                        <i className="nav-icon fas fa-solid fa-chart-line"></i>
                         <p>Rekap Bulanan</p>
                       </Link>
                     </li>

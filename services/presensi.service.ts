@@ -8,7 +8,8 @@ import {
     orderBy,
     doc,
     getDoc,
-    updateDoc
+    updateDoc,
+    deleteDoc,
 } from "firebase/firestore";
 import {
     Attendance,
@@ -721,4 +722,47 @@ export async function getMonthlyAttendanceByFilter(
         bulan,
         students,
     };
+}
+
+/**
+ * Hapus beberapa record presensi siswa. Jika setelah penghapusan tidak ada siswa tersisa
+ * pada dokumen presensi, dokumen tersebut akan dihapus.
+ */
+export async function deleteAttendanceStudents(items: { attendanceId: string; studentId: string }[]) {
+    try {
+        // Group by attendanceId
+        const map = new Map<string, Set<string>>();
+
+        items.forEach((it) => {
+            if (!map.has(it.attendanceId)) map.set(it.attendanceId, new Set());
+            map.get(it.attendanceId)!.add(it.studentId);
+        });
+
+        for (const [attendanceId, studentSet] of map.entries()) {
+            const docRef = doc(db, "presensi", attendanceId);
+            const snapshot = await getDoc(docRef);
+
+            if (!snapshot.exists()) continue;
+
+            const data = snapshot.data();
+            const siswa = Array.isArray(data.siswa) ? data.siswa : [];
+
+            const filtered = siswa.filter((s: any) => !studentSet.has(s.studentId));
+
+            if (filtered.length === 0) {
+                // hapus dokumen jika tidak ada siswa tersisa
+                await deleteDoc(docRef);
+            } else {
+                await updateDoc(docRef, {
+                    siswa: filtered,
+                    updatedAt: new Date(),
+                });
+            }
+        }
+
+        return true;
+    } catch (error) {
+        console.error("Gagal menghapus data presensi:", error);
+        throw error;
+    }
 }

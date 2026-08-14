@@ -17,6 +17,7 @@ import {
 import { useAuth } from "@/context/AuthContext";
 
 import { getActiveTahunAjaran } from "@/services/tahunajaran.service";
+import { getSchoolById } from "@/lib/sekolah";
 
 interface AcademicYearOption {
     id?: string;
@@ -464,57 +465,85 @@ export default function RekapPresensiBulananPage() {
                     continue;
                 }
 
-                // Siapkan array of arrays untuk sheet
+                // Siapkan array of arrays untuk sheet dengan judul dan header yang rapi
                 const daysInMonth = getDaysInMonth(yearForMonth, month);
 
-                const header = [
-                    "No",
-                    "NIS",
-                    "NISN",
-                    "NAMA SISWA",
-                    "L/P",
-                    ...Array.from({ length: daysInMonth }, (_, i) => String(i + 1)),
-                    "S",
-                    "I",
-                    "A",
-                ];
+                const totalCols = 5 + daysInMonth + 3; // No, NIS, NISN, NAMA, L/P, days..., S,I,A
 
-                const aoa: any[] = [header];
+                const school = await getSchoolById(schoolId!);
 
+                const kelasName = kelas.find((k) => k.kelasId === kelasId)?.kelas || rekap?.kelas || kelasId;
+
+                const schoolName = school?.nama || "";
+
+                const title = `Presensi Bulan ${MONTHS[month - 1]} ${yearForMonth} - ${kelasName}`;
+
+                // Row 0: title (merged across all columns)
+                const rowTitle = [title, ...Array(totalCols - 1).fill("")];
+
+                // Row 1: blank spacer row to create one-line gap between title and table
+                const blankRow: any[] = Array(totalCols).fill("");
+
+                // Row 2: header - day names above
+                const headerRow1: any[] = Array(totalCols).fill("");
+                headerRow1[0] = "No";
+                headerRow1[1] = "NIS";
+                headerRow1[2] = "NISN";
+                headerRow1[3] = "NAMA SISWA";
+                headerRow1[4] = "L/P";
+                for (let d = 1; d <= daysInMonth; d++) {
+                    const idx = 5 + (d - 1);
+                    const dayName = getDayName(yearForMonth, month, d);
+                    headerRow1[idx] = dayName;
+                }
+                // Rekap label above S/I/A
+                headerRow1[5 + daysInMonth] = "Rekap Presensi";
+
+                // Row 3: header - date numbers and S/I/A
+                const headerRow2: any[] = Array(totalCols).fill("");
+                for (let d = 1; d <= daysInMonth; d++) {
+                    const idx = 5 + (d - 1);
+                    headerRow2[idx] = String(d);
+                }
+                headerRow2[5 + daysInMonth] = "S";
+                headerRow2[5 + daysInMonth + 1] = "I";
+                headerRow2[5 + daysInMonth + 2] = "A";
+
+                const aoa: any[] = [rowTitle, blankRow, headerRow1, headerRow2];
+
+                // Data rows
                 if (data && data.students && data.students.length) {
-
                     data.students.forEach((student: any, index: number) => {
+                        const row: any[] = Array(totalCols).fill("");
 
-                        const row: any[] = [];
-
-                        row.push(index + 1);
-                        row.push(student.nis || "-");
-                        row.push(student.nisn || "-");
-                        row.push(student.nama || "-");
-                        row.push(student.jk || "-");
+                        row[0] = index + 1;
+                        row[1] = student.nis || "-";
+                        row[2] = student.nisn || "-";
+                        row[3] = student.nama || "-";
+                        row[4] = student.jk || "-";
 
                         for (let d = 1; d <= daysInMonth; d++) {
                             const key = getDateKey(yearForMonth, month, d);
                             const status = student.attendance?.[key];
+                            const colIdx = 5 + (d - 1);
                             switch (status) {
                                 case "Hadir":
-                                    row.push("H");
+                                    row[colIdx] = "H";
                                     break;
                                 case "Izin":
-                                    row.push("I");
+                                    row[colIdx] = "I";
                                     break;
                                 case "Sakit":
-                                    row.push("S");
+                                    row[colIdx] = "S";
                                     break;
                                 case "Alpha":
-                                    row.push("A");
+                                    row[colIdx] = "A";
                                     break;
                                 default:
-                                    row.push("");
+                                    row[colIdx] = "";
                             }
                         }
 
-                        // summary
                         const summary: { sakit: number; izin: number; alpha: number } =
                             Object.values(student.attendance || {}).reduce(
                                 (res: { sakit: number; izin: number; alpha: number }, st: any) => {
@@ -526,9 +555,9 @@ export default function RekapPresensiBulananPage() {
                                 { sakit: 0, izin: 0, alpha: 0 }
                             );
 
-                        row.push(summary.sakit);
-                        row.push(summary.izin);
-                        row.push(summary.alpha);
+                        row[5 + daysInMonth] = summary.sakit;
+                        row[5 + daysInMonth + 1] = summary.izin;
+                        row[5 + daysInMonth + 2] = summary.alpha;
 
                         aoa.push(row);
                     });
@@ -536,11 +565,110 @@ export default function RekapPresensiBulananPage() {
 
                 const sheet = XLSX.utils.aoa_to_sheet(aoa);
 
+                // Merges:
+                // - title across all columns (row 0)
+                // - first five header columns (No..L/P) should span two rows (row 2-3)
+                // - Rekap Presensi label across last 3 columns on headerRow1 (row 2)
+                const merges: any[] = [];
+                merges.push({ s: { r: 0, c: 0 }, e: { r: 0, c: totalCols - 1 } }); // title
+
+                // Merge first five columns from headerRow1 (r:2) to headerRow2 (r:3)
+                for (let c = 0; c <= 4; c++) {
+                    merges.push({ s: { r: 2, c }, e: { r: 3, c } });
+                }
+
+                // Rekap Presensi merge across last 3 columns on row 2
+                merges.push({ s: { r: 2, c: 5 + daysInMonth }, e: { r: 2, c: 5 + daysInMonth + 2 } });
+
+                sheet["!merges"] = merges;
+
+                // Adjust column widths based on longest text in each column
+                const cols: any[] = [];
+                for (let c = 0; c < totalCols; c++) {
+                    let maxLen = 0;
+                    for (let r = 0; r < aoa.length; r++) {
+                        const v = aoa[r][c];
+                        if (v !== undefined && v !== null) {
+                            const l = String(v).length;
+                            if (l > maxLen) maxLen = l;
+                        }
+                    }
+                    const wch = Math.min(Math.max(maxLen + 2, 6), 40);
+                    cols.push({ wch });
+                }
+                sheet["!cols"] = cols;
+
+                // Apply styling: title bold & centered, headers bold & centered,
+                // table borders, and status colors (S blue, I yellow, A red).
+                const borderStyle = {
+                    top: { style: "thin", color: { rgb: "000000" } },
+                    bottom: { style: "thin", color: { rgb: "000000" } },
+                    left: { style: "thin", color: { rgb: "000000" } },
+                    right: { style: "thin", color: { rgb: "000000" } },
+                };
+
+                const lastRow = aoa.length - 1;
+
+                // Helper to ensure cell exists
+                const ensureCell = (r: number, c: number) => {
+                    const addr = XLSX.utils.encode_cell({ r, c });
+                    if (!sheet[addr]) {
+                        sheet[addr] = { v: "", t: "s" } as any;
+                    }
+                    return sheet[addr];
+                };
+
+                // Title row (row 0)
+                const titleCell = ensureCell(0, 0);
+                (titleCell as any).s = {
+                    font: { bold: true, sz: 14 },
+                    alignment: { horizontal: "center", vertical: "center" },
+                };
+
+                // Header rows: headerRow1 at r=2, headerRow2 at r=3 (because r=1 is blank)
+                const headerRows = [2, 3];
+                headerRows.forEach((r) => {
+                    for (let c = 0; c < totalCols; c++) {
+                        const cell = ensureCell(r, c) as any;
+                        cell.s = cell.s || {};
+                        cell.s.font = { ...(cell.s.font || {}), bold: true };
+                        cell.s.alignment = { ...(cell.s.alignment || {}), horizontal: "center", vertical: "center", wrapText: true };
+                        cell.s.border = borderStyle;
+                    }
+                });
+
+                // Data rows: apply borders and status colors
+                for (let r = 4; r <= lastRow; r++) {
+                    for (let c = 0; c < totalCols; c++) {
+                        const cell = ensureCell(r, c) as any;
+                        cell.s = cell.s || {};
+                        // default alignment: center for date/status columns, left for name columns
+                        if (c >= 5 && c < 5 + daysInMonth + 3) {
+                            cell.s.alignment = { horizontal: "center", vertical: "center" };
+                        } else if (c === 3) {
+                            cell.s.alignment = { horizontal: "left", vertical: "center" };
+                        } else {
+                            cell.s.alignment = { horizontal: "center", vertical: "center" };
+                        }
+                        cell.s.border = borderStyle;
+
+                        // Apply status colors for single-letter codes in day columns and summary
+                        const v = cell.v;
+                        if (v === "S") {
+                            cell.s.font = { ...(cell.s.font || {}), color: { rgb: "0000FF" } };
+                        } else if (v === "I") {
+                            cell.s.font = { ...(cell.s.font || {}), color: { rgb: "FFD700" } };
+                        } else if (v === "A") {
+                            cell.s.font = { ...(cell.s.font || {}), color: { rgb: "FF0000" } };
+                        }
+                    }
+                }
+
                 const sheetName = `${MONTHS[month - 1].slice(0, 20)}`;
                 XLSX.utils.book_append_sheet(wb, sheet, sheetName);
             }
 
-            const fileName = `rekap-presensi-${(rekap?.kelas || kelasId || "kelas")}-${tahunAjaran}.xlsx`;
+            const fileName = `rekap-presensi-bulanan-${(rekap?.kelas || kelasId || "kelas")}-${tahunAjaran}.xlsx`;
             XLSX.writeFile(wb, fileName);
 
         } finally {
@@ -884,46 +1012,32 @@ export default function RekapPresensiBulananPage() {
                                 {/* INFORMASI REKAP */}
                                 <div className="col-12 col-lg">
                                     <div className="d-flex align-items-start">
-                                        {/* TITLE */}
-                                        <div className="min-w-0">
-                                            <h3 className="card-title fw-bold">
+                                        {/* TITLE + INFO */}
+                                        <div className="min-w-0 w-100">
+
+                                            {/* TITLE */}
+                                            <div className="fw-bold fs-5 lh-sm mb-1">
                                                 Rekap Presensi
                                                 {rekap.kelas && (
                                                     <>
                                                         <span className="text-muted fw-normal">
-                                                            {" "}
-                                                            -
-                                                            {" "}
+                                                            {" - "}
                                                         </span>
 
-                                                        <span>
+                                                        <span className="text-dark">
                                                             {rekap.kelas}
                                                         </span>
                                                     </>
                                                 )}
-                                            </h3>
+                                            </div>
 
-                                            {/* INFO */}
-                                            <div
-                                                className="
-                            d-flex
-                            flex-wrap
-                            align-items-center
-                            gap-2
-                            text-muted
-                            small
-                        "
-                                            >
+                                            {/* INFO - BARIS KEDUA */}
+                                            <div className="d-flex align-items-center flex-wrap gap-2 text-muted small">
 
                                                 {/* TAHUN AJARAN */}
-                                                <span className="text-secondary">
-
-                                                </span>
-                                                <span className="text-secondary">
-                                                    •
-                                                </span>
                                                 <span className="d-inline-flex align-items-center">
-                                                    <i className="bi bi-mortarboard me-1"> </i>
+                                                    <i className="bi bi-mortarboard-fill me-1"></i>
+
                                                     <span>
                                                         {rekap.tahunAjaran || "-"}
                                                     </span>
@@ -933,16 +1047,13 @@ export default function RekapPresensiBulananPage() {
                                                     •
                                                 </span>
 
-
                                                 {/* BULAN */}
                                                 <span className="d-inline-flex align-items-center">
-
                                                     <i className="bi bi-calendar3 me-1"></i>
 
                                                     <span>
                                                         {MONTHS[bulan - 1]} {tahun}
                                                     </span>
-
                                                 </span>
 
                                             </div>
