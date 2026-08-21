@@ -16,6 +16,7 @@ import {
 import {
     createPenilaian,
     getTopikByMapel,
+    getSubtopikByMapel,
 } from "@/services/penilaian.service";
 import CreatableSelect from "react-select/creatable";
 
@@ -187,6 +188,7 @@ export default function TambahPenilaianPage() {
         setStudents([]);
         setScores({});
         setTopikOptions([]);
+        setSubtopikOptions([]);
     };
 
     // Isian tanggal otomatis
@@ -257,6 +259,37 @@ export default function TambahPenilaianPage() {
 
         loadTopik();
     }, [form.mapel]);
+
+    // Mengambil subtopik berdasarkan mata pelajaran yang dipilih
+    const [subtopikOptions, setSubtopikOptions] = useState<
+        { label: string; value: string }[]
+    >([]);
+    useEffect(() => {
+        async function loadSubtopik() {
+            if (!form.mapel) {
+                setSubtopikOptions([]);
+                return;
+            }
+
+            const ownerId = user?.uid;
+
+            if (!ownerId) return;
+
+            const data = await getSubtopikByMapel(
+                ownerId,
+                form.mapel
+            );
+
+            setSubtopikOptions(
+                data.map((item) => ({
+                    label: item,
+                    value: item,
+                }))
+            );
+        }
+
+        loadSubtopik();
+    }, [form.mapel, user?.uid]);
 
 
     return (
@@ -432,13 +465,30 @@ export default function TambahPenilaianPage() {
                                     Sub Topik
                                 </label>
 
-                                <input
-                                    type="text"
-                                    className="form-control"
-                                    name="subtopik"
-                                    value={form.subtopik}
-                                    onChange={handleChange}
-                                    placeholder="Contoh: Penjumlahan dan Pengurangan"
+                                <CreatableSelect
+                                    options={subtopikOptions}
+                                    placeholder="Cari atau ketik sub topik..."
+                                    value={
+                                        form.subtopik
+                                            ? {
+                                                label: form.subtopik,
+                                                value: form.subtopik,
+                                            }
+                                            : null
+                                    }
+                                    onChange={(selected) =>
+                                        setForm({
+                                            ...form,
+                                            subtopik: selected?.value || "",
+                                        })
+                                    }
+                                    onCreateOption={(inputValue) =>
+                                        setForm({
+                                            ...form,
+                                            subtopik: inputValue,
+                                        })
+                                    }
+                                    isClearable
                                 />
                             </div>
 

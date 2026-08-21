@@ -27,6 +27,7 @@ export default function InputNilaiPage() {
         namaKelas: "",
         topik: "",
         subtopik: "",
+        deskripsi: "",
         kkm: 75,
     }); // Update Informasi Penilaian
 
@@ -107,6 +108,7 @@ export default function InputNilaiPage() {
             namaKelas: penilaian.namaKelas,
             topik: penilaian.topik,
             subtopik: penilaian.subtopik,
+            deskripsi: penilaian.deskripsi ?? "",
             kkm: penilaian.kkm,
         });
 
@@ -255,6 +257,24 @@ export default function InputNilaiPage() {
                                         <span className="badge bg-danger fs-6">
                                             {penilaian?.kkm ?? "-"}
                                         </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="col-12">
+                                <div className="infonilai-info-item">
+                                    <div className="infonilai-icon bg-secondary">
+                                        <i className="fas fa-align-left"></i>
+                                    </div>
+
+                                    <div className="flex-grow-1">
+                                        <small className="text-muted d-block">
+                                            Deskripsi
+                                        </small>
+
+                                        <div className="fw-semibold text-break">
+                                            {penilaian?.deskripsi || "-"}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -594,6 +614,26 @@ export default function InputNilaiPage() {
                                                         subtopik: e.target.value,
                                                     })
                                                 }
+                                            />
+                                        </div>
+
+                                        {/* Deskripsi */}
+                                        <div className="col-md-12">
+                                            <label className="form-label fw-semibold">
+                                                Deskripsi
+                                            </label>
+
+                                            <textarea
+                                                className="form-control"
+                                                rows={4}
+                                                value={formEdit.deskripsi}
+                                                onChange={(e) =>
+                                                    setFormEdit({
+                                                        ...formEdit,
+                                                        deskripsi: e.target.value,
+                                                    })
+                                                }
+                                                placeholder="Tambahkan deskripsi atau catatan..."
                                             />
                                         </div>
 

@@ -203,6 +203,31 @@ export async function getTopikByMapel(
     return Array.from(topikSet).sort();
 }
 
+export async function getSubtopikByMapel(
+    ownerId: string,
+    mapel: string
+) {
+    const q = query(
+        collection(db, "penilaian"),
+        where("ownerId", "==", ownerId),
+        where("mapel", "==", mapel)
+    );
+
+    const snapshot = await getDocs(q);
+
+    const subtopikSet = new Set<string>();
+
+    snapshot.forEach((doc) => {
+        const data = doc.data();
+
+        if (data.subtopik) {
+            subtopikSet.add(data.subtopik);
+        }
+    });
+
+    return Array.from(subtopikSet).sort();
+}
+
 export async function getTahunAjaranPenilaian(
     ownerId: string
 ): Promise<string[]> {
@@ -437,6 +462,7 @@ export interface UpdatePenilaianPayload {
     topik: string;
     subtopik: string;
     namaKelas: string;
+    deskripsi: string;
     kkm: number;
 }
 

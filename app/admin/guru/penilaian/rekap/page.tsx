@@ -290,6 +290,34 @@ export default function RekapPenilaianPage() {
 
     }
 
+    function groupBySubtopik(items: RekapNilai[]) {
+        const groups = new Map<string, RekapNilai[]>();
+
+        items.forEach((item) => {
+            if (!groups.has(item.subtopik)) {
+                groups.set(item.subtopik, []);
+            }
+
+            groups.get(item.subtopik)!.push(item);
+        });
+
+        return Array.from(groups.entries()).map(([subtopik, groupedItems]) => ({
+            subtopik,
+            items: groupedItems,
+        }));
+    }
+
+    function getAverageScore(student: any, items: RekapNilai[]) {
+        if (items.length === 0) return 0;
+
+        const total = items.reduce(
+            (sum, item) => sum + Number(student.nilai[item.id] ?? 0),
+            0
+        );
+
+        return total / items.length;
+    }
+
     // Mengelompokkan data rekap berdasarkan Jenis
     const groupedJenis = useMemo(() => {
 
@@ -343,6 +371,10 @@ export default function RekapPenilaianPage() {
                 ).map(([topik, items]) => ({
 
                     topik,
+
+                    tpGroups: jenis === "Formatif"
+                        ? groupBySubtopik(items)
+                        : [],
 
                     items: items.sort((a, b) => {
                         const waktuA = a.createdAt?.toMillis?.() ?? 0;
@@ -467,7 +499,14 @@ export default function RekapPenilaianPage() {
             groupByTopik(asesmenDiagnostik);
 
         const formatifByTopik =
-            groupByTopik(formatifItems);
+            groupByTopik(formatifItems).map((topik) => ({
+                ...topik,
+                items: groupBySubtopik(topik.items),
+            }));
+
+        const formatifGroups = formatifByTopik.flatMap(
+            (topik) => topik.items
+        );
 
         const sumatifByTopik =
             groupByTopik(sumatifItems);
@@ -510,7 +549,7 @@ export default function RekapPenilaianPage() {
         // =====================================
 
         asesmenByTopik.forEach((topik) => {
-            topik.items.forEach((item, index) => {
+            topik.items.forEach((group, index) => {
                 headerRow1.push(
                     index === 0
                         ? "Asesmen Diagnostik"
@@ -609,19 +648,16 @@ export default function RekapPenilaianPage() {
             (student, index) => {
 
                 const totalFormatif =
-                    formatifItems.reduce(
-                        (sum, item) =>
-                            sum +
-                            Number(
-                                student.nilai[item.id] ?? 0
-                            ),
+                    formatifGroups.reduce(
+                        (sum, group) =>
+                            sum + getAverageScore(student, group.items),
                         0
                     );
 
                 const rataFormatif =
-                    formatifItems.length > 0
+                    formatifGroups.length > 0
                         ? totalFormatif /
-                        formatifItems.length
+                        formatifGroups.length
                         : 0;
 
                 const totalSumatif =
@@ -679,10 +715,10 @@ export default function RekapPenilaianPage() {
                 );
 
                 // FORMATIF
-                formatifItems.forEach(
-                    (item) => {
+                formatifGroups.forEach(
+                    (group) => {
                         row.push(
-                            student.nilai[item.id] ?? ""
+                            getAverageScore(student, group.items)
                         );
                     }
                 );
@@ -1265,7 +1301,7 @@ export default function RekapPenilaianPage() {
                                             jenis.jenis === "Formatif"
                                                 ? jenis.topik.reduce(
                                                     (t: number, topik: any) =>
-                                                        t + topik.items.length,
+                                                        t + topik.tpGroups.length,
                                                     0
                                                 )
                                                 : jenis.topik.length;
@@ -1320,7 +1356,7 @@ export default function RekapPenilaianPage() {
                                                 key={`${jenis.jenis}-${topik.topik}`}
                                                 colSpan={
                                                     jenis.jenis === "Formatif"
-                                                        ? topik.items.length
+                                                        ? topik.tpGroups.length
                                                         : 1
                                                 }
                                                 className="text-center bg-light"
@@ -1364,11 +1400,11 @@ export default function RekapPenilaianPage() {
 
                                             return jenis.topik.flatMap((topik: any) =>
 
-                                                topik.items.map(
-                                                    (item: any, index: number) => (
+                                                topik.tpGroups.map(
+                                                    (group: any, index: number) => (
 
                                                         <th
-                                                            key={item.id}
+                                                            key={`${topik.topik}-${group.subtopik}`}
                                                             className="text-center"
                                                             style={{
                                                                 minWidth: 70,
@@ -1376,7 +1412,7 @@ export default function RekapPenilaianPage() {
                                                             }}
                                                             data-bs-toggle="tooltip"
                                                             data-bs-placement="top"
-                                                            title={item.subtopik}
+                                                            title={group.subtopik}
                                                         >
                                                             TP{index + 1}
                                                         </th>
@@ -1433,7 +1469,7 @@ export default function RekapPenilaianPage() {
                                                             jenis.jenis === "Formatif"
                                                                 ? jenis.topik.reduce(
                                                                     (t: number, topik: any) =>
-                                                                        t + topik.items.length,
+                                                                        t + topik.tpGroups.length,
                                                                     0
                                                                 )
                                                                 : jenis.topik.length
@@ -1473,13 +1509,17 @@ export default function RekapPenilaianPage() {
                                             .includes("formatif")
                                     );
 
-                                    const totalFormatif = formatifItems.reduce((sum, item) => {
-                                        return sum + Number(student.nilai[item.id] ?? 0);
+                                    const formatifGroups = groupedJenis
+                                        .find((jenis) => jenis.jenis === "Formatif")
+                                        ?.topik.flatMap((topik: any) => topik.tpGroups) ?? [];
+
+                                    const totalFormatif = formatifGroups.reduce((sum, group: any) => {
+                                        return sum + getAverageScore(student, group.items);
                                     }, 0);
 
                                     const rataFormatif =
-                                        formatifItems.length > 0
-                                            ? totalFormatif / formatifItems.length
+                                        formatifGroups.length > 0
+                                            ? totalFormatif / formatifGroups.length
                                             : 0;
 
                                     // ==========================
@@ -1558,13 +1598,13 @@ export default function RekapPenilaianPage() {
 
                                                     return jenis.topik.flatMap((topik: any) =>
 
-                                                        topik.items.map((item: any) => (
+                                                        topik.tpGroups.map((group: any) => (
 
                                                             <td
-                                                                key={`${student.studentId}-${item.id}`}
+                                                                key={`${student.studentId}-${topik.topik}-${group.subtopik}`}
                                                                 className="text-center"
                                                             >
-                                                                {student.nilai[item.id] ?? ""}
+                                                                {getAverageScore(student, group.items).toFixed(2)}
                                                             </td>
 
                                                         ))

@@ -87,7 +87,28 @@ export default function AnggotaKelasPage() {
         try {
             const kelasRef = doc(db, "classes", kelasId);
             const kelasSnap = await getDoc(kelasRef);
-            if (kelasSnap.exists()) setKelasData({ id: kelasSnap.id, ...kelasSnap.data() });
+
+            if (!kelasSnap.exists()) return;
+
+            const data = kelasSnap.data();
+            let ownerName = data.ownerName || data.namaGuru || "";
+
+            if (!ownerName && data.ownerId) {
+                const ownerSnap = await getDoc(doc(db, "users", data.ownerId));
+                const ownerData = ownerSnap.data();
+
+                ownerName =
+                    ownerData?.nama ||
+                    ownerData?.displayName ||
+                    ownerData?.username ||
+                    "";
+            }
+
+            setKelasData({
+                id: kelasSnap.id,
+                ...data,
+                ownerName,
+            });
         } catch (error) {
             console.log(error);
         }
@@ -230,38 +251,40 @@ export default function AnggotaKelasPage() {
 
                                 <div className="card-body p-0">
 
-                                    <table className="table table-bordered mb-0">
+                                    <div className="table-responsive">
+                                        <table className="table table-bordered mb-0">
 
-                                        <tbody>
+                                            <tbody>
 
-                                            <tr>
-                                                <th style={{ width: 220 }}>Nama Guru</th>
-                                                <td>{kelasData.ownerName}</td>
-                                            </tr>
+                                                <tr>
+                                                    <th style={{ width: 220, minWidth: 150 }}>Nama Guru</th>
+                                                    <td>{kelasData.ownerName || "-"}</td>
+                                                </tr>
 
-                                            <tr>
-                                                <th>Nama Kelas</th>
-                                                <td>{kelasData.namaKelas}</td>
-                                            </tr>
+                                                <tr>
+                                                    <th>Nama Kelas</th>
+                                                    <td>{kelasData.namaKelas || "-"}</td>
+                                                </tr>
 
-                                            <tr>
-                                                <th>Tingkat Kelas</th>
-                                                <td>{kelasData.tingkatKelas}</td>
-                                            </tr>
+                                                <tr>
+                                                    <th>Tingkat Kelas</th>
+                                                    <td>{kelasData.tingkatKelas || "-"}</td>
+                                                </tr>
 
-                                            <tr>
-                                                <th>Tahun Ajaran</th>
-                                                <td>{kelasData.tahunAjaran}</td>
-                                            </tr>
+                                                <tr>
+                                                    <th>Tahun Ajaran</th>
+                                                    <td>{kelasData.tahunAjaran || "-"}</td>
+                                                </tr>
 
-                                            <tr>
-                                                <th>Mata Pelajaran</th>
-                                                <td>{kelasData.mataPelajaran}</td>
-                                            </tr>
+                                                <tr>
+                                                    <th>Mata Pelajaran</th>
+                                                    <td>{kelasData.mataPelajaran || "-"}</td>
+                                                </tr>
 
-                                        </tbody>
+                                            </tbody>
 
-                                    </table>
+                                        </table>
+                                    </div>
 
                                 </div>
 
@@ -326,7 +349,7 @@ export default function AnggotaKelasPage() {
                         color: "#fff"
                     }}
                 >
-                    <div className="d-flex justify-content-between align-items-center">
+                    <div className="d-flex flex-column flex-md-row justify-content-between align-items-stretch align-items-md-center gap-3">
                         <div>
                             <h5 className="mb-1 text-white">
                                 Pengelolaan Anggota Kelas
@@ -338,7 +361,7 @@ export default function AnggotaKelasPage() {
                             </small>
                         </div>
 
-                        <div className="d-flex gap-2">
+                        <div className="d-flex gap-2 align-self-start align-self-md-center">
                             <div className="dropdown">
                                 <button
                                     className="btn btn-outline-light dropdown-toggle"
@@ -389,16 +412,17 @@ export default function AnggotaKelasPage() {
 
                         {!loading && (
                             <>
-                                <table className="table table-bordered table-striped">
+                                <div className="table-responsive">
+                                <table className="table table-bordered table-striped align-middle mb-0">
                                     <thead>
                                         <tr>
-                                            <th>No</th>
-                                            <th>NIS</th>
-                                            <th>NISN</th>
-                                            <th>Nama</th>
-                                            <th>L/P</th>
-                                            <th>% Kehadiran</th>
-                                            <th style={{ width: 120 }}>Aksi</th>
+                                            <th className="text-center" style={{ minWidth: 55 }}>No</th>
+                                            <th style={{ minWidth: 100 }}>NIS</th>
+                                            <th style={{ minWidth: 120 }}>NISN</th>
+                                            <th style={{ minWidth: 180 }}>Nama</th>
+                                            <th className="text-center" style={{ minWidth: 65 }}>L/P</th>
+                                            <th style={{ minWidth: 220 }}> % Kehadiran</th>
+                                            <th className="text-center" style={{ minWidth: 80 }}>Aksi</th>
                                         </tr>
                                     </thead>
 
@@ -496,6 +520,7 @@ export default function AnggotaKelasPage() {
                                         ))}
                                     </tbody>
                                 </table>
+                                </div>
 
                                 <TableFooter
                                     currentPage={currentPage}
