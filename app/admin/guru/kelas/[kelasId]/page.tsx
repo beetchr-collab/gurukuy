@@ -21,6 +21,11 @@ import SearchInput from "@/components/search/SearchInput";
 import { getAttendanceRecap } from "@/services/presensi.service";
 import { AttendanceRecap } from "@/types/presensi";
 import { useAuth } from "@/context/AuthContext";
+import {
+    getMapelPenilaian,
+    getPenilaianRekap,
+} from "@/services/penilaian.service";
+import { getBobotPenilaian } from "@/services/bobotpenilaian.service";
 
 // pagination
 import { usePagination } from "@/hooks/usePagination";
@@ -37,6 +42,24 @@ interface Student {
     kelasId: string;
     tingkatKelas: number;
     jenisKelamin: string;
+}
+
+type NilaiAkhirPerMapel = Record<string, Record<string, number>>;
+
+function getMapelSingkatan(mapel: string) {
+    const normalizedMapel = mapel.toLowerCase().replace(/\s+/g, " ").trim();
+    const singkatan: Record<string, string> = {
+        "pendidikan agama islam": "PAI",
+        "pendidikan pancasila (pp)": "PP",
+        "bahasa indonesia": "BIN",
+        "matematika": "MAT",
+        "ilmu pengetahuan alam dan sosial (ipas)": "IPAS",
+        "bahasa inggris": "BIG",
+        "seni budaya": "SB",
+        "pendidikan olahraga dan kesehatan": "PJOK",
+    };
+
+    return singkatan[normalizedMapel] ?? mapel;
 }
 
 export default function AnggotaKelasPage() {
@@ -193,6 +216,8 @@ export default function AnggotaKelasPage() {
     const { user } = useAuth();
 
     const [rekap, setRekap] = useState<AttendanceRecap[]>([]);
+    const [mapelList, setMapelList] = useState<string[]>([]);
+    const [nilaiAkhir, setNilaiAkhir] = useState<NilaiAkhirPerMapel>({});
     useEffect(() => {
         if (!kelasId || !user?.schoolId) return;
 
@@ -201,6 +226,12 @@ export default function AnggotaKelasPage() {
         loadRekap();
 
     }, [kelasId, user]);
+
+    useEffect(() => {
+        if (!kelasId || !user?.uid || !kelasData?.tahunAjaran) return;
+
+        loadNilaiAkhir();
+    }, [kelasId, user, kelasData?.tahunAjaran, students]);
 
     async function loadRekap() {
 
@@ -214,6 +245,90 @@ export default function AnggotaKelasPage() {
         setRekap(data);
 
     }
+
+    async function loadNilaiAkhir() {
+        if (!user?.uid || !kelasData?.tahunAjaran) return;
+
+        try {
+            const mapelData = await getMapelPenilaian(
+                user.uid,
+                kelasData.tahunAjaran,
+                kelasId
+            );
+            const mapel = mapelData.map((item) => item.mapel);
+
+            const nilaiPerMapel = await Promise.all(
+                mapel.map(async (namaMapel) => {
+                    const [penilaian, bobotData] = await Promise.all([
+                        getPenilaianRekap(
+                            user.uid,
+                            kelasId,
+                            namaMapel,
+                            kelasData.tahunAjaran
+                        ),
+                        getBobotPenilaian(
+                            user.uid,
+                            kelasData.tahunAjaran,
+                            kelasId,
+                            namaMapel
+                        ),
+                    ]);
+
+                    const bobot = bobotData ?? {
+                        formatif: 50,
+                        sumatif: 25,
+                        sas: 25,
+                    };
+                    const formatif = penilaian.filter((item) =>
+                        item.jenisPenilaian.toLowerCase().includes("formatif")
+                    );
+                    const sumatif = penilaian.filter((item) =>
+                        item.jenisPenilaian.toLowerCase().includes("sumatif") &&
+                        !item.jenisPenilaian.toLowerCase().includes("sumatif akhir semester")
+                    );
+                    const sas = penilaian.find((item) =>
+                        item.jenisPenilaian.toLowerCase().includes("sumatif akhir semester")
+                    );
+
+                    const getScore = (studentId: string, items: typeof penilaian) => {
+                        if (items.length === 0) return 0;
+
+                        const total = items.reduce((sum, item) => {
+                            const score = item.nilai.find((value) => value.studentId === studentId)?.nilai;
+                            return sum + Number(score ?? 0);
+                        }, 0);
+
+                        return total / items.length;
+                    };
+
+                    const scores = Object.fromEntries(
+                        students.map((student) => {
+                            const nilaiFormatif = getScore(student.id, formatif);
+                            const nilaiSumatif = getScore(student.id, sumatif);
+                            const nilaiSAS = sas
+                                ? Number(sas.nilai.find((value) => value.studentId === student.id)?.nilai ?? 0)
+                                : 0;
+
+                            return [
+                                student.id,
+                                (nilaiFormatif * bobot.formatif) / 100 +
+                                (nilaiSumatif * bobot.sumatif) / 100 +
+                                (nilaiSAS * bobot.sas) / 100,
+                            ];
+                        })
+                    );
+
+                    return [namaMapel, scores] as const;
+                })
+            );
+
+            setMapelList(mapel);
+            setNilaiAkhir(Object.fromEntries(nilaiPerMapel));
+        } catch (error) {
+            console.error("Gagal mengambil nilai akhir:", error);
+        }
+    }
+
     function getStudentRecap(studentId: string) {
         return rekap.find(
             (item) => item.studentId === studentId
@@ -226,6 +341,34 @@ export default function AnggotaKelasPage() {
         if (persentase >= 60) return "bg-warning";
         return "bg-danger";
     };
+
+    const getStudentAverage = (studentId: string) => {
+        if (mapelList.length === 0) return null;
+
+        const total = mapelList.reduce(
+            (sum, mapel) => sum + (nilaiAkhir[mapel]?.[studentId] ?? 0),
+            0
+        );
+
+        return total / mapelList.length;
+    };
+
+    const ranking = [...students]
+        .sort((a, b) => {
+            const averageDifference =
+                (getStudentAverage(b.id) ?? 0) - (getStudentAverage(a.id) ?? 0);
+
+            if (averageDifference !== 0) return averageDifference;
+
+            return a.nama.localeCompare(b.nama, "id", {
+                sensitivity: "base",
+                numeric: true,
+            });
+        })
+        .reduce<Record<string, number>>((result, student, index) => {
+            result[student.id] = index + 1;
+            return result;
+        }, {});
 
 
     return (
@@ -278,7 +421,7 @@ export default function AnggotaKelasPage() {
 
                                                 <tr>
                                                     <th>Mata Pelajaran</th>
-                                                    <td>{kelasData.mataPelajaran || "-"}</td>
+                                                    <td>{kelasData.mataPelajaran ? getMapelSingkatan(kelasData.mataPelajaran) : "-"}</td>
                                                 </tr>
 
                                             </tbody>
@@ -375,11 +518,11 @@ export default function AnggotaKelasPage() {
                                     zIndex: 9999
                                 }}>
                                     <li><a className="dropdown-item" href={`/admin/guru/kelas/${kelasId}/tambah`}>Tambah Anggota</a></li>
-                                    <li><a className="dropdown-item" href={`/admin/guru/kelas/${kelasId}/presensi`}>Presensi</a></li>
-                                    <li><a className="dropdown-item" href={`/admin/guru/kelas/${kelasId}/penilaian`}>Penilaian</a></li>
+                                    <li><a className="dropdown-item" href="/admin/guru/presensi/rekap-presensi">Presensi</a></li>
+                                    <li><a className="dropdown-item" href="/admin/guru/penilaian">Penilaian</a></li>
                                     <li><a className="dropdown-item" href={`/admin/guru/kelas/${kelasId}/cetak`}>Cetak Data</a></li>
                                     <li><hr className="dropdown-divider" /></li>
-                                    <li><a className="dropdown-item" href="/admin/guru/kelas/[kelasId]/refresh">Refresh Data</a></li>
+                                    <li><a className="dropdown-item" href={`/admin/guru/kelas/${kelasId}`}>Refresh Data</a></li>
                                 </ul>
                             </div>
                         </div>
@@ -421,6 +564,13 @@ export default function AnggotaKelasPage() {
                                             <th style={{ minWidth: 120 }}>NISN</th>
                                             <th style={{ minWidth: 180 }}>Nama</th>
                                             <th className="text-center" style={{ minWidth: 65 }}>L/P</th>
+                                            {mapelList.map((mapel) => (
+                                                <th key={mapel} className="text-center" style={{ minWidth: 110 }}>
+                                                    {getMapelSingkatan(mapel)}
+                                                </th>
+                                            ))}
+                                            <th className="text-center" style={{ minWidth: 110 }}>Rata-rata</th>
+                                            <th className="text-center" style={{ minWidth: 90 }}>Peringkat</th>
                                             <th style={{ minWidth: 220 }}> % Kehadiran</th>
                                             <th className="text-center" style={{ minWidth: 80 }}>Aksi</th>
                                         </tr>
@@ -429,7 +579,7 @@ export default function AnggotaKelasPage() {
                                     <tbody>
                                         {sortedStudents.length === 0 && (
                                             <tr>
-                                                <td colSpan={7} className="text-center">
+                                                <td colSpan={9 + mapelList.length} className="text-center">
                                                     Tidak ada anggota kelas
                                                 </td>
                                             </tr>
@@ -447,13 +597,29 @@ export default function AnggotaKelasPage() {
 
                                                 <td>{student.jk}</td>
 
+                                                {mapelList.map((mapel) => (
+                                                    <td key={mapel} className="text-center">
+                                                        {nilaiAkhir[mapel]?.[student.id] === undefined
+                                                            ? "-"
+                                                            : nilaiAkhir[mapel][student.id].toFixed(2)}
+                                                    </td>
+                                                ))}
+
+                                                <td className="text-center">
+                                                    {getStudentAverage(student.id)?.toFixed(2) ?? "-"}
+                                                </td>
+
+                                                <td className="text-center">
+                                                    {ranking[student.id] ?? "-"}
+                                                </td>
+
                                                 <td style={{ minWidth: 220 }}>
                                                     {(() => {
                                                         const recap = getStudentRecap(student.id);
 
                                                         return (
                                                             <Link
-                                                                href={`/admin/guru/kelas/${kelasId}/presensi/siswa-presensi/${student.id}`}
+                                                                href={`/admin/guru/presensi/detail-presensi/${student.id}?kelasId=${kelasId}`}
                                                                 className="text-decoration-none text-reset"
                                                             >
                                                                 <div className="riwayat-presensi-link p-2 rounded">

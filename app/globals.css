@@ -1596,11 +1596,11 @@ body {
   background: linear-gradient(135deg, #20c997, #198754);
 }
 
-.riwayat-presensi-stat-card.izin {
+.riwayat-presensi-stat-card.sakit {
   background: linear-gradient(135deg, #4f8ef7, #0d6efd);
 }
 
-.riwayat-presensi-stat-card.sakit {
+.riwayat-presensi-stat-card.izin {
   background: linear-gradient(135deg, #ffc107, #ff9800);
 }
 
@@ -1785,6 +1785,10 @@ body {
   color: #fff;
   font-size: 22px;
   box-shadow: 0 8px 18px rgba(0, 0, 0, .12);
+}
+
+.min-w-0 {
+    min-width: 0;
 }
 
 .infonilai-icon.bg-primary {

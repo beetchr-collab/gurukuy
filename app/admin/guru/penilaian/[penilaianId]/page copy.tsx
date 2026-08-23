@@ -158,15 +158,240 @@ export default function InputNilaiPage() {
 
                 {/* Header */}
 
-                <div className="mb-3">
+                <div className="mb-4">
 
                     <h3 className="h3 font-weight-bold">
                         Daftar Nilai
                     </h3>
                 </div>
 
+                {/* Informasi Penilaian */}
+                <div className="card shadow-sm border-0 mb-4 infonilai-card">
+                    {/* Header */}
+                    <div className="card-header bg-white border-0 py-3">
+                        <div className="d-flex justify-content-between align-items-center flex-wrap gap-2">
+
+                            <div>
+                                <h5 className="fw-bold mb-1">
+                                    <i className="fas fa-clipboard-check text-primary me-2"></i>
+                                    Informasi Penilaian
+                                </h5>
+
+                                <small className="text-muted">
+                                    Informasi dasar penilaian yang digunakan untuk input nilai siswa.
+                                </small>
+                            </div>
+
+                            <button
+                                type="button"
+                                className="btn btn-warning btn-sm shadow-sm d-flex align-items-center"
+                                onClick={openEditModal}
+                            >
+                                <i className="fas fa-edit me-2"></i>
+                                Edit Informasi
+                            </button>
+
+                        </div>
+                    </div>
+
+                    <div className="card-body">
+
+                        <div className="row g-3">
+
+                            <div className="col-12 col-sm-6 col-lg-3">
+                                <div className="infonilai-info-item">
+                                    <div className="infonilai-icon bg-primary">
+                                        <i className="fas fa-book"></i>
+                                    </div>
+
+                                    <div>
+                                        <small className="text-muted d-block">
+                                            Sub Topik Penilaian
+                                        </small>
+
+                                        <div className="fw-bold">
+                                            {penilaian?.subtopik ?? "-"}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="col-12 col-sm-6 col-lg-3">
+                                <div className="infonilai-info-item">
+                                    <div className="infonilai-icon bg-success">
+                                        <i className="fas fa-users"></i>
+                                    </div>
+
+                                    <div>
+                                        <small className="text-muted d-block">
+                                            Kelas
+                                        </small>
+
+                                        <span className="badge bg-success">
+                                            {penilaian?.namaKelas ?? "-"}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="col-12 col-sm-6 col-lg-3">
+                                <div className="infonilai-info-item">
+                                    <div className="infonilai-icon bg-warning text-dark">
+                                        <i className="fas fa-book-open"></i>
+                                    </div>
+
+                                    <div>
+                                        <small className="text-muted d-block">
+                                            Mata Pelajaran
+                                        </small>
+
+                                        <span className="badge bg-primary">
+                                            {penilaian?.mapel ?? "-"}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="col-12 col-sm-6 col-lg-3">
+                                <div className="infonilai-info-item">
+                                    <div className="infonilai-icon bg-danger">
+                                        <i className="fas fa-award"></i>
+                                    </div>
+
+                                    <div>
+                                        <small className="text-muted d-block">
+                                            KKM
+                                        </small>
+
+                                        <span className="badge bg-danger fs-6">
+                                            {penilaian?.kkm ?? "-"}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="col-12">
+                                <div className="infonilai-info-item">
+                                    <div className="infonilai-icon bg-secondary">
+                                        <i className="fas fa-align-left"></i>
+                                    </div>
+
+                                    <div className="flex-grow-1">
+                                        <small className="text-muted d-block">
+                                            Deskripsi
+                                        </small>
+
+                                        <div className="fw-semibold text-break">
+                                            {penilaian?.deskripsi || "-"}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    {/* Informasi Penilaian */}
+<div className="card shadow-sm border-0 mb-4">
+    <div className="card-body py-3">
+
+        <div className="d-flex flex-wrap align-items-center gap-3">
+
+            {/* TITLE */}
+            <div className="d-flex align-items-center me-2">
+                <i className="fas fa-clipboard-check text-primary fs-5 me-2"></i>
+
+                <div>
+                    <div className="fw-bold">
+                        Informasi Penilaian
+                    </div>
+
+                    <small className="text-muted">
+                        Detail penilaian
+                    </small>
+                </div>
+            </div>
+
+            {/* SUB TOPIK */}
+            <div className="border-start ps-3">
+                <small className="text-muted d-block">
+                    Sub Topik
+                </small>
+
+                <span className="fw-semibold">
+                    {penilaian?.subtopik ?? "-"}
+                </span>
+            </div>
+
+            {/* KELAS */}
+            <div className="border-start ps-3">
+                <small className="text-muted d-block">
+                    Kelas
+                </small>
+
+                <span className="badge bg-success">
+                    {penilaian?.namaKelas ?? "-"}
+                </span>
+            </div>
+
+            {/* MAPEL */}
+            <div className="border-start ps-3">
+                <small className="text-muted d-block">
+                    Mata Pelajaran
+                </small>
+
+                <span className="badge bg-primary">
+                    {penilaian?.mapel ?? "-"}
+                </span>
+            </div>
+
+            {/* KKM */}
+            <div className="border-start ps-3">
+                <small className="text-muted d-block">
+                    KKM
+                </small>
+
+                <span className="badge bg-danger">
+                    {penilaian?.kkm ?? "-"}
+                </span>
+            </div>
+
+            {/* EDIT */}
+            <div className="ms-auto">
+                <button
+                    type="button"
+                    className="btn btn-warning btn-sm d-flex align-items-center"
+                    onClick={openEditModal}
+                >
+                    <i className="fas fa-edit me-2"></i>
+                    Edit
+                </button>
+            </div>
+
+        </div>
+
+        {/* DESKRIPSI */}
+        {penilaian?.deskripsi && (
+            <div className="border-top mt-3 pt-2">
+                <small className="text-muted me-2">
+                    <i className="fas fa-align-left me-1"></i>
+                    Deskripsi:
+                </small>
+
+                <span className="text-muted">
+                    {penilaian.deskripsi}
+                </span>
+            </div>
+        )}
+
+    </div>
+</div>
+
+                </div>
+                
+
                 {/* Progress */}
-                <div className="card shadow-sm mb-2">
+                <div className="card shadow-sm mb-4">
 
                     <div className="card-body">
 
@@ -197,105 +422,6 @@ export default function InputNilaiPage() {
                         <div className="text-right mt-2 font-weight-bold">
                             {progress}%
                         </div>
-
-                    </div>
-
-                </div>
-
-                {/* Informasi Penilaian */}
-                <div className="card shadow-sm border-0 mb-4 infonilai-card">
-
-                    <div className="card-body py-3">
-
-                        <div className="d-flex flex-wrap align-items-center gap-3">
-
-                            {/* TITLE */}
-                            <div className="d-flex align-items-center me-2">
-                                <i className="fas fa-clipboard-check text-primary fs-5 me-2"></i>
-
-                                <div>
-                                    <div className="fw-bold">
-                                        Informasi Penilaian
-                                    </div>
-
-                                    <small className="text-muted">
-                                        Detail penilaian
-                                    </small>
-                                </div>
-                            </div>
-
-                            {/* SUB TOPIK */}
-                            <div className="border-start ps-3">
-                                <small className="text-muted d-block">
-                                    Sub Topik
-                                </small>
-
-                                <span className="fw-semibold">
-                                    {penilaian?.subtopik ?? "-"}
-                                </span>
-                            </div>
-
-                            {/* KELAS */}
-                            <div className="border-start ps-3">
-                                <small className="text-muted d-block">
-                                    Kelas
-                                </small>
-
-                                <span className="badge bg-success">
-                                    {penilaian?.namaKelas ?? "-"}
-                                </span>
-                            </div>
-
-                            {/* MAPEL */}
-                            <div className="border-start ps-3">
-                                <small className="text-muted d-block">
-                                    Mata Pelajaran
-                                </small>
-
-                                <span className="badge bg-primary">
-                                    {penilaian?.mapel ?? "-"}
-                                </span>
-                            </div>
-
-                            {/* KKM */}
-                            <div className="border-start ps-3">
-                                <small className="text-muted d-block">
-                                    KKM
-                                </small>
-
-                                <span className="badge bg-danger">
-                                    {penilaian?.kkm ?? "-"}
-                                </span>
-                            </div>
-
-                            {/* EDIT */}
-                            <div className="ms-auto">
-                                <button
-                                    type="button"
-                                    className="btn btn-warning btn-sm d-flex align-items-center"
-                                    onClick={openEditModal}
-                                    title="Edit Informasi Penilaian"
-                                >
-                                    <i className="fas fa-edit me-2"></i>
-                                    Edit
-                                </button>
-                            </div>
-
-                        </div>
-
-                        {/* DESKRIPSI */}
-                        {penilaian?.deskripsi && (
-                            <div className="border-top mt-3 pt-2">
-                                <small className="text-muted me-2">
-                                    <i className="fas fa-align-left me-1"></i>
-                                    Deskripsi/Kegiatan:
-                                </small>
-
-                                <span className="text-muted">
-                                    {penilaian.deskripsi}
-                                </span>
-                            </div>
-                        )}
 
                     </div>
 

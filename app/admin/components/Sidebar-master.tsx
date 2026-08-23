@@ -369,7 +369,20 @@ export default function Sidebar() {
                           }`}
                       >
                         <i className="far fa-file-alt nav-icon"></i>
-                        <p>Rekap</p>
+                        <p>Rekap Mapel</p>
+                      </Link>
+                    </li>
+
+                    <li className="nav-item">
+                      <Link
+                        href="/admin/guru/penilaian/leger"
+                        className={`nav-link ${isActive("/admin/guru/penilaian/leger")
+                          ? "active bg-primary text-white"
+                          : ""
+                          }`}
+                      >
+                        <i className="far fa-list-ol nav-icon"></i>
+                        <p>Leger Nilai</p>
                       </Link>
                     </li>
 
