@@ -381,7 +381,7 @@ export default function Sidebar() {
                           : ""
                           }`}
                       >
-                        <i className="far fa-list-ol nav-icon"></i>
+                        <i className="fas fa-book-open nav-icon"></i>
                         <p>Leger Nilai</p>
                       </Link>
                     </li>

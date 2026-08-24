@@ -304,60 +304,69 @@ export default function InputNilaiPage() {
                 {/* Tabel */}
                 <div className="card shadow-sm border-0">
 
-                    {/* Header */}
-                    <div className="card-header bg-white border-bottom">
+                   {/* Header */}
+                    <div className="card-header bg-white border-bottom py-3">
 
-                        <div className="d-flex align-items-center gap-3 w-100">
+    <div className="d-flex flex-wrap align-items-center gap-3 w-100">
 
-                            {/* TITLE */}
-                            <div className="flex-grow-1 min-w-0">
-                                <h3 className="card-title mb-0 fw-semibold">
-                                    <i className="fas fa-user-graduate text-primary me-2"></i>
-                                    Daftar Nilai Siswa
-                                </h3>
-                            </div>
+        {/* TITLE */}
+        <div className="flex-grow-1 min-w-0">
+            <h3 className="card-title mb-1 fw-semibold text-nowrap">
+                <i className="fas fa-user-graduate text-primary me-2"></i>
+                Daftar Nilai Siswa
+            </h3>
+        </div>
 
-                            {/* FILTER */}
-                            <div className="d-flex align-items-center gap-2 flex-shrink-0">
+        {/* FILTER */}
+        <div className="d-flex flex-wrap align-items-center gap-2 ms-auto">
 
-                                {/* STATUS */}
-                                <select
-                                    className="form-select"
-                                    style={{ width: 180 }}
-                                    value={statusNilai}
-                                    onChange={(e) => setStatusNilai(e.target.value)}
-                                    aria-label="Filter status nilai"
-                                >
-                                    <option value="semua">Semua</option>
-                                    <option value="belum-dinilai">Belum Dinilai</option>
-                                    <option value="tuntas">Tuntas</option>
-                                    <option value="belum-tuntas">Belum Tuntas</option>
-                                    <option value="kurang">Kurang</option>
-                                </select>
+            {/* STATUS */}
+            <div className="filter-status">
+                <select
+                    className="form-select"
+                    value={statusNilai}
+                    onChange={(e) => setStatusNilai(e.target.value)}
+                    aria-label="Filter status nilai"
+                >
+                    <option value="semua">Semua Status</option>
+                    <option value="belum-dinilai">
+                        Belum Dinilai
+                    </option>
+                    <option value="tuntas">
+                        Tuntas
+                    </option>
+                    <option value="belum-tuntas">
+                        Belum Tuntas
+                    </option>
+                    <option value="kurang">
+                        Kurang
+                    </option>
+                </select>
+            </div>
 
-                                {/* SEARCH */}
-                                <div style={{ width: 320 }}>
-                                    <div className="input-group">
+            {/* SEARCH */}
+            <div className="filter-search">
+                <div className="input-group">
 
-                                        <span className="input-group-text bg-white">
-                                            <i className="fas fa-search"></i>
-                                        </span>
+                    <span className="input-group-text bg-white">
+                        <i className="fas fa-search text-muted"></i>
+                    </span>
 
-                                        <input
-                                            type="text"
-                                            className="form-control"
-                                            placeholder="Cari siswa..."
-                                            value={keyword}
-                                            onChange={(e) => setKeyword(e.target.value)}
-                                        />
+                    <input
+                        type="text"
+                        className="form-control"
+                        placeholder="Cari siswa..."
+                        value={keyword}
+                        onChange={(e) => setKeyword(e.target.value)}
+                    />
 
-                                    </div>
-                                </div>
+                </div>
+            </div>
 
-                            </div>
+        </div>
 
-                        </div>
-                    </div>
+    </div>
+</div>
 
                     {/* Table */}
                     <div className="table-responsive">
