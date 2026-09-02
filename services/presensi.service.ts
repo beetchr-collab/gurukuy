@@ -15,6 +15,7 @@ import {
     Attendance,
     AttendanceRecap,
 } from "@/types/presensi";
+import { getAnggotaKelas } from "@/services/anggotakelas.service";
 
 export interface AttendanceClass {
     id: string;
@@ -693,15 +694,37 @@ export async function getMonthlyAttendanceByFilter(
             const student =
                 studentMap.get(item.studentId)!;
 
+            const status = item.status === "Ijin"
+                ? "Izin"
+                : item.status;
+
             if (
-                item.status === "Hadir" ||
-                item.status === "Izin" ||
-                item.status === "Sakit" ||
-                item.status === "Alpha"
+                status === "Hadir" ||
+                status === "Izin" ||
+                status === "Sakit" ||
+                status === "Alpha"
             ) {
-                student.attendance[tanggal] =
-                    item.status;
+                student.attendance[tanggal] = status;
             }
+        });
+    });
+
+    const anggotaKelas = await getAnggotaKelas(kelasId);
+
+    anggotaKelas.forEach((anggota) => {
+        const studentId = anggota.studentId || anggota.id;
+
+        if (!studentId || studentMap.has(studentId)) {
+            return;
+        }
+
+        studentMap.set(studentId, {
+            studentId,
+            nis: anggota.nis?.toString() || "",
+            nisn: anggota.nisn?.toString() || "",
+            nama: anggota.nama || "",
+            jk: anggota.jk || "",
+            attendance: {},
         });
     });
 

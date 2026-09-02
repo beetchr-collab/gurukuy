@@ -43,16 +43,81 @@ const DEFAULT_BOBOT: Pick<BobotPenilaian, "formatif" | "sumatif" | "sas"> = {
 function getMapelSingkatan(mapel: string) {
     const normalizedMapel = mapel.toLowerCase().replace(/\s+/g, " ").trim();
     const singkatan: Record<string, string> = {
-        "pendidikan agama islam": "PAI",
-        "pendidikan pancasila": "PP",
-        "pendidikan pancasila (pp)": "PP",
-        "bahasa indonesia": "BIN",
-        "matematika": "MAT",
-        "ilmu pengetahuan alam dan sosial": "IPAS",
-        "ilmu pengetahuan alam dan sosial (ipas)": "IPAS",
-        "bahasa inggris": "BIG",
-        "seni budaya": "SB",
-        "pendidikan olahraga dan kesehatan": "PJOK",
+    // AGAMA
+    "pendidikan agama islam": "PAI",
+    "pendidikan agama islam dan budi pekerti": "PAI",
+
+    "pendidikan agama kristen": "PAK",
+    "pendidikan agama kristen dan budi pekerti": "PAK",
+
+    "pendidikan agama hindu": "PAH",
+    "pendidikan agama hindu dan budi pekerti": "PAH",
+
+    "pendidikan agama buddha": "PAB",
+    "pendidikan agama buddha dan budi pekerti": "PAB",
+
+    "pendidikan agama khonghucu": "PAKh",
+    "pendidikan agama khonghucu dan budi pekerti": "PAKh",
+
+    // UMUM / WAJIB
+    "guru kelas": "GK",
+
+    "pendidikan pancasila": "PP",
+    "pendidikan pancasila (pp)": "PP",
+
+    "bahasa indonesia": "BIN",
+
+    "matematika": "MAT",
+
+    "ilmu pengetahuan alam dan sosial": "IPAS",
+    "ilmu pengetahuan alam dan sosial (ipas)": "IPAS",
+
+    "ilmu pengetahuan alam": "IPA",
+    "ipa": "IPA",
+
+    "ilmu pengetahuan sosial": "IPS",
+    "ips": "IPS",
+
+    "bahasa inggris": "BIG",
+
+    // SENI & OLAHRAGA
+    "seni budaya": "SB",
+
+    "pendidikan jasmani, olahraga, dan kesehatan": "PJOK",
+    "pendidikan jasmani olahraga dan kesehatan": "PJOK",
+    "pendidikan olahraga dan kesehatan": "PJOK",
+    "pjok": "PJOK",
+
+    // PRAKARYA & TEKNOLOGI
+    "prakarya": "PRAK",
+
+    "informatika": "INF",
+
+    "informatika / tik": "TIK",
+    "informatika/tik": "TIK",
+
+    // SMA
+    "fisika": "FIS",
+    "kimia": "KIM",
+    "biologi": "BIO",
+    "ekonomi": "EKO",
+    "geografi": "GEO",
+    "sosiologi": "SOS",
+    "sejarah": "SEJ",
+    "sejarah indonesia": "SEJIND",
+
+    // BAHASA
+    "bahasa arab": "BAR",
+    "bahasa jepang": "BJP",
+    "bahasa jerman": "BJR",
+    "bahasa mandarin": "BMAN",
+    "bahasa daerah": "BD",
+
+    // OPSIONAL
+    "kewirausahaan": "KWU",
+
+    "koding dan kecerdasan artifisial": "KKA",
+    "koding dan kecerdasan artifisial (kka)": "KKA",
     };
 
     return singkatan[normalizedMapel] ?? mapel;

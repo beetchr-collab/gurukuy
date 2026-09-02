@@ -15,8 +15,7 @@ export default function Sidebar() {
 
   const isActive = (path: string) => pathname === path;
 
-  const isParentActive = (path: string) =>
-    pathname.startsWith(path);
+  const isParentActive = (path: string) => pathname.startsWith(path);
 
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   useEffect(() => {
@@ -26,7 +25,10 @@ export default function Sidebar() {
   }, [pathname]);
 
   return (
-    <aside className="app-sidebar bg-body-secondary shadow" data-bs-theme="dark">
+    <aside
+      className="app-sidebar bg-body-secondary shadow"
+      data-bs-theme="dark"
+    >
       {/* BRAND */}
       <div className="sidebar-brand">
         <Link
@@ -41,7 +43,7 @@ export default function Sidebar() {
             style={{
               maxHeight: 55,
               width: "auto",
-              objectFit: "contain"
+              objectFit: "contain",
             }}
           />
         </Link>
@@ -50,11 +52,7 @@ export default function Sidebar() {
       {/* SIDEBAR */}
       <div className="sidebar-wrapper">
         <nav className="mt-2" aria-label="Main navigation">
-          <ul
-            className="nav sidebar-menu flex-column"
-            role="menu"
-          >
-
+          <ul className="nav sidebar-menu flex-column" role="menu">
             {/* DASHBOARD — SUPERADMIN */}
             {user?.role === "superadmin" && (
               <>
@@ -98,7 +96,6 @@ export default function Sidebar() {
                     <p>Login History</p>
                   </Link>
                 </li>
-
               </>
             )}
 
@@ -116,7 +113,9 @@ export default function Sidebar() {
                 </li>
 
                 <li className="nav-header">MENU UTAMA</li>
-                <li className={`nav-item ${openMenu === "sekolah" ? "menu-open" : ""}`}>
+                <li
+                  className={`nav-item ${openMenu === "sekolah" ? "menu-open" : ""}`}
+                >
                   <a
                     href="#"
                     onClick={(e) => {
@@ -133,14 +132,14 @@ export default function Sidebar() {
                   </a>
 
                   <ul className="nav nav-treeview">
-
                     <li className="nav-item">
                       <Link
                         href="/admin/adminsekolah/sekolah"
-                        className={`nav-link ${isActive("/admin/adminsekolah/sekolah")
-                          ? "active bg-primary text-white"
-                          : ""
-                          }`}
+                        className={`nav-link ${
+                          isActive("/admin/adminsekolah/sekolah")
+                            ? "active bg-primary text-white"
+                            : ""
+                        }`}
                       >
                         <i className="far fa-circle nav-icon"></i>
                         <p>Data Sekolah</p>
@@ -150,16 +149,16 @@ export default function Sidebar() {
                     <li className="nav-item">
                       <Link
                         href="/admin/adminsekolah/setting-sekolah"
-                        className={`nav-link ${isActive("/admin/adminsekolah/setting-sekolah")
-                          ? "active bg-primary text-white"
-                          : ""
-                          }`}
+                        className={`nav-link ${
+                          isActive("/admin/adminsekolah/setting-sekolah")
+                            ? "active bg-primary text-white"
+                            : ""
+                        }`}
                       >
                         <i className="far fa-circle nav-icon"></i>
                         <p>Setting Sekolah</p>
                       </Link>
                     </li>
-
                   </ul>
                 </li>
 
@@ -182,8 +181,6 @@ export default function Sidebar() {
                     <p>Peserta Didik</p>
                   </Link>
                 </li>
-
-
               </>
             )}
 
@@ -231,37 +228,45 @@ export default function Sidebar() {
                 </li>
 
                 {/* Menu Presensi */}
-                <li className={`nav-item ${openMenu === "presensi" ? "menu-open" : ""}`}>
+                <li
+                  className={`nav-item ${openMenu === "presensi" ? "menu-open" : ""}`}
+                >
                   <a
                     href="#"
                     onClick={(e) => {
                       e.preventDefault();
                       setOpenMenu(openMenu === "presensi" ? null : "presensi");
                     }}
-                    className={`nav-link ${isParentActive("/admin/guru/presensi") ? "active" : ""
-                      }`}
+                    className={`nav-link ${
+                      isParentActive("/admin/guru/presensi") ? "active" : ""
+                    }`}
                   >
                     <i className="nav-icon fas fa-user-check"></i>
                     <p className="d-flex align-items-center w-100 mb-0">
                       <span>Presensi</span>
 
                       <i
-                        className={`fas ${openMenu === "presensi"
-                          ? "fa-angle-down"
-                          : "fa-angle-right"
-                          } ms-auto`}
+                        className={`fas ${
+                          openMenu === "presensi"
+                            ? "fa-angle-down"
+                            : "fa-angle-right"
+                        } ms-auto`}
                       ></i>
                     </p>
                   </a>
 
-                  <ul className="nav nav-treeview" style={{ paddingLeft: "15px" }}>
+                  <ul
+                    className="nav nav-treeview"
+                    style={{ paddingLeft: "15px" }}
+                  >
                     <li className="nav-item">
                       <Link
                         href="/admin/guru/presensi/input-presensi"
-                        className={`nav-link ${isActive("/admin/guru/presensi/input-presensi")
-                          ? "active bg-primary text-white"
-                          : ""
-                          }`}
+                        className={`nav-link ${
+                          isActive("/admin/guru/presensi/input-presensi")
+                            ? "active bg-primary text-white"
+                            : ""
+                        }`}
                       >
                         <i className="nav-icon fas fa-user-edit"></i>
                         <p>Input Presensi Harian</p>
@@ -271,10 +276,11 @@ export default function Sidebar() {
                     <li className="nav-item">
                       <Link
                         href="/admin/guru/presensi/list-presensi"
-                        className={`nav-link ${isActive("/admin/guru/presensi/list-presensi")
-                          ? "active bg-primary text-white"
-                          : ""
-                          }`}
+                        className={`nav-link ${
+                          isActive("/admin/guru/presensi/list-presensi")
+                            ? "active bg-primary text-white"
+                            : ""
+                        }`}
                       >
                         <i className="nav-icon fas fa-list-check"></i>
                         <p>List Presensi</p>
@@ -284,10 +290,11 @@ export default function Sidebar() {
                     <li className="nav-item">
                       <Link
                         href="/admin/guru/presensi/rekap-presensi"
-                        className={`nav-link ${isActive("/admin/guru/presensi/rekap-presensi")
-                          ? "active bg-primary text-white"
-                          : ""
-                          }`}
+                        className={`nav-link ${
+                          isActive("/admin/guru/presensi/rekap-presensi")
+                            ? "active bg-primary text-white"
+                            : ""
+                        }`}
                       >
                         <i className="nav-icon fas fa-calendar-check"></i>
                         <p>Rekap Presensi</p>
@@ -297,10 +304,11 @@ export default function Sidebar() {
                     <li className="nav-item">
                       <Link
                         href="/admin/guru/presensi/rekap-bulanan"
-                        className={`nav-link ${isActive("/admin/guru/presensi/rekap-bulanan")
-                          ? "active bg-primary text-white"
-                          : ""
-                          }`}
+                        className={`nav-link ${
+                          isActive("/admin/guru/presensi/rekap-bulanan")
+                            ? "active bg-primary text-white"
+                            : ""
+                        }`}
                       >
                         <i className="nav-icon fas fa-solid fa-chart-line"></i>
                         <p>Rekap Bulanan</p>
@@ -310,12 +318,16 @@ export default function Sidebar() {
                 </li>
 
                 {/* Menu nilai */}
-                <li className={`nav-item ${openMenu === "penilaian" ? "menu-open" : ""}`}>
+                <li
+                  className={`nav-item ${openMenu === "penilaian" ? "menu-open" : ""}`}
+                >
                   <a
                     href="#"
                     onClick={(e) => {
                       e.preventDefault();
-                      setOpenMenu(openMenu === "penilaian" ? null : "penilaian");
+                      setOpenMenu(
+                        openMenu === "penilaian" ? null : "penilaian",
+                      );
                     }}
                     className={`nav-link ${isParentActive("/admin/guru/penilaian") ? "active" : ""}`}
                   >
@@ -324,23 +336,27 @@ export default function Sidebar() {
                       <span>Penilaian</span>
 
                       <i
-                        className={`fas ${openMenu === "penilaian"
-                          ? "fa-angle-down"
-                          : "fa-angle-right"
-                          } ms-auto`}
+                        className={`fas ${
+                          openMenu === "penilaian"
+                            ? "fa-angle-down"
+                            : "fa-angle-right"
+                        } ms-auto`}
                       ></i>
                     </p>
                   </a>
 
-                  <ul className="nav nav-treeview" style={{ paddingLeft: "15px" }}>
-
+                  <ul
+                    className="nav nav-treeview"
+                    style={{ paddingLeft: "15px" }}
+                  >
                     <li className="nav-item">
                       <Link
                         href="/admin/guru/penilaian"
-                        className={`nav-link ${isActive("/admin/guru/penilaian")
-                          ? "active bg-primary text-white"
-                          : ""
-                          }`}
+                        className={`nav-link ${
+                          isActive("/admin/guru/penilaian")
+                            ? "active bg-primary text-white"
+                            : ""
+                        }`}
                       >
                         <i className="far fa-chart-bar nav-icon"></i>
                         <p>Progres Nilai</p>
@@ -350,10 +366,11 @@ export default function Sidebar() {
                     <li className="nav-item">
                       <Link
                         href="/admin/guru/penilaian/tambah"
-                        className={`nav-link ${isActive("/admin/guru/penilaian/tambah")
-                          ? "active bg-primary text-white"
-                          : ""
-                          }`}
+                        className={`nav-link ${
+                          isActive("/admin/guru/penilaian/tambah")
+                            ? "active bg-primary text-white"
+                            : ""
+                        }`}
                       >
                         <i className="far fa-edit nav-icon"></i>
                         <p>Topik/Input Nilai</p>
@@ -363,10 +380,11 @@ export default function Sidebar() {
                     <li className="nav-item">
                       <Link
                         href="/admin/guru/penilaian/rekap"
-                        className={`nav-link ${isActive("/admin/guru/penilaian/rekap")
-                          ? "active bg-primary text-white"
-                          : ""
-                          }`}
+                        className={`nav-link ${
+                          isActive("/admin/guru/penilaian/rekap")
+                            ? "active bg-primary text-white"
+                            : ""
+                        }`}
                       >
                         <i className="far fa-file-alt nav-icon"></i>
                         <p>Rekap Mapel</p>
@@ -376,19 +394,97 @@ export default function Sidebar() {
                     <li className="nav-item">
                       <Link
                         href="/admin/guru/penilaian/leger"
-                        className={`nav-link ${isActive("/admin/guru/penilaian/leger")
-                          ? "active bg-primary text-white"
-                          : ""
-                          }`}
+                        className={`nav-link ${
+                          isActive("/admin/guru/penilaian/leger")
+                            ? "active bg-primary text-white"
+                            : ""
+                        }`}
                       >
                         <i className="fas fa-book-open nav-icon"></i>
                         <p>Leger Nilai</p>
                       </Link>
                     </li>
-
                   </ul>
                 </li>
 
+                 {/* Menu Jurnal Mengajar */}
+                <li
+                  className={`nav-item ${openMenu === "jurnal-mengajar" ? "menu-open" : ""}`}
+                >
+                  <a
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setOpenMenu(
+                        openMenu === "jurnal-mengajar" ? null : "jurnal-mengajar",
+                      );
+                    }}
+                    className={`nav-link ${isParentActive("/admin/guru/jurnal-mengajar") ? "active" : ""}`}
+                  >
+                    <i className="nav-icon fas fa-chalkboard-teacher"></i>
+                    <p className="d-flex align-items-center w-100 mb-0">
+                      <span>Jurnal Mengajar</span>
+
+                      <i
+                        className={`fas ${
+                          openMenu === "jurnal-mengajar"
+                            ? "fa-angle-down"
+                            : "fa-angle-right"
+                        } ms-auto`}
+                      ></i>
+                    </p>
+                  </a>
+
+                  <ul
+                    className="nav nav-treeview"
+                    style={{ paddingLeft: "15px" }}
+                  >
+
+                    <li className="nav-item">
+                      <Link
+                        href="/admin/guru/jurnal-mengajar/tambah"
+                        className={`nav-link ${
+                          isActive("/admin/guru/jurnal-mengajar/tambah")
+                            ? "active bg-primary text-white"
+                            : ""
+                        }`}
+                      >
+                        <i className="far fa-edit nav-icon"></i>
+                        <p>Input Jurnal Harian</p>
+                      </Link>
+                    </li>
+
+                    <li className="nav-item">
+                      <Link
+                        href="/admin/guru/jurnal-mengajar/import-jurnal"
+                        className={`nav-link ${
+                          isActive("/admin/guru/jurnal-mengajar/import-jurnal")
+                            ? "active bg-primary text-white"
+                            : ""
+                        }`}
+                      >
+                        <i className="fas fa-file-import nav-icon"></i>
+                        <p>Import Jurnal</p>
+                      </Link>
+                    </li>
+
+                    <li className="nav-item">
+                      <Link
+                        href="/admin/guru/jurnal-mengajar/rekap-jurnal"
+                        className={`nav-link ${
+                          isActive("/admin/guru/jurnal-mengajar/rekap-jurnal")
+                            ? "active bg-primary text-white"
+                            : ""
+                        }`}
+                      >
+                        <i className="fas fa-book-open nav-icon"></i>
+                        <p>Rekap Jurnal</p>
+                      </Link>
+                    </li>
+                  </ul>
+                </li>
+
+                {/* Menu nilai */}
                 <li className="nav-item">
                   <Link
                     href="/admin/guru/eujian"
@@ -400,7 +496,6 @@ export default function Sidebar() {
                 </li>
               </>
             )}
-
           </ul>
         </nav>
       </div>
