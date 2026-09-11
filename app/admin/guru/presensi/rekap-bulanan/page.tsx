@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import * as XLSX from "xlsx";
+import { doc, getDoc } from "firebase/firestore";
 
 import {
     getMonthlyAttendanceByFilter,
@@ -18,6 +19,8 @@ import { useAuth } from "@/context/AuthContext";
 
 import { getActiveTahunAjaran } from "@/services/tahunajaran.service";
 import { getSchoolById } from "@/lib/sekolah";
+import { db } from "@/lib/firebase";
+import { getKepalaSekolahBySchool } from "@/services/kepalaSekolah.service";
 
 interface AcademicYearOption {
     id?: string;
@@ -676,6 +679,144 @@ export default function RekapPresensiBulananPage() {
         }
     }
 
+    async function handlePrint() {
+        if (!rekap || !schoolId || !auth.user?.uid) {
+            alert("Data rekap belum siap untuk dicetak.");
+            return;
+        }
+
+        const printWindow = window.open("", "_blank", "width=1400,height=900");
+
+        if (!printWindow) {
+            alert("Popup diblokir. Izinkan popup browser untuk mencetak rekap.");
+            return;
+        }
+
+        const escapeHtml = (value: unknown) =>
+            String(value ?? "-")
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+
+        try {
+            const [userSnapshot, kepalaSekolahData, school] = await Promise.all([
+                getDoc(doc(db, "users", auth.user.uid)),
+                getKepalaSekolahBySchool(schoolId),
+                getSchoolById(schoolId),
+            ]);
+
+            const guruData = userSnapshot.exists() ? userSnapshot.data() : null;
+            const kepalaSekolah = kepalaSekolahData.find((item) => item.aktif) ?? kepalaSekolahData[0];
+            const guruName = guruData?.username || auth.user.username || "Guru";
+            const guruNip = guruData?.nip || "-";
+            const kepalaNama = kepalaSekolah?.nama || "-";
+            const kepalaNip = kepalaSekolah?.nip || "-";
+            const schoolName = school?.nama || "-";
+
+            const rows = rekap.students.map((student, index) => {
+                const summary = Object.values(student.attendance).reduce(
+                    (result, status) => {
+                        if (status === "Sakit") result.sakit++;
+                        if (status === "Izin") result.izin++;
+                        if (status === "Alpha") result.alpha++;
+                        return result;
+                    },
+                    { sakit: 0, izin: 0, alpha: 0 },
+                );
+
+                const dayCells = Array.from({ length: days }, (_, dayIndex) => {
+                    const status = student.attendance[getDateKey(tahun, bulan, dayIndex + 1)];
+                    return `<td>${getStatusCode(status)}</td>`;
+                }).join("");
+
+                return `<tr>
+                    <td>${index + 1}</td>
+                    <td>${escapeHtml(student.nis || "-")}</td>
+                    <td>${escapeHtml(student.nisn || "-")}</td>
+                    <td class="name">${escapeHtml(student.nama)}</td>
+                    <td>${escapeHtml(student.jk || "-")}</td>
+                    ${dayCells}
+                    <td>${summary.sakit}</td>
+                    <td>${summary.izin}</td>
+                    <td>${summary.alpha}</td>
+                </tr>`;
+            }).join("");
+
+            const dayHeaders = Array.from({ length: days }, (_, dayIndex) => {
+                const day = dayIndex + 1;
+                return `<th>${getDayName(tahun, bulan, day)}<br>${day}</th>`;
+            }).join("");
+            const printDate = new Date().toLocaleDateString("id-ID", {
+                day: "2-digit",
+                month: "long",
+                year: "numeric",
+            });
+
+            printWindow.document.write(`
+                <html>
+                    <head>
+                        <title>Rekap Presensi ${escapeHtml(rekap.kelas || "")}</title>
+                        <style>
+                            @page { size: A4 landscape; margin: 10mm; }
+                            body { font-family: Arial, sans-serif; color: #111827; margin: 0; font-size: 9px; }
+                            h2, .school, .period { text-align: center; margin: 0; }
+                            h2 { font-size: 16px; margin-bottom: 4px; }
+                            .school, .period { font-size: 10px; margin-bottom: 3px; }
+                            table { width: 100%; border-collapse: collapse; margin-top: 10px; table-layout: fixed; }
+                            th, td { border: 1px solid #374151; padding: 3px 2px; text-align: center; vertical-align: middle; word-wrap: break-word; }
+                            th { background: #e5e7eb; font-weight: 700; }
+                            th:nth-child(4), td:nth-child(4) { width: 18%; }
+                            td.name { text-align: left; }
+                            .signatures { display: flex; justify-content: space-between; margin-top: 28px; page-break-inside: avoid; }
+                            .signature { width: 35%; text-align: center; }
+                            .signature-space { height: 48px; }
+                            .date { text-align: right; margin-bottom: 8px; }
+                        </style>
+                    </head>
+                    <body>
+                        <h2>REKAP PRESENSI BULANAN</h2>
+                        <div class="school">${escapeHtml(schoolName)}${rekap.kelas ? ` - Kelas ${escapeHtml(rekap.kelas)}` : ""}</div>
+                        <div class="period">${escapeHtml(rekap.tahunAjaran || tahunAjaran)} | ${MONTHS[bulan - 1]} ${tahun}</div>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>No</th><th>NIS</th><th>NISN</th><th>NAMA SISWA</th><th>L/P</th>
+                                    ${dayHeaders}<th>S</th><th>I</th><th>A</th>
+                                </tr>
+                            </thead>
+                            <tbody>${rows || `<tr><td colspan="${5 + days + 3}">Tidak ada data siswa</td></tr>`}</tbody>
+                        </table>
+                        <div class="signatures">
+                            <div class="signature">
+                                <div>Mengetahui,</div>
+                                <div>Kepala Sekolah</div>
+                                <div class="signature-space"></div>
+                                <strong>${escapeHtml(kepalaNama)}</strong>
+                                <div>NIP. ${escapeHtml(kepalaNip)}</div>
+                            </div>
+                            <div class="signature">
+                                <div class="date">${printDate}</div>
+                                <div>Guru</div>
+                                <div class="signature-space"></div>
+                                <strong>${escapeHtml(guruName)}</strong>
+                                <div>NIP. ${escapeHtml(guruNip)}</div>
+                            </div>
+                        </div>
+                    </body>
+                </html>
+            `);
+            printWindow.document.close();
+            printWindow.focus();
+            setTimeout(() => printWindow.print(), 500);
+        } catch (error) {
+            console.error("Gagal menyiapkan cetak rekap presensi:", error);
+            printWindow.close();
+            alert("Gagal menyiapkan data cetak rekap presensi.");
+        }
+    }
+
     return (
 
         <div className="container-fluid py-3">
@@ -1154,6 +1295,15 @@ export default function RekapPresensiBulananPage() {
                                         >
                                             <i className="fas fa-file-excel me-1"></i>
                                             {exporting ? "Membuat Excel..." : "Download Excel (Per Bulan)"}
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            className="btn btn-outline-primary btn-sm"
+                                            onClick={handlePrint}
+                                        >
+                                            <i className="fas fa-print me-1"></i>
+                                            Cetak
                                         </button>
 
                                     </div>
