@@ -79,11 +79,6 @@ const monthOptions = [
   { label: "Desember", value: "12" },
 ];
 
-const yearOptions = Array.from({ length: 6 }, (_, index) => {
-  const year = new Date().getFullYear() - index;
-  return { label: String(year), value: String(year) };
-});
-
 const formatDate = (value: string) => {
   if (!value) return "-";
   const date = new Date(value);
@@ -102,11 +97,14 @@ const getMonthLabel = (month: string) =>
 export default function RekapJurnalPage() {
   const { user } = useAuth();
   const [entries, setEntries] = useState<JurnalEntry[]>([]);
-  const [kelasList, setKelasList] = useState<{ id: string; namaKelas: string }[]>([]);
+  const [kelasList, setKelasList] = useState<
+    { id: string; namaKelas: string }[]
+  >([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [selectedTahunAjaran, setSelectedTahunAjaran] = useState("");
   const [selectedMonth, setSelectedMonth] = useState("all");
-  const [selectedYear, setSelectedYear] = useState(String(new Date().getFullYear()));
+  const [selectedMapel, setSelectedMapel] = useState("all");
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<EditFormState | null>(null);
@@ -141,11 +139,11 @@ export default function RekapJurnalPage() {
         }));
 
         setEntries(
-          data.sort(
-            (a, b) =>
-              new Date(b.tanggal || "1970-01-01").getTime() -
-              new Date(a.tanggal || "1970-01-01").getTime(),
-          ),
+          [...data].sort((a, b) => {
+            const dateA = new Date(a.tanggal || "1970-01-01").getTime();
+            const dateB = new Date(b.tanggal || "1970-01-01").getTime();
+            return dateA - dateB;
+          }),
         );
       } catch (error) {
         console.error("Gagal memuat data jurnal:", error);
@@ -158,35 +156,87 @@ export default function RekapJurnalPage() {
     loadData();
   }, [user?.uid, user?.schoolId]);
 
+  const tahunAjaranOptions = useMemo(() => {
+    const uniqueYears = Array.from(
+      new Set(entries.map((entry) => entry.tahunAjaran).filter(Boolean)),
+    ).sort((a, b) => b.localeCompare(a));
+
+    return uniqueYears;
+  }, [entries]);
+
+  useEffect(() => {
+    if (!tahunAjaranOptions.length) return;
+
+    setSelectedTahunAjaran((current) => {
+      if (current && current !== "all") return current;
+      return tahunAjaranOptions[0];
+    });
+  }, [tahunAjaranOptions]);
+
+  const mapelOptions = useMemo(() => {
+    const mapelDalamJurnal = Array.from(
+      new Set(entries.map((entry) => entry.mapelId).filter(Boolean)),
+    );
+
+    const options = mapelDalamJurnal
+      .map((mapelId) => ({
+        label: mapelLabelMap.get(mapelId) ?? mapelId,
+        value: mapelId,
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label, "id"));
+
+    return [{ label: "Semua mata pelajaran", value: "all" }, ...options];
+  }, [entries]);
+
   const filteredEntries = useMemo(() => {
     const keyword = search.toLowerCase().trim();
 
-    return entries.filter((entry) => {
-      const yearMatch = selectedYear === "all" || (entry.tanggal || "").slice(0, 4) === selectedYear;
-      const monthMatch =
-        selectedMonth === "all" || (entry.tanggal || "").slice(5, 7) === selectedMonth;
+    return entries
+      .filter((entry) => {
+        const tahunAjaranMatch =
+          !selectedTahunAjaran ||
+          selectedTahunAjaran === "all" ||
+          (entry.tahunAjaran || "") === selectedTahunAjaran;
+        const monthMatch =
+          selectedMonth === "all" ||
+          (entry.tanggal || "").slice(5, 7) === selectedMonth;
+        const mapelMatch =
+          selectedMapel === "all" || entry.mapelId === selectedMapel;
 
-      const kelasNama = kelasList.find((item) => item.id === entry.kelasId)?.namaKelas ?? "";
-      const mapelNama = mapelLabelMap.get(entry.mapelId) ?? "";
+        const kelasNama =
+          kelasList.find((item) => item.id === entry.kelasId)?.namaKelas ?? "";
+        const mapelNama = mapelLabelMap.get(entry.mapelId) ?? "";
 
-      const haystack = [
-        entry.tanggal,
-        kelasNama,
-        mapelNama,
-        entry.materi,
-        entry.tujuanPembelajaran,
-        entry.kegiatanPembelajaran,
-        entry.catatan,
-        entry.status,
-        entry.jamKe,
-      ]
-        .join(" ")
-        .toLowerCase();
+        const haystack = [
+          entry.tanggal,
+          kelasNama,
+          mapelNama,
+          entry.materi,
+          entry.tujuanPembelajaran,
+          entry.kegiatanPembelajaran,
+          entry.catatan,
+          entry.status,
+          entry.jamKe,
+        ]
+          .join(" ")
+          .toLowerCase();
 
-      const searchMatch = !keyword || haystack.includes(keyword);
-      return yearMatch && monthMatch && searchMatch;
-    });
-  }, [entries, kelasList, search, selectedMonth, selectedYear]);
+        const searchMatch = !keyword || haystack.includes(keyword);
+        return tahunAjaranMatch && monthMatch && mapelMatch && searchMatch;
+      })
+      .sort((a, b) => {
+        const dateA = new Date(a.tanggal || "1970-01-01").getTime();
+        const dateB = new Date(b.tanggal || "1970-01-01").getTime();
+        return dateA - dateB;
+      });
+  }, [
+    entries,
+    kelasList,
+    search,
+    selectedMapel,
+    selectedMonth,
+    selectedTahunAjaran,
+  ]);
 
   const {
     currentPage,
@@ -196,10 +246,10 @@ export default function RekapJurnalPage() {
     currentData,
     setCurrentPage,
     setPageSize,
-  } = usePagination({
+  } = usePagination<JurnalEntry>({
     data: filteredEntries,
     pageSize: 10,
-    resetDeps: [search, selectedMonth, selectedYear],
+    resetDeps: [search, selectedMonth, selectedMapel, selectedTahunAjaran],
   });
 
   const handleDelete = async (id: string) => {
@@ -275,7 +325,8 @@ export default function RekapJurnalPage() {
   };
 
   const printJournal = (entry: JurnalEntry) => {
-    const kelasNama = kelasList.find((item) => item.id === entry.kelasId)?.namaKelas ?? "-";
+    const kelasNama =
+      kelasList.find((item) => item.id === entry.kelasId)?.namaKelas ?? "-";
     const mapelNama = mapelLabelMap.get(entry.mapelId) ?? "-";
     const printWindow = window.open("", "_blank", "width=900,height=700");
 
@@ -338,18 +389,24 @@ export default function RekapJurnalPage() {
     const printWindow = window.open("", "_blank", "width=1200,height=900");
 
     if (!printWindow) {
-      alert("Popup diblokir. Izinkan popup browser untuk mencetak rekap jurnal.");
+      alert(
+        "Popup diblokir. Izinkan popup browser untuk mencetak rekap jurnal.",
+      );
       return;
     }
 
     try {
-      const [kepalaSekolahResult, userSnapshot, schoolSnapshot] = await Promise.all([
-        getKepalaSekolahBySchool(user.schoolId),
-        getDoc(doc(db, "users", user.uid)),
-        getDoc(doc(db, "sekolah", user.schoolId)),
-      ]);
+      const [kepalaSekolahResult, userSnapshot, schoolSnapshot] =
+        await Promise.all([
+          getKepalaSekolahBySchool(user.schoolId),
+          getDoc(doc(db, "users", user.uid)),
+          getDoc(doc(db, "sekolah", user.schoolId)),
+        ]);
 
-      const kepalaSekolah = kepalaSekolahResult.find((item) => item.aktif) ?? kepalaSekolahResult[0] ?? null;
+      const kepalaSekolah =
+        kepalaSekolahResult.find((item) => item.aktif) ??
+        kepalaSekolahResult[0] ??
+        null;
       const schoolData = schoolSnapshot.exists() ? schoolSnapshot.data() : null;
       const guruData = userSnapshot.exists() ? userSnapshot.data() : null;
       const guruName = guruData?.username || user.username || "Guru";
@@ -357,60 +414,37 @@ export default function RekapJurnalPage() {
       const kepalaNama = kepalaSekolah?.nama || "-";
       const kepalaNip = kepalaSekolah?.nip || "-";
       const schoolName = schoolData?.namaSekolah || "-";
-      const activeYear =
-        selectedYear !== "all"
-          ? selectedYear
-          : (kepalaSekolah?.tahunAjaran || schoolData?.tahunAjaran || "Semua Tahun");
+      const tahunAjaran =
+        selectedTahunAjaran ||
+        kepalaSekolah?.tahunAjaran ||
+        schoolData?.tahunAjaran ||
+        "Semua Tahun";
 
-      const rows = await Promise.all(
-        filteredEntries.map(async (entry, index) => {
-          const kelasNama = kelasList.find((item) => item.id === entry.kelasId)?.namaKelas ?? "-";
-          const mapelNama = mapelLabelMap.get(entry.mapelId) ?? "-";
+      const orderedEntries = [...filteredEntries].sort((a, b) => {
+        const dateA = new Date(a.tanggal || "1970-01-01").getTime();
+        const dateB = new Date(b.tanggal || "1970-01-01").getTime();
+        return dateA - dateB;
+      });
 
-          let presensiText = "-";
+      const rows = orderedEntries.map((entry, index) => {
+        const kelasNama =
+          kelasList.find((item) => item.id === entry.kelasId)?.namaKelas ?? "-";
+        const mapelNama = mapelLabelMap.get(entry.mapelId) ?? "-";
 
-          const presensiQuery = query(
-            collection(db, "presensi"),
-            where("schoolId", "==", user.schoolId),
-            where("kelasId", "==", entry.kelasId),
-            where("tanggal", "==", entry.tanggal),
-          );
-
-          const presensiSnapshot = await getDocs(presensiQuery);
-          const siswaTidakHadir = presensiSnapshot.docs.flatMap((docSnap) => {
-            const data = docSnap.data();
-            return Array.isArray(data?.siswa)
-              ? (data.siswa as Array<{ nama?: string; status?: string }>).filter((siswa) => {
-                  const status = (siswa.status ?? "").trim();
-                  return ["Izin", "Ijin", "Sakit", "Alpha"].includes(status);
-                })
-              : [];
-          });
-
-          if (siswaTidakHadir.length > 0) {
-            presensiText = siswaTidakHadir
-              .map((siswa) => {
-                const status = (siswa.status ?? "").trim();
-                const statusLabel = status === "Ijin" ? "Izin" : status;
-                return `${siswa.nama || "-"} (${statusLabel})`;
-              })
-              .join("<br>");
-          }
-
-          return `
-            <tr>
-              <td style="text-align:center;">${index + 1}</td>
-              <td>${formatDate(entry.tanggal)}</td>
-              <td>${entry.jamKe}</td>
-              <td>${kelasNama}</td>
-              <td>${mapelNama}</td>
-              <td>${entry.materi || "-"}</td>
-              <td>${entry.kegiatanPembelajaran || "-"}</td>
-              <td>${presensiText}</td>
-            </tr>
-          `;
-        }),
-      );
+        return `
+          <tr>
+            <td style="text-align:center;">${index + 1}</td>
+            <td>${formatDate(entry.tanggal)}</td>
+            <td>${entry.jamKe}</td>
+            <td>${kelasNama}</td>
+            <td>${mapelNama}</td>
+            <td>${entry.materi || "-"}</td>
+            <td>${entry.tujuanPembelajaran || "-"}</td>
+            <td>${entry.kegiatanPembelajaran || "-"}</td>
+            <td>${entry.catatan || "-"}</td>
+          </tr>
+        `;
+      });
 
       const printDate = new Date().toLocaleDateString("id-ID", {
         day: "2-digit",
@@ -420,10 +454,8 @@ export default function RekapJurnalPage() {
 
       const periodText =
         selectedMonth === "all"
-          ? selectedYear === "all"
-            ? "Semua Tahun"
-            : selectedYear
-          : `${getMonthLabel(selectedMonth)} ${selectedYear}`;
+          ? `Tahun Ajaran ${tahunAjaran}`
+          : `${getMonthLabel(selectedMonth)} ${tahunAjaran}`;
 
       printWindow.document.write(`
         <html>
@@ -495,19 +527,19 @@ export default function RekapJurnalPage() {
           <body>
             <h2>${title}</h2>
             <div class="subtitle">${schoolName}</div>
-            <div class="school-info">Tahun Ajaran: ${activeYear}</div>
-            <div class="subtitle">Periode: ${periodText}</div>
+            <div class="school-info">Tahun Ajaran: ${tahunAjaran}</div>
             <table>
               <thead>
                 <tr>
-                  <th style="width:5%;">No</th>
-                  <th style="width:10%;">Tanggal</th>
-                  <th style="width:7%;">Jam Ke</th>
-                  <th style="width:12%;">Kelas</th>
-                  <th style="width:12%;">Mapel</th>
-                  <th style="width:18%;">Materi/Topik</th>
-                  <th style="width:22%;">Kegiatan Pembelajaran</th>
-                  <th style="width:14%;">Presensi</th>
+                  <th style="width:4%;">No</th>
+                  <th style="width:8%;">Tanggal</th>
+                  <th style="width:6%;">Jam Ke</th>
+                  <th style="width:6%;">Kelas</th>
+                  <th style="width:10%;">Mapel</th>
+                  <th style="width:14%;">Materi/Topik</th>
+                  <th style="width:18%;">Tujuan Pembelajaran (TP)</th>
+                  <th style="width:20%;">Kegiatan Pembelajaran</th>
+                  <th style="width:14%;">Refleksi Pembelajaran / Catatan</th>
                 </tr>
               </thead>
               <tbody>
@@ -571,6 +603,27 @@ export default function RekapJurnalPage() {
             <div className="card-body">
               <div className="row g-3 align-items-end">
                 <div className="col-md-3">
+                  <label className="form-label">Tahun Ajaran</label>
+                  <select
+                    className="form-select"
+                    value={selectedTahunAjaran}
+                    onChange={(event) =>
+                      setSelectedTahunAjaran(event.target.value)
+                    }
+                  >
+                    {tahunAjaranOptions.length === 0 ? (
+                      <option value="">Belum ada data</option>
+                    ) : (
+                      tahunAjaranOptions.map((tahun) => (
+                        <option key={tahun} value={tahun}>
+                          {tahun}
+                        </option>
+                      ))
+                    )}
+                  </select>
+                </div>
+
+                <div className="col-md-3">
                   <label className="form-label">Bulan</label>
                   <select
                     className="form-select"
@@ -586,40 +639,18 @@ export default function RekapJurnalPage() {
                 </div>
 
                 <div className="col-md-3">
-                  <label className="form-label">Tahun</label>
+                  <label className="form-label">Mata Pelajaran</label>
                   <select
                     className="form-select"
-                    value={selectedYear}
-                    onChange={(event) => setSelectedYear(event.target.value)}
+                    value={selectedMapel}
+                    onChange={(event) => setSelectedMapel(event.target.value)}
                   >
-                    <option value="all">Semua tahun</option>
-                    {yearOptions.map((year) => (
-                      <option key={year.value} value={year.value}>
-                        {year.label}
+                    {mapelOptions.map((mapel) => (
+                      <option key={mapel.value} value={mapel.value}>
+                        {mapel.label}
                       </option>
                     ))}
                   </select>
-                </div>
-
-                <div className="col-md-6 d-flex justify-content-md-end gap-2 flex-wrap">
-                  <Link href="/admin/guru/jurnal-mengajar/tambah" className="btn btn-primary">
-                    <i className="fas fa-plus me-2"></i>
-                    Tambah Jurnal
-                  </Link>
-                  <button
-                    type="button"
-                    className="btn btn-outline-success"
-                    onClick={() => {
-                      if (filteredEntries.length === 0) {
-                        alert("Tidak ada data jurnal untuk dicetak pada filter saat ini.");
-                        return;
-                      }
-                      setShowPrintConfirmModal(true);
-                    }}
-                  >
-                    <i className="fas fa-print me-2"></i>
-                    Cetak Bulan
-                  </button>
                 </div>
               </div>
             </div>
@@ -627,14 +658,44 @@ export default function RekapJurnalPage() {
 
           <div className="card shadow-sm border-0">
             <div className="card-header bg-white border-bottom py-3">
-              <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
-                <h5 className="mb-0">Daftar jurnal</h5>
-                <div style={{ width: "100%", maxWidth: 420 }}>
-                  <SearchInput
-                    value={search}
-                    onChange={setSearch}
-                    placeholder="Cari materi, kelas, mapel, atau tanggal..."
-                  />
+              <div className="row align-items-center g-2">
+                <div className="col-12 col-lg-auto">
+                  <h5 className="mb-0 fw-semibold">Daftar Jurnal</h5>
+                </div>
+                <div className="col-12 col-lg">
+                  <div className="d-flex flex-wrap justify-content-lg-end align-items-center gap-2">
+                    <div className="flex-grow-1 flex-lg-grow-0">
+                      <SearchInput
+                        value={search}
+                        onChange={setSearch}
+                        placeholder="Cari materi, kelas, mapel, atau tanggal..."
+                      />
+                    </div>
+                    <Link
+                      href="/admin/guru/jurnal-mengajar/tambah"
+                      className="btn btn-primary btn-sm"
+                    >
+                      <i className="fas fa-plus me-2"></i>
+                      Tambah Jurnal
+                    </Link>
+                    <button
+                      type="button"
+                      className="btn btn-outline-success btn-sm"
+                      onClick={() => {
+                        if (filteredEntries.length === 0) {
+                          alert(
+                            "Tidak ada data jurnal untuk dicetak pada filter saat ini.",
+                          );
+                          return;
+                        }
+
+                        setShowPrintConfirmModal(true);
+                      }}
+                    >
+                      <i className="fas fa-print me-2"></i>
+                      Cetak
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -652,32 +713,44 @@ export default function RekapJurnalPage() {
                     <table className="table table-bordered table-striped table-hover align-middle mb-0">
                       <thead className="table-light">
                         <tr>
-                          <th className="text-center" style={{ width: 60 }}>No</th>
+                          <th className="text-center" style={{ width: 60 }}>
+                            No
+                          </th>
                           <th style={{ minWidth: 130 }}>Tanggal</th>
-                          <th style={{ minWidth: 140 }}>Kelas</th>
+                          <th style={{ minWidth: 80 }}>Kelas</th>
                           <th style={{ minWidth: 180 }}>Mapel</th>
-                          <th style={{ minWidth: 90 }}>Jam</th>
+                          <th style={{ minWidth: 70 }}>Jam</th>
                           <th style={{ minWidth: 220 }}>Materi</th>
                           <th style={{ minWidth: 90 }}>Status</th>
-                          <th className="text-center" style={{ minWidth: 95 }}>Cetak</th>
-                          <th className="text-center" style={{ minWidth: 150 }}>Aksi</th>
+                          <th className="text-center" style={{ minWidth: 95 }}>
+                            Aksi
+                          </th>
                         </tr>
                       </thead>
                       <tbody>
                         {filteredEntries.length === 0 ? (
                           <tr>
-                            <td colSpan={9} className="text-center text-muted py-4">
+                            <td
+                              colSpan={9}
+                              className="text-center text-muted py-4"
+                            >
                               Tidak ada data jurnal sesuai filter.
                             </td>
                           </tr>
                         ) : (
                           currentData.map((entry, index) => {
-                            const kelasNama = kelasList.find((item) => item.id === entry.kelasId)?.namaKelas ?? "-";
-                            const mapelNama = mapelLabelMap.get(entry.mapelId) ?? "-";
+                            const kelasNama =
+                              kelasList.find(
+                                (item) => item.id === entry.kelasId,
+                              )?.namaKelas ?? "-";
+                            const mapelNama =
+                              mapelLabelMap.get(entry.mapelId) ?? "-";
 
                             return (
                               <tr key={entry.id}>
-                                <td className="text-center">{startIndex + index + 1}</td>
+                                <td className="text-center">
+                                  {startIndex + index + 1}
+                                </td>
                                 <td>{formatDate(entry.tanggal)}</td>
                                 <td>{kelasNama}</td>
                                 <td>{mapelNama}</td>
@@ -695,16 +768,14 @@ export default function RekapJurnalPage() {
                                   </span>
                                 </td>
                                 <td className="text-center">
-                                  <button
-                                    type="button"
-                                    className="btn btn-sm btn-outline-primary"
-                                    onClick={() => printJournal(entry)}
-                                  >
-                                    <i className="fas fa-print"></i>
-                                  </button>
-                                </td>
-                                <td className="text-center">
-                                  <div className="d-flex justify-content-center gap-2">
+                                  <div className="d-flex justify-content-center gap-1">
+                                    <button
+                                      type="button"
+                                      className="btn btn-sm btn-outline-primary"
+                                      onClick={() => printJournal(entry)}
+                                    >
+                                      <i className="fas fa-print"></i>
+                                    </button>
                                     <button
                                       type="button"
                                       className="btn btn-sm btn-outline-warning"
@@ -748,7 +819,10 @@ export default function RekapJurnalPage() {
       </div>
 
       {showDeleteModal && (
-        <div className="modal fade show d-block" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
+        <div
+          className="modal fade show d-block"
+          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+        >
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
               <div className="modal-header">
@@ -763,7 +837,9 @@ export default function RekapJurnalPage() {
                 ></button>
               </div>
               <div className="modal-body">
-                <p className="mb-0">Apakah Anda yakin ingin menghapus data jurnal ini?</p>
+                <p className="mb-0">
+                  Apakah Anda yakin ingin menghapus data jurnal ini?
+                </p>
               </div>
               <div className="modal-footer">
                 <button
@@ -776,7 +852,11 @@ export default function RekapJurnalPage() {
                 >
                   Batal
                 </button>
-                <button type="button" className="btn btn-danger" onClick={confirmDelete}>
+                <button
+                  type="button"
+                  className="btn btn-danger"
+                  onClick={confirmDelete}
+                >
                   Hapus
                 </button>
               </div>
@@ -786,7 +866,10 @@ export default function RekapJurnalPage() {
       )}
 
       {showPrintConfirmModal && (
-        <div className="modal fade show d-block" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
+        <div
+          className="modal fade show d-block"
+          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+        >
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
               <div className="modal-header">
@@ -799,7 +882,11 @@ export default function RekapJurnalPage() {
               </div>
               <div className="modal-body">
                 <p className="mb-0">
-                  Anda akan mencetak rekap jurnal untuk periode {selectedMonth === "all" ? "semua bulan" : getMonthLabel(selectedMonth)} {selectedYear === "all" ? "semua tahun" : selectedYear}. Lanjutkan?
+                  Anda akan mencetak rekap jurnal untuk periode{" "}
+                  {selectedMonth === "all"
+                    ? "semua bulan"
+                    : getMonthLabel(selectedMonth)}{" "}
+                  {selectedTahunAjaran || "tahun ajaran aktif"}. Lanjutkan?
                 </p>
               </div>
               <div className="modal-footer">
@@ -827,7 +914,10 @@ export default function RekapJurnalPage() {
       )}
 
       {isEditOpen && editForm && (
-        <div className="modal fade show d-block" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
+        <div
+          className="modal fade show d-block"
+          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+        >
           <div className="modal-dialog modal-lg modal-dialog-centered">
             <div className="modal-content">
               <div className="modal-header">
@@ -853,7 +943,9 @@ export default function RekapJurnalPage() {
                       value={editForm.tanggal}
                       onChange={(event) =>
                         setEditForm((prev) =>
-                          prev ? { ...prev, tanggal: event.target.value } : prev,
+                          prev
+                            ? { ...prev, tanggal: event.target.value }
+                            : prev,
                         )
                       }
                       required
@@ -868,7 +960,12 @@ export default function RekapJurnalPage() {
                       onChange={(event) =>
                         setEditForm((prev) =>
                           prev
-                            ? { ...prev, status: event.target.value as "Draft" | "Selesai" }
+                            ? {
+                                ...prev,
+                                status: event.target.value as
+                                  | "Draft"
+                                  | "Selesai",
+                              }
                             : prev,
                         )
                       }
@@ -885,7 +982,9 @@ export default function RekapJurnalPage() {
                       value={editForm.kelasId}
                       onChange={(event) =>
                         setEditForm((prev) =>
-                          prev ? { ...prev, kelasId: event.target.value } : prev,
+                          prev
+                            ? { ...prev, kelasId: event.target.value }
+                            : prev,
                         )
                       }
                       required
@@ -906,14 +1005,19 @@ export default function RekapJurnalPage() {
                       value={editForm.mapelId}
                       onChange={(event) =>
                         setEditForm((prev) =>
-                          prev ? { ...prev, mapelId: event.target.value } : prev,
+                          prev
+                            ? { ...prev, mapelId: event.target.value }
+                            : prev,
                         )
                       }
                       required
                     >
                       <option value="">Pilih mata pelajaran</option>
                       {MATA_PELAJARAN.map((mapel) => (
-                        <option key={mapel.idMataPelajaran} value={mapel.idMataPelajaran}>
+                        <option
+                          key={mapel.idMataPelajaran}
+                          value={mapel.idMataPelajaran}
+                        >
                           {mapel.namaMataPelajaran}
                         </option>
                       ))}
@@ -957,7 +1061,10 @@ export default function RekapJurnalPage() {
                       onChange={(event) =>
                         setEditForm((prev) =>
                           prev
-                            ? { ...prev, tujuanPembelajaran: event.target.value }
+                            ? {
+                                ...prev,
+                                tujuanPembelajaran: event.target.value,
+                              }
                             : prev,
                         )
                       }
@@ -973,7 +1080,10 @@ export default function RekapJurnalPage() {
                       onChange={(event) =>
                         setEditForm((prev) =>
                           prev
-                            ? { ...prev, kegiatanPembelajaran: event.target.value }
+                            ? {
+                                ...prev,
+                                kegiatanPembelajaran: event.target.value,
+                              }
                             : prev,
                         )
                       }
@@ -988,7 +1098,9 @@ export default function RekapJurnalPage() {
                       value={editForm.catatan}
                       onChange={(event) =>
                         setEditForm((prev) =>
-                          prev ? { ...prev, catatan: event.target.value } : prev,
+                          prev
+                            ? { ...prev, catatan: event.target.value }
+                            : prev,
                         )
                       }
                     />
@@ -1007,7 +1119,11 @@ export default function RekapJurnalPage() {
                   >
                     Batal
                   </button>
-                  <button type="submit" className="btn btn-primary" disabled={saving}>
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    disabled={saving}
+                  >
                     {saving ? "Menyimpan..." : "Simpan Perubahan"}
                   </button>
                 </div>

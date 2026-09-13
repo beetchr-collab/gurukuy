@@ -30,6 +30,7 @@ type ImportReport = {
   success: number;
   failed: number;
   errors: string[];
+  failedRows?: Array<ExcelRow & { error?: string }>;
 };
 
 type AttendanceSummary = {
@@ -150,6 +151,7 @@ export default function ImportJurnalPage() {
   const [mapelId, setMapelId] = useState("");
   const [progress, setProgress] = useState(0);
   const [report, setReport] = useState<ImportReport | null>(null);
+  const [failedData, setFailedData] = useState<Array<ExcelRow & { error?: string }>>([]);
   const [attendanceByDate, setAttendanceByDate] = useState<
     Record<string, AttendanceSummary>
   >({});
@@ -366,12 +368,16 @@ export default function ImportJurnalPage() {
         alert("File Excel tidak berisi data.");
         setRows([]);
         setColumns([]);
+        setFailedData([]);
+        setReport(null);
         return;
       }
 
       const headers = Object.keys(data[0]);
       setColumns(headers);
       setRows(data);
+      setFailedData([]);
+      setReport(null);
 
       const nextMapping: Record<string, string> = {};
 
@@ -449,21 +455,63 @@ export default function ImportJurnalPage() {
     };
   };
 
-  const previewRows = rows
-    .slice(0, 5)
-    .map((row) => {
-      const prepared = buildPreparedRow(row);
-      return {
-        ...prepared,
-        ...(attendanceByDate[prepared.tanggal] ?? {
-          jumlahSiswa: 0,
-          siswaHadir: 0,
-          siswaIzin: 0,
-          siswaSakit: 0,
-          siswaAlpha: 0,
-        }),
-      };
+  const tableRows = rows.map((row) => {
+    const prepared = buildPreparedRow(row);
+    return {
+      ...prepared,
+      ...(attendanceByDate[prepared.tanggal] ?? {
+        jumlahSiswa: 0,
+        siswaHadir: 0,
+        siswaIzin: 0,
+        siswaSakit: 0,
+        siswaAlpha: 0,
+      }),
+    };
+  });
+
+  const downloadFailedRowsExcel = async (
+    rowsToExport: Array<ExcelRow & { error?: string }>,
+  ) => {
+    if (!rowsToExport.length) return;
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Data Gagal Import");
+    const headers = Array.from(
+      new Set(rowsToExport.flatMap((row) => Object.keys(row as Record<string, unknown>))),
+    );
+
+    worksheet.addRow(headers);
+
+    rowsToExport.forEach((row) => {
+      const values = headers.map((header) => {
+        const value = (row as Record<string, unknown>)[header];
+        return value === undefined || value === null ? "" : String(value);
+      });
+      worksheet.addRow(values);
     });
+
+    worksheet.getRow(1).font = { bold: true, color: { argb: "FFFFFFFF" } };
+    worksheet.getRow(1).fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "FFDC3545" },
+    };
+
+    headers.forEach((_, index) => {
+      worksheet.getColumn(index + 1).width = 22;
+    });
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "data-jurnal-gagal.xlsx";
+    anchor.click();
+    URL.revokeObjectURL(url);
+  };
 
   const handleImport = async () => {
     if (!user?.uid || !user?.schoolId) {
@@ -529,8 +577,11 @@ export default function ImportJurnalPage() {
 
       let success = 0;
       const errors: string[] = [];
+      const failedRowsToExport: Array<ExcelRow & { error: string }> = [];
 
       for (const [index, item] of payloads.entries()) {
+        const sourceRow = rows[index];
+
         try {
           await addDoc(collection(db, "jurnal_mengajar"), {
             ...item,
@@ -540,25 +591,41 @@ export default function ImportJurnalPage() {
           success += 1;
         } catch (error) {
           console.error(`Gagal menyimpan baris ${index + 2}:`, error);
-          errors.push(`Baris ${index + 2}: gagal disimpan`);
+          const failureMessage = `Baris ${index + 2}: gagal disimpan`;
+          errors.push(failureMessage);
+          failedRowsToExport.push({
+            ...(sourceRow ?? {}),
+            error: failureMessage,
+          });
         }
         setProgress(Math.round(((index + 1) / payloads.length) * 100));
       }
 
-      setReport({ total: payloads.length, success, failed: errors.length, errors });
+      setFailedData(failedRowsToExport);
+      const reportData: ImportReport = {
+        total: payloads.length,
+        success,
+        failed: errors.length,
+        errors,
+        failedRows: failedRowsToExport,
+      };
+
+      setReport(reportData);
       alert(`Import selesai: ${success} berhasil, ${errors.length} gagal.`);
-      setRows([]);
-      setColumns([]);
-      setFieldMap({});
-      setFileName("");
+
+      if (failedRowsToExport.length > 0) {
+        await downloadFailedRowsExcel(failedRowsToExport);
+      }
     } catch (error) {
       console.error("Gagal mengimport jurnal:", error);
-      setReport({
+      const failureReport: ImportReport = {
         total: rows.length,
         success: 0,
         failed: rows.length,
         errors: ["File atau data tidak dapat diproses."],
-      });
+      };
+      setFailedData([]);
+      setReport(failureReport);
       alert("Gagal mengimport jurnal. Periksa format Excel dan izin Firestore.");
     } finally {
       setSaving(false);
@@ -739,7 +806,19 @@ export default function ImportJurnalPage() {
                       </div>
 
                       <div className="mb-4">
-                        <h6 className="fw-bold">Preview data</h6>
+                        <div className="d-flex justify-content-between align-items-center gap-2 flex-wrap mb-2">
+                          <h6 className="fw-bold mb-0">Data Excel yang akan diimport</h6>
+                          {report?.failed && report.failed > 0 && failedData.length > 0 && (
+                            <button
+                              type="button"
+                              className="btn btn-outline-danger btn-sm"
+                              onClick={() => downloadFailedRowsExcel(failedData)}
+                            >
+                              <i className="fas fa-file-excel me-2" />
+                              Download Data Gagal
+                            </button>
+                          )}
+                        </div>
                         <div className="table-responsive">
                           <table className="table table-bordered table-sm align-middle">
                             <thead>
@@ -759,7 +838,7 @@ export default function ImportJurnalPage() {
                               </tr>
                             </thead>
                             <tbody>
-                              {previewRows.map((row, index) => (
+                              {tableRows.map((row, index) => (
                                 <tr key={`${row.tanggal}-${index}`}>
                                   <td>{row.tanggal}</td>
                                   <td>{kelasList.find((kelas) => kelas.id === kelasId)?.namaKelas || "-"}</td>
