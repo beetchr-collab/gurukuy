@@ -16,13 +16,13 @@ export default function Pagination({
     totalPages,
     onPageChange,
     showInfo = true,
-    maxVisiblePages = 10,
+    maxVisiblePages = 5,
     className = "",
 }: PaginationProps) {
     if (totalPages <= 1) return null;
 
     const getPages = () => {
-        const pages: (number | string)[] = [];
+        const pages: Array<number | string> = [];
 
         const half = Math.floor(maxVisiblePages / 2);
 
@@ -37,21 +37,27 @@ export default function Pagination({
             start = Math.max(2, totalPages - maxVisiblePages + 1);
         }
 
+        const uniquePages = new Set<number>();
+
         pages.push(1);
+        uniquePages.add(1);
 
         if (start > 2) {
             pages.push("...");
         }
 
         for (let i = start; i <= end; i++) {
-            pages.push(i);
+            if (!uniquePages.has(i)) {
+                pages.push(i);
+                uniquePages.add(i);
+            }
         }
 
         if (end < totalPages - 1) {
             pages.push("...");
         }
 
-        if (totalPages > 1) {
+        if (totalPages > 1 && !uniquePages.has(totalPages)) {
             pages.push(totalPages);
         }
 
@@ -62,13 +68,6 @@ export default function Pagination({
         <div
             className={`d-flex flex-column flex-md-row justify-content-between align-items-center gap-3 ${className}`}
         >
-            {showInfo && (
-                <small className="text-muted">
-                    Halaman <strong>{currentPage}</strong> dari{" "}
-                    <strong>{totalPages}</strong>
-                </small>
-            )}
-
             <nav>
                 <ul className="pagination pagination-sm mb-0">
 
@@ -96,7 +95,7 @@ export default function Pagination({
                         if (page === "...") {
                             return (
                                 <li
-                                    key={index}
+                                    key={`ellipsis-${index}`}
                                     className="page-item disabled"
                                 >
                                     <span className="page-link">…</span>
@@ -106,7 +105,7 @@ export default function Pagination({
 
                         return (
                             <li
-                                key={page}
+                                key={`page-${page}`}
                                 className={`page-item ${
                                     currentPage === page ? "active" : ""
                                 }`}

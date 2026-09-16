@@ -13,6 +13,7 @@ import {
 } from "firebase/firestore";
 import { useAuth } from "@/context/AuthContext";
 import { db } from "@/lib/firebase";
+import { useModal } from "@/components/modals/useModal";
 import { MATA_PELAJARAN } from "@/lib/mata-pelajaran";
 import { getClassesByOwner } from "@/services/kelas.service";
 import { getActiveTahunAjaran } from "@/services/tahunajaran.service";
@@ -139,6 +140,7 @@ const parseMultiValues = (raw: string, options: SelectOption[]) => {
 
 export default function ImportJurnalPage() {
   const { user } = useAuth();
+  const { showModal } = useModal();
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<ExcelRow[]>([]);
   const [columns, setColumns] = useState<string[]>([]);
@@ -386,7 +388,8 @@ export default function ImportJurnalPage() {
           const normalizedHeader = normalizeHeader(header);
           return normalizedHeader === normalizeHeader(field.label) ||
             normalizedHeader === normalizeHeader(field.key) ||
-            normalizedHeader.includes(normalizeHeader(field.key));
+            normalizedHeader.includes(normalizeHeader(field.key)) ||
+            normalizeHeader(field.label).includes(normalizedHeader);
         });
 
         if (match) {
@@ -395,6 +398,10 @@ export default function ImportJurnalPage() {
       });
 
       setFieldMap(nextMapping);
+      setRows(data);
+      setColumns(headers);
+      setFailedData([]);
+      setReport(null);
     } catch (error) {
       console.error("Gagal membaca file Excel:", error);
       alert("Gagal membaca file Excel. Pastikan format file .xlsx atau .xls.");
@@ -406,6 +413,25 @@ export default function ImportJurnalPage() {
       ...prev,
       [fieldKey]: columnName,
     }));
+  };
+
+  const resetImportPage = () => {
+    setRows([]);
+    setColumns([]);
+    setFieldMap({});
+    setFileName("");
+    setProgress(0);
+    setReport(null);
+    setFailedData([]);
+    setAttendanceByDate({});
+
+    const fileInput = document.querySelector<HTMLInputElement>(
+      'input[type="file"][data-import-input="true"]',
+    );
+
+    if (fileInput) {
+      fileInput.value = "";
+    }
   };
 
   const buildPreparedRow = (
@@ -611,11 +637,21 @@ export default function ImportJurnalPage() {
       };
 
       setReport(reportData);
-      alert(`Import selesai: ${success} berhasil, ${errors.length} gagal.`);
 
       if (failedRowsToExport.length > 0) {
-        await downloadFailedRowsExcel(failedRowsToExport);
+        return;
       }
+
+      showModal({
+        title: "Import Berhasil",
+        type: "success",
+        message: `Semua ${success} data jurnal berhasil diimport.`,
+        confirmText: "Kembali ke halaman import",
+        hideCancelButton: true,
+        onConfirm: () => {
+          resetImportPage();
+        },
+      });
     } catch (error) {
       console.error("Gagal mengimport jurnal:", error);
       const failureReport: ImportReport = {
@@ -729,6 +765,7 @@ export default function ImportJurnalPage() {
                       type="file"
                       accept=".xlsx,.xls,.csv"
                       className="form-control"
+                      data-import-input="true"
                       onChange={handleFileUpload}
                     />
                     {fileName && (
@@ -778,33 +815,8 @@ export default function ImportJurnalPage() {
                     </div>
                   )}
 
-                  {columns.length > 0 && (
+                  {!saving && rows.length > 0 && (
                     <>
-                      <div className="alert alert-info">
-                        Pilih kolom Excel yang sesuai dengan setiap field jurnal.
-                      </div>
-                      <div className="row g-3 mb-4">
-                        {FIELD_CONFIG.map((field) => (
-                          <div className="col-md-6" key={field.key}>
-                            <label className="form-label">{field.label}</label>
-                            <select
-                              className="form-select"
-                              value={fieldMap[field.key] || ""}
-                              onChange={(e) =>
-                                handleFieldMapChange(field.key, e.target.value)
-                              }
-                            >
-                              <option value="">Pilih kolom</option>
-                              {columns.map((column) => (
-                                <option key={column} value={column}>
-                                  {column}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                        ))}
-                      </div>
-
                       <div className="mb-4">
                         <div className="d-flex justify-content-between align-items-center gap-2 flex-wrap mb-2">
                           <h6 className="fw-bold mb-0">Data Excel yang akan diimport</h6>
@@ -858,6 +870,44 @@ export default function ImportJurnalPage() {
                           </table>
                         </div>
                       </div>
+
+                      {report && report.failed > 0 && failedData.length > 0 && (
+                        <div className="mb-4">
+                          <div className="d-flex justify-content-between align-items-center gap-2 flex-wrap mb-2">
+                            <h6 className="fw-bold mb-0 text-danger">Data yang Gagal diimport</h6>
+                            <button
+                              type="button"
+                              className="btn btn-outline-danger btn-sm"
+                              onClick={() => downloadFailedRowsExcel(failedData)}
+                            >
+                              <i className="fas fa-file-excel me-2" />
+                              Download Data Gagal
+                            </button>
+                          </div>
+                          <div className="table-responsive">
+                            <table className="table table-bordered table-sm align-middle">
+                              <thead>
+                                <tr>
+                                  {Object.keys(failedData[0] ?? {}).map((key) => (
+                                    <th key={key}>{key}</th>
+                                  ))}
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {failedData.map((row, index) => (
+                                  <tr key={`${row.error ?? "row"}-${index}`}>
+                                    {Object.keys(row).map((key) => (
+                                      <td key={`${key}-${index}`}>
+                                        {row[key] === undefined || row[key] === null ? "" : String(row[key])}
+                                      </td>
+                                    ))}
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )}
 
                       <div className="d-flex justify-content-end">
                         <button

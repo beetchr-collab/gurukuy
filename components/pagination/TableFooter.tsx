@@ -63,8 +63,7 @@ export default function DataTableFooter({
 
                 {showInfo && (
                     <small className="text-muted text-center">
-                        Menampilkan <strong>{start}</strong>–
-                        <strong>{end}</strong> dari{" "}
+                        dari{" "}
                         <strong>{totalData}</strong> data
                     </small>
                 )}
