@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 import { doc, getDoc } from "firebase/firestore";
 
 import {
@@ -443,7 +443,7 @@ export default function RekapPresensiBulananPage() {
         setExporting(true);
 
         try {
-            const wb = XLSX.utils.book_new();
+            const wb = new ExcelJS.Workbook();
 
             const startMonth = 7; // Juli sebagai awal tahun ajaran
 
@@ -473,22 +473,18 @@ export default function RekapPresensiBulananPage() {
 
                 const totalCols = 5 + daysInMonth + 3; // No, NIS, NISN, NAMA, L/P, days..., S,I,A
 
-                const school = await getSchoolById(schoolId!);
-
                 const kelasName = kelas.find((k) => k.kelasId === kelasId)?.kelas || rekap?.kelas || kelasId;
 
-                const schoolName = school?.nama || "";
+                // Identitas laporan dibuat terpisah agar mudah dibaca saat dibuka di Excel.
+                const rowTitle = [`REKAP PRESENSI BULAN ${MONTHS[month - 1].toUpperCase()}`, ...Array(totalCols - 1).fill("")];
+                const rowKelas = [`Kelas ${kelasName}`, ...Array(totalCols - 1).fill("")];
+                const rowTahunAjaran = [`Tahun Ajaran ${tahunAjaran}`, ...Array(totalCols - 1).fill("")];
 
-                const title = `Presensi Bulan ${MONTHS[month - 1]} ${yearForMonth} - ${kelasName}`;
+                // Row 3: blank spacer row to create one-line gap between title and table
+                const blankRow: (string | number)[] = Array(totalCols).fill("");
 
-                // Row 0: title (merged across all columns)
-                const rowTitle = [title, ...Array(totalCols - 1).fill("")];
-
-                // Row 1: blank spacer row to create one-line gap between title and table
-                const blankRow: any[] = Array(totalCols).fill("");
-
-                // Row 2: header - day names above
-                const headerRow1: any[] = Array(totalCols).fill("");
+                // Row 4: header - day names above
+                const headerRow1: (string | number)[] = Array(totalCols).fill("");
                 headerRow1[0] = "No";
                 headerRow1[1] = "NIS";
                 headerRow1[2] = "NISN";
@@ -502,8 +498,8 @@ export default function RekapPresensiBulananPage() {
                 // Rekap label above S/I/A
                 headerRow1[5 + daysInMonth] = "Rekap Presensi";
 
-                // Row 3: header - date numbers and S/I/A
-                const headerRow2: any[] = Array(totalCols).fill("");
+                // Row 5: header - date numbers and S/I/A
+                const headerRow2: (string | number)[] = Array(totalCols).fill("");
                 for (let d = 1; d <= daysInMonth; d++) {
                     const idx = 5 + (d - 1);
                     headerRow2[idx] = String(d);
@@ -512,12 +508,12 @@ export default function RekapPresensiBulananPage() {
                 headerRow2[5 + daysInMonth + 1] = "I";
                 headerRow2[5 + daysInMonth + 2] = "A";
 
-                const aoa: any[] = [rowTitle, blankRow, headerRow1, headerRow2];
+                const aoa: (string | number)[][] = [rowTitle, rowKelas, rowTahunAjaran, blankRow, headerRow1, headerRow2];
 
                 // Data rows
                 if (data && data.students && data.students.length) {
-                    data.students.forEach((student: any, index: number) => {
-                        const row: any[] = Array(totalCols).fill("");
+                    data.students.forEach((student, index: number) => {
+                        const row: (string | number)[] = Array(totalCols).fill("");
 
                         row[0] = index + 1;
                         row[1] = student.nis || "-";
@@ -549,7 +545,7 @@ export default function RekapPresensiBulananPage() {
 
                         const summary: { sakit: number; izin: number; alpha: number } =
                             Object.values(student.attendance || {}).reduce(
-                                (res: { sakit: number; izin: number; alpha: number }, st: any) => {
+                                (res: { sakit: number; izin: number; alpha: number }, st) => {
                                     if (st === "Sakit") res.sakit++;
                                     if (st === "Izin") res.izin++;
                                     if (st === "Alpha") res.alpha++;
@@ -566,113 +562,98 @@ export default function RekapPresensiBulananPage() {
                     });
                 }
 
-                const sheet = XLSX.utils.aoa_to_sheet(aoa);
+                const sheetName = `${MONTHS[month - 1].slice(0, 20)}`;
+                const sheet = wb.addWorksheet(sheetName);
+                aoa.forEach((row) => sheet.addRow(row));
 
-                // Merges:
-                // - title across all columns (row 0)
-                // - first five header columns (No..L/P) should span two rows (row 2-3)
-                // - Rekap Presensi label across last 3 columns on headerRow1 (row 2)
-                const merges: any[] = [];
-                merges.push({ s: { r: 0, c: 0 }, e: { r: 0, c: totalCols - 1 } }); // title
+                // Merge identity rows, the first five headers, and the summary header.
+                for (let row = 1; row <= 3; row++) {
+                    sheet.mergeCells(row, 1, row, totalCols);
+                }
+                for (let column = 1; column <= 5; column++) {
+                    sheet.mergeCells(5, column, 6, column);
+                }
+                sheet.mergeCells(5, 6 + daysInMonth, 5, 8 + daysInMonth);
 
-                // Merge first five columns from headerRow1 (r:2) to headerRow2 (r:3)
-                for (let c = 0; c <= 4; c++) {
-                    merges.push({ s: { r: 2, c }, e: { r: 3, c } });
+                const borderStyle: Partial<ExcelJS.Borders> = {
+                    top: { style: "thin", color: { argb: "FF000000" } },
+                    bottom: { style: "thin", color: { argb: "FF000000" } },
+                    left: { style: "thin", color: { argb: "FF000000" } },
+                    right: { style: "thin", color: { argb: "FF000000" } },
+                };
+                const sundayFill: ExcelJS.Fill = {
+                    type: "pattern",
+                    pattern: "solid",
+                    fgColor: { argb: "ff0600" },
+                };
+
+                // Fit every column to its longest header/data value.
+                for (let column = 1; column <= totalCols; column++) {
+                    let maxLength = 0;
+                    for (let row = 5; row <= aoa.length; row++) {
+                        const value = sheet.getCell(row, column).value;
+                        const length = value === null || value === undefined ? 0 : String(value).length;
+                        maxLength = Math.max(maxLength, length);
+                    }
+                    sheet.getColumn(column).width = Math.min(Math.max(maxLength + 2, 6), 40);
                 }
 
-                // Rekap Presensi merge across last 3 columns on row 2
-                merges.push({ s: { r: 2, c: 5 + daysInMonth }, e: { r: 2, c: 5 + daysInMonth + 2 } });
-
-                sheet["!merges"] = merges;
-
-                // Adjust column widths based on longest text in each column
-                const cols: any[] = [];
-                for (let c = 0; c < totalCols; c++) {
-                    let maxLen = 0;
-                    for (let r = 0; r < aoa.length; r++) {
-                        const v = aoa[r][c];
-                        if (v !== undefined && v !== null) {
-                            const l = String(v).length;
-                            if (l > maxLen) maxLen = l;
+                for (let row = 1; row <= aoa.length; row++) {
+                    for (let column = 1; column <= totalCols; column++) {
+                        const cell = sheet.getCell(row, column);
+                        if (row >= 5) {
+                            cell.border = borderStyle;
                         }
+                        cell.alignment = {
+                            horizontal: column === 4 && row >= 7 ? "left" : "center",
+                            vertical: "middle",
+                            wrapText: true,
+                        };
                     }
-                    const wch = Math.min(Math.max(maxLen + 2, 6), 40);
-                    cols.push({ wch });
                 }
-                sheet["!cols"] = cols;
 
-                // Apply styling: title bold & centered, headers bold & centered,
-                // table borders, and status colors (S blue, I yellow, A red).
-                const borderStyle = {
-                    top: { style: "thin", color: { rgb: "000000" } },
-                    bottom: { style: "thin", color: { rgb: "000000" } },
-                    left: { style: "thin", color: { rgb: "000000" } },
-                    right: { style: "thin", color: { rgb: "000000" } },
-                };
+                [1, 2, 3].forEach((row) => {
+                    const cell = sheet.getCell(row, 1);
+                    cell.font = { bold: row === 1, size: row === 1 ? 14 : 11 };
+                    cell.alignment = { horizontal: "center", vertical: "middle" };
+                });
 
-                const lastRow = aoa.length - 1;
-
-                // Helper to ensure cell exists
-                const ensureCell = (r: number, c: number) => {
-                    const addr = XLSX.utils.encode_cell({ r, c });
-                    if (!sheet[addr]) {
-                        sheet[addr] = { v: "", t: "s" } as any;
-                    }
-                    return sheet[addr];
-                };
-
-                // Title row (row 0)
-                const titleCell = ensureCell(0, 0);
-                (titleCell as any).s = {
-                    font: { bold: true, sz: 14 },
-                    alignment: { horizontal: "center", vertical: "center" },
-                };
-
-                // Header rows: headerRow1 at r=2, headerRow2 at r=3 (because r=1 is blank)
-                const headerRows = [2, 3];
-                headerRows.forEach((r) => {
-                    for (let c = 0; c < totalCols; c++) {
-                        const cell = ensureCell(r, c) as any;
-                        cell.s = cell.s || {};
-                        cell.s.font = { ...(cell.s.font || {}), bold: true };
-                        cell.s.alignment = { ...(cell.s.alignment || {}), horizontal: "center", vertical: "center", wrapText: true };
-                        cell.s.border = borderStyle;
+                [5, 6].forEach((row) => {
+                    for (let column = 1; column <= totalCols; column++) {
+                        sheet.getCell(row, column).font = { bold: true };
                     }
                 });
 
-                // Data rows: apply borders and status colors
-                for (let r = 4; r <= lastRow; r++) {
-                    for (let c = 0; c < totalCols; c++) {
-                        const cell = ensureCell(r, c) as any;
-                        cell.s = cell.s || {};
-                        // default alignment: center for date/status columns, left for name columns
-                        if (c >= 5 && c < 5 + daysInMonth + 3) {
-                            cell.s.alignment = { horizontal: "center", vertical: "center" };
-                        } else if (c === 3) {
-                            cell.s.alignment = { horizontal: "left", vertical: "center" };
-                        } else {
-                            cell.s.alignment = { horizontal: "center", vertical: "center" };
-                        }
-                        cell.s.border = borderStyle;
-
-                        // Apply status colors for single-letter codes in day columns and summary
-                        const v = cell.v;
-                        if (v === "S") {
-                            cell.s.font = { ...(cell.s.font || {}), color: { rgb: "0000FF" } };
-                        } else if (v === "I") {
-                            cell.s.font = { ...(cell.s.font || {}), color: { rgb: "FFD700" } };
-                        } else if (v === "A") {
-                            cell.s.font = { ...(cell.s.font || {}), color: { rgb: "FF0000" } };
-                        }
+                // Sunday columns are red; status letters keep their requested text colors.
+                for (let day = 1; day <= daysInMonth; day++) {
+                    if (getDayName(yearForMonth, month, day) !== "Min") continue;
+                    const column = 5 + day;
+                    for (let row = 5; row <= aoa.length; row++) {
+                        sheet.getCell(row, column).fill = sundayFill;
                     }
                 }
 
-                const sheetName = `${MONTHS[month - 1].slice(0, 20)}`;
-                XLSX.utils.book_append_sheet(wb, sheet, sheetName);
+                for (let row = 7; row <= aoa.length; row++) {
+                    for (let column = 6; column <= 5 + daysInMonth + 3; column++) {
+                        const cell = sheet.getCell(row, column);
+                        const value = String(cell.value ?? "");
+                        if (value === "S") cell.font = { color: { argb: "1600ff" } };
+                        if (value === "I") cell.font = { color: { argb: "fffb00" } };
+                        if (value === "A") cell.font = { color: { argb: "FF0000" } };
+                    }
+                }
             }
 
             const fileName = `rekap-presensi-bulanan-${(rekap?.kelas || kelasId || "kelas")}-${tahunAjaran}.xlsx`;
-            XLSX.writeFile(wb, fileName);
+            const buffer = await wb.xlsx.writeBuffer();
+            const downloadUrl = URL.createObjectURL(new Blob([buffer], {
+                type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            }));
+            const downloadLink = document.createElement("a");
+            downloadLink.href = downloadUrl;
+            downloadLink.download = fileName;
+            downloadLink.click();
+            URL.revokeObjectURL(downloadUrl);
 
         } finally {
             setExporting(false);
@@ -844,9 +825,7 @@ export default function RekapPresensiBulananPage() {
             </div>
 
 
-            {/* =========================================
-                FILTER
-            ========================================= */}
+            {/* FILTER */}
 
             <div className="card card-primary card-outline mb-3">
 

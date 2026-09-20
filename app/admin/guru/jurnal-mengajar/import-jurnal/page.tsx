@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import * as XLSX from "xlsx";
 import ExcelJS from "exceljs";
+import Select from "react-select";
 import {
   addDoc,
   collection,
@@ -73,6 +74,11 @@ const FIELD_CONFIG: FieldConfig[] = [
   { key: "mediaPembelajaran", label: "Media Pembelajaran", required: false },
   { key: "catatan", label: "Catatan / Refleksi", required: false },
 ];
+
+const MAPEL_OPTIONS = MATA_PELAJARAN.map((mapel) => ({
+  label: mapel.namaMataPelajaran,
+  value: mapel.idMataPelajaran,
+}));
 
 const normalizeHeader = (value: string) =>
   value
@@ -729,19 +735,15 @@ export default function ImportJurnalPage() {
                     </div>
                     <div className="col-md-4">
                       <label className="form-label">Mata Pelajaran</label>
-                      <select
-                        className="form-select"
-                        value={mapelId}
-                        onChange={(event) => setMapelId(event.target.value)}
-                        required
-                      >
-                        <option value="">Pilih mata pelajaran</option>
-                        {MATA_PELAJARAN.map((mapel) => (
-                          <option key={mapel.idMataPelajaran} value={mapel.idMataPelajaran}>
-                            {mapel.namaMataPelajaran}
-                          </option>
-                        ))}
-                      </select>
+                      <Select
+                        options={MAPEL_OPTIONS}
+                        placeholder="Cari mata pelajaran..."
+                        value={MAPEL_OPTIONS.find((mapel) => mapel.value === mapelId) ?? null}
+                        onChange={(option) => setMapelId(option?.value ?? "")}
+                        isSearchable
+                        isClearable
+                        classNamePrefix="mapel-select"
+                      />
                     </div>
                   </div>
 

@@ -94,6 +94,12 @@ const formatDate = (value: string) => {
 const getMonthLabel = (month: string) =>
   monthOptions.find((item) => item.value === month)?.label ?? "Semua Bulan";
 
+const getTodayInputValue = () => {
+  const today = new Date();
+  const offset = today.getTimezoneOffset() * 60000;
+  return new Date(today.getTime() - offset).toISOString().slice(0, 10);
+};
+
 export default function RekapJurnalPage() {
   const { user } = useAuth();
   const [entries, setEntries] = useState<JurnalEntry[]>([]);
@@ -112,6 +118,7 @@ export default function RekapJurnalPage() {
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showPrintConfirmModal, setShowPrintConfirmModal] = useState(false);
+  const [printDateInput, setPrintDateInput] = useState(getTodayInputValue);
 
   useEffect(() => {
     const loadData = async () => {
@@ -373,7 +380,7 @@ export default function RekapJurnalPage() {
     setTimeout(() => printWindow.print(), 500);
   };
 
-  const printMonthlyJournal = async () => {
+  const printMonthlyJournal = async (selectedPrintDate: string) => {
     if (filteredEntries.length === 0) {
       alert("Tidak ada data jurnal untuk dicetak pada filter saat ini.");
       return;
@@ -451,6 +458,15 @@ export default function RekapJurnalPage() {
         month: "long",
         year: "numeric",
       });
+
+      const formattedPrintDate = selectedPrintDate
+        ? new Intl.DateTimeFormat("id-ID", {
+            day: "2-digit",
+            month: "long",
+            year: "numeric",
+          }).format(new Date(`${selectedPrintDate}T00:00:00`))
+        : printDate;
+      const kecamatan = schoolData?.kecamatan || "-";
 
       const periodText =
         selectedMonth === "all"
@@ -557,7 +573,7 @@ export default function RekapJurnalPage() {
               </div>
 
               <div class="sign-box">
-                <div style="text-align:right; margin-bottom:12px;" class="small-text">Tanggal: ${printDate}</div>
+                <div class="small-text">${kecamatan}, ${formattedPrintDate}</div>
                 <div class="small-text">Guru Mata Pelajaran</div>
                 <div class="sign-line"></div>
                 <div><strong>${guruName}</strong></div>
@@ -888,6 +904,19 @@ export default function RekapJurnalPage() {
                     : getMonthLabel(selectedMonth)}{" "}
                   {selectedTahunAjaran || "tahun ajaran aktif"}. Lanjutkan?
                 </p>
+                <div className="mt-3">
+                  <label htmlFor="print-date" className="form-label">
+                    Tanggal cetak
+                  </label>
+                  <input
+                    id="print-date"
+                    type="date"
+                    className="form-control"
+                    value={printDateInput}
+                    onChange={(event) => setPrintDateInput(event.target.value)}
+                    required
+                  />
+                </div>
               </div>
               <div className="modal-footer">
                 <button
@@ -902,7 +931,7 @@ export default function RekapJurnalPage() {
                   className="btn btn-success"
                   onClick={async () => {
                     setShowPrintConfirmModal(false);
-                    await printMonthlyJournal();
+                    await printMonthlyJournal(printDateInput);
                   }}
                 >
                   Cetak
