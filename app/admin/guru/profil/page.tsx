@@ -17,7 +17,8 @@ export default function ProfilePage() {
   const currentUser = auth.currentUser;
 
   const [profil, setProfil] = useState({
-    nama: "",
+    username: "",
+    namaGuru: "",
     nip: "",
     tanggalLahir: "",
     jenisKelamin: "",
@@ -50,7 +51,8 @@ export default function ProfilePage() {
           const data = snap.data();
 
           setProfil({
-            nama: data.username || "", // ✅ ambil dari firestore
+            username: data.username || "",
+            namaGuru: data.namaGuru || "",
             nip: data.nip || "",
             tanggalLahir: data.tanggalLahir || "",
             jenisKelamin: data.jenisKelamin || "",
@@ -74,7 +76,7 @@ export default function ProfilePage() {
         // ambil nama dari session
         setProfil((prev) => ({
           ...prev,
-          nama: currentUser?.displayName || "",
+          username: currentUser?.displayName || prev.username,
           email: currentUser?.email || "",
         }));
       } catch (err) {
@@ -104,7 +106,7 @@ export default function ProfilePage() {
           ...profil,
           updatedAt: new Date(),
         },
-        { merge: true }
+        { merge: true },
       );
 
       setModalType("success");
@@ -168,7 +170,7 @@ export default function ProfilePage() {
 
     // KEJURUAN / OPSIONAL
     "Informatika / TIK",
-    "Kewirausahaan"
+    "Kewirausahaan",
   ];
   const mapelOptions = mataPelajaran.map((item) => ({
     label: item,
@@ -184,11 +186,12 @@ export default function ProfilePage() {
           </div>
           <div className="col-sm-6">
             <ol className="breadcrumb float-sm-end">
-              <li className="breadcrumb-item active" aria-current="page">Profil Pengguna</li>
+              <li className="breadcrumb-item active" aria-current="page">
+                Profil Pengguna
+              </li>
             </ol>
           </div>
         </div>
-
       </div>
 
       <div className="container-fluid">
@@ -196,20 +199,28 @@ export default function ProfilePage() {
           <div className="card-body">
             <h5 className="fw-bold mb-2">Profil Pengguna</h5>
             <p className="mb-2 text-muted">
-              Halaman ini digunakan untuk mengelola dan memperbarui data pribadi Anda sebagai pengguna sistem.
+              Halaman ini digunakan untuk mengelola dan memperbarui data pribadi
+              Anda sebagai pengguna sistem.
             </p>
 
             <ul className="mb-0 small">
-              <li>Pastikan data seperti NIP, tanggal lahir, dan alamat diisi dengan benar.</li>
-              <li>Data yang Anda isi akan digunakan untuk kebutuhan administrasi sekolah.</li>
-              <li>Perubahan data dapat dilakukan dengan menekan tombol   
-              
-                  <button
-                    className="btn btn-warning btn-sm"
-                    onClick={() => setEdit(true)}
-                  >
-                    Edit Profil
-                  </button></li>
+              <li>
+                Pastikan data seperti NIP, tanggal lahir, dan alamat diisi
+                dengan benar.
+              </li>
+              <li>
+                Data yang Anda isi akan digunakan untuk kebutuhan administrasi
+                sekolah.
+              </li>
+              <li>
+                Perubahan data dapat dilakukan dengan menekan tombol
+                <button
+                  className="btn btn-warning btn-sm"
+                  onClick={() => setEdit(true)}
+                >
+                  Edit Profil
+                </button>
+              </li>
             </ul>
           </div>
         </div>
@@ -225,17 +236,38 @@ export default function ProfilePage() {
               <p>Sedang mengambil data, mohon menunggu...</p>
             ) : (
               <div className="row g-3">
-
-                {/* NAMA */}
+                {/* USERNAME */}
                 <div className="col-md-6">
-                  <label className="form-label">Nama</label>
-                  <input className="form-control" value={profil.nama} readOnly />
+                  <label className="form-label">Username</label>
+                  <input
+                    className="form-control"
+                    value={profil.username}
+                    readOnly
+                  />
+                </div>
+
+                {/* NAMA GURU */}
+                <div className="col-md-6">
+                  <label className="form-label">Nama Guru</label>
+                  <input
+                    className="form-control"
+                    placeholder="Nama lengkap beserta gelar"
+                    value={profil.namaGuru}
+                    disabled={!edit}
+                    onChange={(e) =>
+                      setProfil({ ...profil, namaGuru: e.target.value })
+                    }
+                  />
                 </div>
 
                 {/* EMAIL */}
                 <div className="col-md-6">
                   <label className="form-label">Email</label>
-                  <input className="form-control" value={profil.email} readOnly />
+                  <input
+                    className="form-control"
+                    value={profil.email}
+                    readOnly
+                  />
                 </div>
 
                 {/* NIP */}
@@ -244,15 +276,14 @@ export default function ProfilePage() {
                   <input
                     type="text"
                     inputMode="numeric"
-                    pattern="[0-9]*"
-                    placeholder="Isi NIP tanpa spasi (18 digit)"
+                    placeholder="Isi NIP (18 digit)"
                     className="form-control"
                     value={profil.nip}
                     disabled={!edit}
                     onChange={(e) => {
                       const value = e.target.value
-                        .replace(/\D/g, "")   // 🔥 hanya angka
-                        .slice(0, 18);        // 🔥 maksimal 18 digit
+                        .replace(/[^0-9 ]/g, "") // hanya angka dan spasi
+                        .slice(0, 21); // maksimal 18 karakter
 
                       setProfil({ ...profil, nip: value });
                     }}
@@ -462,7 +493,7 @@ export default function ProfilePage() {
                     isDisabled={!edit}
                     options={mapelOptions}
                     value={mapelOptions.find(
-                      (opt) => opt.value === profil.mapel
+                      (opt) => opt.value === profil.mapel,
                     )}
                     onChange={(selected) =>
                       setProfil({ ...profil, mapel: selected?.value || "" })
@@ -470,7 +501,6 @@ export default function ProfilePage() {
                     placeholder="Pilih Mata Pelajaran"
                   />
                 </div>
-
               </div>
             )}
             <div className="d-flex justify-content-end mt-3">
@@ -515,11 +545,11 @@ export default function ProfilePage() {
           {/* MODAL */}
           <div className="modal d-block" tabIndex={-1}>
             <div
-              className={`modal-dialog modal-dialog-centered ${animate ? "modal-show" : "modal-hide"
-                }`}
+              className={`modal-dialog modal-dialog-centered ${
+                animate ? "modal-show" : "modal-hide"
+              }`}
             >
               <div className="modal-content">
-
                 <div className="modal-header">
                   <h5 className="modal-title">
                     {modalType === "success" ? "Berhasil" : "Error"}
@@ -540,11 +570,13 @@ export default function ProfilePage() {
                 </div>
 
                 <div className="modal-footer">
-                  <button className="btn btn-primary" onClick={handleCloseModal}>
+                  <button
+                    className="btn btn-primary"
+                    onClick={handleCloseModal}
+                  >
                     OK
                   </button>
                 </div>
-
               </div>
             </div>
           </div>
@@ -552,6 +584,4 @@ export default function ProfilePage() {
       )}
     </>
   );
-
 }
-

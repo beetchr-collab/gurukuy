@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { doc, getDoc } from "firebase/firestore";
+import { collection, doc, getDocs, getDoc, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
+import { MATA_PELAJARAN } from "@/lib/mata-pelajaran";
 import {
   KepalaSekolah,
   getKepalaSekolahBySchool,
@@ -12,6 +13,25 @@ import {
 import {
   getJumlahKelas,
 } from "@/services/kelas.service";
+
+type JurnalHariIni = {
+  id: string;
+  mapelId: string;
+  materi: string;
+  tujuanPembelajaran: string;
+  kegiatanPembelajaran: string;
+  jamKe?: string;
+};
+
+const getTodayInputValue = () => {
+  const today = new Date();
+  const offset = today.getTimezoneOffset() * 60000;
+  return new Date(today.getTime() - offset).toISOString().slice(0, 10);
+};
+
+const mapelLabelMap = new Map(
+  MATA_PELAJARAN.map((item) => [item.idMataPelajaran, item.namaMataPelajaran]),
+);
 
 export default function DashboardPage() {
   const { user, loading: authLoading } = useAuth();
@@ -65,6 +85,8 @@ export default function DashboardPage() {
   const [kepalaSekolah, setKepalaSekolah] = useState<KepalaSekolah | null>(null);
   const [tahunAjaran, setTahunAjaran] = useState("");
   const [loading, setLoading] = useState(true);
+  const [jurnalHariIni, setJurnalHariIni] = useState<JurnalHariIni[]>([]);
+  const [jurnalLoading, setJurnalLoading] = useState(true);
   useEffect(() => {
     if (authLoading) return;
 
@@ -100,6 +122,46 @@ export default function DashboardPage() {
     };
 
     loadData();
+  }, [user, authLoading]);
+
+  useEffect(() => {
+    const loadJurnalHariIni = async () => {
+      if (!user?.uid || !user.schoolId) {
+        setJurnalHariIni([]);
+        setJurnalLoading(false);
+        return;
+      }
+
+      setJurnalLoading(true);
+
+      try {
+        const jurnalQuery = query(
+          collection(db, "jurnal_mengajar"),
+          where("ownerId", "==", user.uid),
+          where("schoolId", "==", user.schoolId),
+          where("tanggal", "==", getTodayInputValue()),
+        );
+        const snapshot = await getDocs(jurnalQuery);
+
+        setJurnalHariIni(
+          snapshot.docs
+            .map((jurnalDoc) => ({
+              id: jurnalDoc.id,
+              ...(jurnalDoc.data() as Omit<JurnalHariIni, "id">),
+            }))
+            .sort((a, b) => (a.jamKe || "").localeCompare(b.jamKe || "")),
+        );
+      } catch (error) {
+        console.error("Gagal memuat jurnal hari ini:", error);
+        setJurnalHariIni([]);
+      } finally {
+        setJurnalLoading(false);
+      }
+    };
+
+    if (!authLoading) {
+      loadJurnalHariIni();
+    }
   }, [user, authLoading]);
 
   return (
@@ -208,6 +270,64 @@ export default function DashboardPage() {
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* JURNAL MENGAJAR HARI INI */}
+        <div className="app-content mb-3">
+          <div className="container-fluid">
+            <div className="card border-0 shadow-sm">
+              <div className="card-header bg-success text-white border-0 py-3">
+                <div className="d-flex justify-content-between align-items-center gap-2">
+                  <h5 className="mb-0 fw-semibold">
+                    <i className="fas fa-book-open me-2"></i>
+                    Jurnal Mengajar Hari Ini
+                  </h5>
+                  <span className="badge bg-white text-success">
+                    {new Intl.DateTimeFormat("id-ID", {
+                      day: "2-digit",
+                      month: "short",
+                      year: "numeric",
+                    }).format(new Date())}
+                  </span>
+                </div>
+              </div>
+
+              <div className="card-body">
+                {jurnalLoading ? (
+                  <p className="text-muted mb-0">Memuat jurnal...</p>
+                ) : jurnalHariIni.length === 0 ? (
+                  <p className="text-muted mb-0">
+                    Belum ada jurnal mengajar untuk hari ini.
+                  </p>
+                ) : (
+                  <div className="table-responsive">
+                    <table className="table table-bordered align-middle mb-0">
+                      <thead className="table-light text-center">
+                        <tr>
+                          <th>Mata Pelajaran</th>
+                          <th>Materi/Topik</th>
+                          <th>Tujuan Pembelajaran</th>
+                          <th>Kegiatan Pembelajaran</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {jurnalHariIni.map((jurnal) => (
+                          <tr key={jurnal.id}>
+                            <td className="fw-semibold">
+                              {mapelLabelMap.get(jurnal.mapelId) || jurnal.mapelId || "-"}
+                            </td>
+                            <td>{jurnal.materi || "-"}</td>
+                            <td>{jurnal.tujuanPembelajaran || "-"}</td>
+                            <td>{jurnal.kegiatanPembelajaran || "-"}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             </div>
           </div>

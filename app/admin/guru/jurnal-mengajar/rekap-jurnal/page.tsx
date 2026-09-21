@@ -416,7 +416,7 @@ export default function RekapJurnalPage() {
         null;
       const schoolData = schoolSnapshot.exists() ? schoolSnapshot.data() : null;
       const guruData = userSnapshot.exists() ? userSnapshot.data() : null;
-      const guruName = guruData?.username || user.username || "Guru";
+      const namaGuru = guruData?.namaGuru || "Guru";
       const guruNip = guruData?.nip || "-";
       const kepalaNama = kepalaSekolah?.nama || "-";
       const kepalaNip = kepalaSekolah?.nip || "-";
@@ -549,13 +549,13 @@ export default function RekapJurnalPage() {
                 <tr>
                   <th style="width:4%;">No</th>
                   <th style="width:8%;">Tanggal</th>
-                  <th style="width:6%;">Jam Ke</th>
-                  <th style="width:6%;">Kelas</th>
+                  <th style="width:4%;">Jam Ke</th>
+                  <th style="width:5%;">Kelas</th>
                   <th style="width:10%;">Mapel</th>
                   <th style="width:14%;">Materi/Topik</th>
                   <th style="width:18%;">Tujuan Pembelajaran (TP)</th>
                   <th style="width:20%;">Kegiatan Pembelajaran</th>
-                  <th style="width:14%;">Refleksi Pembelajaran / Catatan</th>
+                  <th style="width:15%;">Refleksi Pembelajaran / Catatan</th>
                 </tr>
               </thead>
               <tbody>
@@ -576,7 +576,7 @@ export default function RekapJurnalPage() {
                 <div class="small-text">${kecamatan}, ${formattedPrintDate}</div>
                 <div class="small-text">Guru Mata Pelajaran</div>
                 <div class="sign-line"></div>
-                <div><strong>${guruName}</strong></div>
+                <div><strong>${namaGuru}</strong></div>
                 <div class="small-text">NIP. ${guruNip}</div>
               </div>
             </div>
