@@ -83,11 +83,8 @@ function getMapelSingkatan(mapel: string) {
     // SENI & OLAHRAGA
     "seni budaya": "SB",
 
-    "pendidikan jasmani, olahraga, dan kesehatan": "PJOK",
-    "pendidikan jasmani olahraga dan kesehatan": "PJOK",
-    "pendidikan olahraga dan kesehatan": "PJOK",
-    "pjok": "PJOK",
-
+    "pendidikan jasmani, olahraga, dan kesehatan (pjok)": "PJOK",
+   
     // PRAKARYA & TEKNOLOGI
     "prakarya": "PRAK",
 

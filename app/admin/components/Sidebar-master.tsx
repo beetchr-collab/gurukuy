@@ -404,10 +404,24 @@ export default function Sidebar() {
                         <p>Leger Nilai</p>
                       </Link>
                     </li>
+
+                    <li className="nav-item">
+                      <Link
+                        href="/admin/guru/penilaian/tagihan-tugas"
+                        className={`nav-link ${
+                          isActive("/admin/guru/penilaian/tagihan-tugas")
+                            ? "active bg-primary text-white"
+                            : ""
+                        }`}
+                      >
+                        <i className="fas fa-list-check nav-icon"></i>
+                        <p>Tagihan Tugas</p>
+                      </Link>
+                    </li>
                   </ul>
                 </li>
 
-                 {/* Menu Jurnal Mengajar */}
+                {/* Menu Jurnal Mengajar */}
                 <li
                   className={`nav-item ${openMenu === "jurnal-mengajar" ? "menu-open" : ""}`}
                 >
@@ -416,7 +430,9 @@ export default function Sidebar() {
                     onClick={(e) => {
                       e.preventDefault();
                       setOpenMenu(
-                        openMenu === "jurnal-mengajar" ? null : "jurnal-mengajar",
+                        openMenu === "jurnal-mengajar"
+                          ? null
+                          : "jurnal-mengajar",
                       );
                     }}
                     className={`nav-link ${isParentActive("/admin/guru/jurnal-mengajar") ? "active" : ""}`}
@@ -439,7 +455,6 @@ export default function Sidebar() {
                     className="nav nav-treeview"
                     style={{ paddingLeft: "15px" }}
                   >
-
                     <li className="nav-item">
                       <Link
                         href="/admin/guru/jurnal-mengajar/tambah"
@@ -484,15 +499,78 @@ export default function Sidebar() {
                   </ul>
                 </li>
 
-                {/* Menu nilai */}
-                <li className="nav-item">
-                  <Link
-                    href="/admin/guru/eujian"
-                    className={`nav-link ${isActive("/admin/guru/eujian") ? "active bg-primary text-white" : ""}`}
+                {/* Menu E-Ujian */}
+                <li
+                  className={`nav-item ${openMenu === "eujian" ? "menu-open" : ""}`}
+                >
+                  <a
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setOpenMenu(openMenu === "eujian" ? null : "eujian");
+                    }}
+                    className={`nav-link ${isParentActive("/admin/guru/eujian") ? "active" : ""}`}
                   >
                     <i className="nav-icon fas fa-laptop"></i>
-                    <p>E-Ujian</p>
-                  </Link>
+                    <p className="d-flex align-items-center w-100 mb-0">
+                      <span>E-Ujian</span>
+
+                      <i
+                        className={`fas ${
+                          openMenu === "eujian"
+                            ? "fa-angle-down"
+                            : "fa-angle-right"
+                        } ms-auto`}
+                      ></i>
+                    </p>
+                  </a>
+
+                  <ul
+                    className="nav nav-treeview"
+                    style={{ paddingLeft: "15px" }}
+                  >
+                    <li className="nav-item">
+                      <Link
+                        href="/admin/guru/eujian/bank_soal"
+                        className={`nav-link ${
+                          isActive("/admin/guru/eujian/bank_soal")
+                            ? "active bg-primary text-white"
+                            : ""
+                        }`}
+                      >
+                        <i className="far fa-edit nav-icon"></i>
+                        <p>Bank Soal</p>
+                      </Link>
+                    </li>
+
+                    <li className="nav-item">
+                      <Link
+                        href="/admin/guru/eujian/import-eujian"
+                        className={`nav-link ${
+                          isActive("/admin/guru/eujian/import-eujian")
+                            ? "active bg-primary text-white"
+                            : ""
+                        }`}
+                      >
+                        <i className="fas fa-file-import nav-icon"></i>
+                        <p>Import E-Ujian</p>
+                      </Link>
+                    </li>
+
+                    <li className="nav-item">
+                      <Link
+                        href="/admin/guru/eujian/rekap-eujian"
+                        className={`nav-link ${
+                          isActive("/admin/guru/eujian/rekap-eujian")
+                            ? "active bg-primary text-white"
+                            : ""
+                        }`}
+                      >
+                        <i className="fas fa-book-open nav-icon"></i>
+                        <p>Rekap E-Ujian</p>
+                      </Link>
+                    </li>
+                  </ul>
                 </li>
               </>
             )}

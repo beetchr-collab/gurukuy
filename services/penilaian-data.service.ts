@@ -19,7 +19,9 @@ export interface PenilaianData {
     ownerName: string;
     schoolId: string;
 
+    kelasId: string;
     mapel: string;
+    jenisPenilaian: string;
     namaKelas: string;
     tingkatKelas: number;
 

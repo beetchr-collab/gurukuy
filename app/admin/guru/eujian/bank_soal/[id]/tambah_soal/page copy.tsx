@@ -1,66 +1,18 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import DOMPurify from "isomorphic-dompurify";
-import "summernote/dist/summernote-lite.min.css";
 import {
     addDoc,
     collection,
-    deleteDoc,
     doc,
     getDoc,
     onSnapshot,
     orderBy,
     query,
     serverTimestamp,
-    updateDoc,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-
-type SummernoteEditorInstance = {
-    summernote: {
-        (options: {
-            height: number;
-            toolbar: [string, string[]][];
-            callbacks: { onChange: (contents: string) => void };
-        }): unknown;
-        (command: "code", value: string): unknown;
-        (command: "destroy"): unknown;
-    };
-};
-
-type QuestionItem = {
-    id: string;
-    tipeSoal?: string;
-    pertanyaan?: string;
-    gambarUrl?: string;
-    opsi?: string[];
-    jawabanBenar?: string | string[];
-    benarSalah?: { statement: string; jawaban: string }[];
-    pasangan?: { left: string; right: string }[];
-    jawabanIsian?: string;
-    jawabanEssay?: string;
-};
-
-const normalizeImageUrl = (value: string) => {
-    try {
-        const url = new URL(value.trim());
-        if (url.protocol !== "http:" && url.protocol !== "https:") return "";
-
-        if (url.hostname === "drive.google.com") {
-            const fileId = url.pathname.match(/\/file\/d\/([^/]+)/)?.[1]
-                || url.searchParams.get("id");
-            if (fileId) {
-                return `https://drive.google.com/uc?export=view&id=${encodeURIComponent(fileId)}`;
-            }
-        }
-
-        return url.toString();
-    } catch {
-        return "";
-    }
-};
 
 export default function TambahSoalPage() {
     const router = useRouter();
@@ -72,9 +24,6 @@ export default function TambahSoalPage() {
     const [bankSoal, setBankSoal] = useState<any>(null);
     const [soalList, setSoalList] = useState<any[]>([]);
     const [soalLoadError, setSoalLoadError] = useState("");
-    const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
-    const questionEditorRef = useRef<HTMLTextAreaElement>(null);
-    const summernoteRef = useRef<SummernoteEditorInstance | null>(null);
 
     const initialFormData = {
         tipeSoal: "PG",
@@ -90,50 +39,7 @@ export default function TambahSoalPage() {
     };
 
     const [formData, setFormData] = useState<typeof initialFormData>(initialFormData);
-
-    useEffect(() => {
-        let disposed = false;
-
-        const initializeEditor = async () => {
-            const jquery = (await import("jquery")).default;
-            (window as Window & { $?: typeof jquery; jQuery?: typeof jquery }).$ = jquery;
-            (window as Window & { $?: typeof jquery; jQuery?: typeof jquery }).jQuery = jquery;
-            await import("summernote/dist/summernote-lite.min.js");
-
-            if (disposed || !questionEditorRef.current) return;
-
-            const editor = jquery(questionEditorRef.current) as unknown as SummernoteEditorInstance;
-            editor.summernote({
-                height: 220,
-                toolbar: [
-                    ["style", ["style"]],
-                    ["font", ["bold", "italic", "underline", "strikethrough", "superscript", "subscript", "clear"]],
-                    ["fontname", ["fontname"]],
-                    ["fontsize", ["fontsize"]],
-                    ["color", ["color"]],
-                    ["para", ["ul", "ol", "paragraph", "height"]],
-                    ["table", ["table"]],
-                    ["insert", ["link", "hr"]],
-                    ["history", ["undo", "redo"]],
-                    ["view", ["fullscreen", "codeview", "help"]],
-                ],
-                callbacks: {
-                    onChange: (contents) => {
-                        setFormData((prev) => ({ ...prev, pertanyaan: contents }));
-                    },
-                },
-            });
-            summernoteRef.current = editor;
-        };
-
-        void initializeEditor();
-
-        return () => {
-            disposed = true;
-            summernoteRef.current?.summernote("destroy");
-            summernoteRef.current = null;
-        };
-    }, []);
+    const [uploadingImage, setUploadingImage] = useState(false);
 
     const handleChange = (
         e: React.ChangeEvent<
@@ -246,51 +152,41 @@ export default function TambahSoalPage() {
         }));
     };
 
-    const resetForm = () => setFormData(initialFormData);
+    const handleImageUpload = async (
+        e: React.ChangeEvent<HTMLInputElement>
+    ) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
 
-    const cancelEdit = () => {
-        setEditingQuestionId(null);
-        resetForm();
-        summernoteRef.current?.summernote("code", "");
-    };
-
-    const handleEditQuestion = (item: QuestionItem) => {
-        const answer = item.jawabanBenar;
-        const nextFormData = {
-            ...initialFormData,
-            tipeSoal: item.tipeSoal || "PG",
-            pertanyaan: item.pertanyaan || "",
-            gambarUrl: item.gambarUrl || "",
-            opsi: Array.isArray(item.opsi) ? item.opsi : initialFormData.opsi,
-            jawabanBenar: typeof answer === "string" ? answer : "A",
-            jawabanBenarComplex: Array.isArray(answer) ? answer : [],
-            benarSalah: Array.isArray(item.benarSalah)
-                ? item.benarSalah
-                : initialFormData.benarSalah,
-            pasangan: Array.isArray(item.pasangan)
-                ? item.pasangan
-                : initialFormData.pasangan,
-            jawabanIsian: item.jawabanIsian || "",
-            jawabanEssay: item.jawabanEssay || "",
-        };
-
-        setEditingQuestionId(item.id);
-        setFormData(nextFormData);
-        summernoteRef.current?.summernote("code", nextFormData.pertanyaan);
-        document.getElementById("form-tambah-soal")?.scrollIntoView({ behavior: "smooth" });
-    };
-
-    const handleDeleteQuestion = async (questionId: string) => {
-        if (!window.confirm("Hapus soal ini? Tindakan ini tidak dapat dibatalkan.")) return;
+        setUploadingImage(true);
 
         try {
-            await deleteDoc(doc(db, "bank_soal", bankSoalId, "soal", questionId));
-            if (editingQuestionId === questionId) cancelEdit();
-        } catch (error) {
-            console.error("Gagal menghapus soal:", error);
-            alert("Gagal menghapus soal");
+            const form = new FormData();
+            form.append("file", file);
+
+            const res = await fetch("/api/upload-drive", {
+                method: "POST",
+                body: form,
+            });
+
+            const data = await res.json();
+            if (!res.ok) {
+                throw new Error(data?.error || "Gagal upload gambar");
+            }
+
+            setFormData((prev) => ({
+                ...prev,
+                gambarUrl: data.url,
+            }));
+        } catch (error: any) {
+            console.error(error);
+            alert(error.message || "Gagal upload gambar");
+        } finally {
+            setUploadingImage(false);
         }
     };
+
+    const resetForm = () => setFormData(initialFormData);
 
     // GET BANK SOAL
     useEffect(() => {
@@ -357,19 +253,13 @@ export default function TambahSoalPage() {
         e: React.FormEvent<HTMLFormElement>
     ) => {
         e.preventDefault();
-        const cleanQuestion = DOMPurify.sanitize(formData.pertanyaan);
-        if (!cleanQuestion.replace(/<[^>]*>/g, "").trim()) {
-            alert("Pertanyaan tidak boleh kosong");
-            return;
-        }
-
         setLoading(true);
 
         try {
             const payload: any = {
                 tipeSoal: formData.tipeSoal,
-                pertanyaan: cleanQuestion,
-                gambarUrl: normalizeImageUrl(formData.gambarUrl),
+                pertanyaan: formData.pertanyaan,
+                gambarUrl: formData.gambarUrl,
                 createdAt: serverTimestamp(),
             };
 
@@ -399,17 +289,8 @@ export default function TambahSoalPage() {
                 payload.jawabanEssay = formData.jawabanEssay;
             }
 
-            if (editingQuestionId) {
-                delete payload.createdAt;
-                await updateDoc(
-                    doc(db, "bank_soal", bankSoalId, "soal", editingQuestionId),
-                    payload
-                );
-            } else {
-                await addDoc(collection(db, "bank_soal", bankSoalId, "soal"), payload);
-            }
-
-            cancelEdit();
+            await addDoc(collection(db, "bank_soal", bankSoalId, "soal"), payload);
+            resetForm();
         } catch (error) {
             console.error(error);
             alert("Gagal menambahkan soal");
@@ -451,7 +332,7 @@ export default function TambahSoalPage() {
             <div className="container-fluid">
 
                 {/* INFO */}
-                <div className="callout callout-info shadow-sm rounded-3 mb-3">
+                <div className="callout callout-info shadow-sm rounded-3">
                     <h5>
                         <i className="fas fa-info-circle me-2"></i>
                         Informasi
@@ -466,12 +347,12 @@ export default function TambahSoalPage() {
                 <div className="row">
 
                     {/* FORM */}
-                    <div className="col-12">
-                        <div className="card card-primary card-outline" id="form-tambah-soal">
+                    <div className="col-lg-5">
+                        <div className="card card-primary card-outline">
 
                             <div className="card-header">
                                 <h3 className="card-title fw-bold">
-                                    {editingQuestionId ? "Edit Soal" : "Form Tambah Soal"}
+                                    Form Tambah Soal
                                 </h3>
                             </div>
 
@@ -500,38 +381,32 @@ export default function TambahSoalPage() {
                                             {formData.tipeSoal === "Benar/Salah" ? "Pernyataan" : "Pertanyaan"}
                                         </label>
                                         <textarea
-                                            ref={questionEditorRef}
                                             className="form-control"
+                                            rows={4}
                                             name="pertanyaan"
-                                            defaultValue={formData.pertanyaan}
-                                            aria-label="Editor pertanyaan"
-                                        />
+                                            value={formData.pertanyaan}
+                                            onChange={handleChange}
+                                            required
+                                        ></textarea>
                                     </div>
 
                                     <div className="mb-3">
-                                        <label className="form-label fw-semibold" htmlFor="gambarUrl">URL Gambar</label>
+                                        <label className="form-label fw-semibold">Gambar (Upload Google Drive)</label>
                                         <input
-                                            id="gambarUrl"
-                                            type="url"
+                                            type="file"
                                             className="form-control"
-                                            name="gambarUrl"
-                                            value={formData.gambarUrl}
-                                            onChange={(event) => {
-                                                const value = event.target.value;
-                                                setFormData((prev) => ({ ...prev, gambarUrl: value }));
-                                            }}
-                                            placeholder="https://..."
+                                            accept="image/*"
+                                            onChange={handleImageUpload}
                                         />
-                                        <div className="form-text">Masukkan URL gambar publik, termasuk tautan berbagi Google Drive.</div>
+                                        {uploadingImage && (
+                                            <div className="form-text text-muted">Mengunggah gambar...</div>
+                                        )}
                                         {formData.gambarUrl && (
                                             <div className="mt-3">
                                                 <img
-                                                    src={normalizeImageUrl(formData.gambarUrl)}
+                                                    src={formData.gambarUrl}
                                                     alt="Preview gambar soal"
                                                     className="img-fluid rounded"
-                                                    onError={(event) => {
-                                                        event.currentTarget.style.display = "none";
-                                                    }}
                                                 />
                                             </div>
                                         )}
@@ -735,16 +610,6 @@ export default function TambahSoalPage() {
                                 </div>
 
                                 <div className="card-footer">
-                                    {editingQuestionId && (
-                                        <button
-                                            type="button"
-                                            className="btn btn-outline-secondary me-2"
-                                            onClick={cancelEdit}
-                                            disabled={loading}
-                                        >
-                                            Batal
-                                        </button>
-                                    )}
                                     <button
                                         type="submit"
                                         className="btn btn-primary"
@@ -757,8 +622,8 @@ export default function TambahSoalPage() {
                                             </>
                                         ) : (
                                             <>
-                                                <i className={`fas ${editingQuestionId ? "fa-pen" : "fa-save"} me-2`}></i>
-                                                {editingQuestionId ? "Simpan Perubahan" : "Simpan Soal"}
+                                                <i className="fas fa-save me-2"></i>
+                                                Simpan Soal
                                             </>
                                         )}
                                     </button>
@@ -768,7 +633,7 @@ export default function TambahSoalPage() {
                     </div>
 
                     {/* LIST SOAL */}
-                    <div className="col-12 mt-4">
+                    <div className="col-lg-7">
                         <div className="card">
 
                             <div className="card-header d-flex justify-content-between align-items-center">
@@ -802,7 +667,6 @@ export default function TambahSoalPage() {
                                                         {item.tipeSoal || "Tidak diketahui"}
                                                     </span>
                                                 </div>
-                                                <div className="d-flex align-items-center gap-2">
                                                 <span className="badge bg-success">
                                                     {item.tipeSoal === "PGK"
                                                         ? `Jawaban: ${Array.isArray(item.jawabanBenar) ? item.jawabanBenar.join(", ") : item.jawabanBenar}`
@@ -816,33 +680,9 @@ export default function TambahSoalPage() {
                                                         ? "Uraian"
                                                         : "Menjodohkan"}
                                                 </span>
-                                                <button
-                                                    type="button"
-                                                    className="btn btn-sm btn-outline-primary"
-                                                    title="Edit soal"
-                                                    aria-label={`Edit soal ${index + 1}`}
-                                                    onClick={() => handleEditQuestion(item)}
-                                                >
-                                                    <i className="fas fa-pen"></i>
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    className="btn btn-sm btn-outline-danger"
-                                                    title="Hapus soal"
-                                                    aria-label={`Hapus soal ${index + 1}`}
-                                                    onClick={() => handleDeleteQuestion(item.id)}
-                                                >
-                                                    <i className="fas fa-trash"></i>
-                                                </button>
-                                                </div>
                                             </div>
 
-                                            <div
-                                                className="mb-3"
-                                                dangerouslySetInnerHTML={{
-                                                    __html: DOMPurify.sanitize(item.pertanyaan || ""),
-                                                }}
-                                            />
+                                            <p className="mb-3">{item.pertanyaan}</p>
 
                                             {item.gambarUrl && (
                                                 <div className="mb-3">
