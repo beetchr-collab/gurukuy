@@ -117,7 +117,7 @@ useEffect(() => {
 }, [storedStudent]);
   const handleLogout = () => {
     localStorage.removeItem("cbtStudent");
-    router.replace("/cbt");
+    router.replace("/cbt/login");
   };
 
   if (!student) {

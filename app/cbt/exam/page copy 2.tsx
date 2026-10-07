@@ -36,34 +36,6 @@ type Question = {
 
 type Answer = string | string[] | Record<string, string>;
 
-const isQuestionAnswered = (question: Question, answer: Answer | undefined) => {
-  if (question.tipeSoal === "PG") {
-    return typeof answer === "string" && answer.trim().length > 0;
-  }
-
-  if (question.tipeSoal === "PGK" || question.tipeSoal === "Benar/Salah") {
-    const statementCount = question.tipeSoal === "PGK"
-      ? question.opsi?.length || 0
-      : question.benarSalah?.length || 0;
-    if (statementCount === 0 || !answer || typeof answer === "string" || Array.isArray(answer)) {
-      return false;
-    }
-    return Array.from({ length: statementCount }, (_, index) => answer[String(index)])
-      .every((value) => value === "Benar" || value === "Salah");
-  }
-
-  if (question.tipeSoal === "Menjodohkan") {
-    const pairCount = question.pasangan?.length || 0;
-    if (pairCount === 0 || !answer || typeof answer === "string" || Array.isArray(answer)) {
-      return false;
-    }
-    return Array.from({ length: pairCount }, (_, index) => answer[String(index)])
-      .every((value) => typeof value === "string" && value.trim().length > 0);
-  }
-
-  return typeof answer === "string" && answer.trim().length > 0;
-};
-
 export default function CbtExamPage() {
   const router = useRouter();
   const [exam, setExam] = useState<Exam | null>(null);
@@ -73,11 +45,8 @@ export default function CbtExamPage() {
   const [doubtfulQuestions, setDoubtfulQuestions] = useState<Set<string>>(new Set());
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [remainingSeconds, setRemainingSeconds] = useState<number | null>(null);
-  const [questionNavigationOpen, setQuestionNavigationOpen] = useState(false);
   const [finishConfirmationOpen, setFinishConfirmationOpen] = useState(false);
   const [examFinished, setExamFinished] = useState(false);
-  const [savingSubmission, setSavingSubmission] = useState(false);
-  const [submissionError, setSubmissionError] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -172,65 +141,14 @@ export default function CbtExamPage() {
   }, [exam]);
 
   const answeredCount = useMemo(
-    () => questions.filter((question) => isQuestionAnswered(question, answers[question.id])).length,
+    () => questions.filter((question) => {
+      const answer = answers[question.id];
+      if (typeof answer === "string") return answer.trim().length > 0;
+      if (Array.isArray(answer)) return answer.length > 0;
+      return answer !== undefined && Object.values(answer).some((value) => value.trim().length > 0);
+    }).length,
     [answers, questions]
   );
-  const canFinishExam = questions.length > 0 &&
-    answeredCount === questions.length &&
-    doubtfulQuestions.size === 0;
-
-  useEffect(() => {
-    if (!questionNavigationOpen && !finishConfirmationOpen) return;
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setQuestionNavigationOpen(false);
-        setFinishConfirmationOpen(false);
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [finishConfirmationOpen, questionNavigationOpen]);
-
-  const saveAndFinishExam = async () => {
-    if (!exam || !student || savingSubmission || !canFinishExam) return;
-
-    setSavingSubmission(true);
-    setSubmissionError("");
-    try {
-      const examId = new URLSearchParams(window.location.search).get("examId");
-      if (!examId) throw new Error("ID ujian tidak ditemukan.");
-
-      const response = await fetch("/api/cbt/submit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          examId,
-          studentId: student.id,
-          answers,
-          doubtfulQuestionIds: Array.from(doubtfulQuestions),
-        }),
-      });
-      const result = await response.json() as { success: boolean; message?: string };
-
-      if (!response.ok || !result.success) {
-        throw new Error(result.message || "Jawaban gagal disimpan. Silakan coba lagi.");
-      }
-
-      setFinishConfirmationOpen(false);
-      setExamFinished(true);
-    } catch (submitError) {
-      console.error("Gagal menyimpan jawaban CBT:", submitError);
-      setSubmissionError(
-        submitError instanceof Error
-          ? submitError.message
-          : "Jawaban gagal disimpan. Silakan coba lagi."
-      );
-    } finally {
-      setSavingSubmission(false);
-    }
-  };
 
   const formatTime = (seconds: number | null) => {
     if (seconds === null) return "--:--:--";
@@ -294,17 +212,60 @@ export default function CbtExamPage() {
           <div className={styles.examEmpty}>Belum ada soal pada ujian ini.</div>
         ) : (
           <section className={styles.examWorkspace} aria-label="Area pengerjaan ujian">
-            <div className={styles.questionMain}>
+            <aside className={styles.questionNavigation} aria-label="Navigasi nomor soal">
+              <div className={styles.navigationHeading}>
+                <div>
+                  <h2>Navigasi soal</h2>
+                  <p>{answeredCount} dari {questions.length} terjawab</p>
+                </div>
+                <span className={styles.navigationCount}>{questions.length}</span>
+              </div>
+              <div className={styles.questionGrid}>
+                {questions.map((question, index) => {
+                  const answer = answers[question.id];
+                  const answered = typeof answer === "string"
+                    ? answer.trim().length > 0
+                    : Array.isArray(answer)
+                      ? answer.length > 0
+                      : answer !== undefined &&
+                        Object.values(answer).some((value) => value.trim().length > 0);
+                  const classes = [
+                    styles.questionNumber,
+                    answered ? styles.numberAnswered : "",
+                    index === currentQuestionIndex ? styles.numberActive : "",
+                    doubtfulQuestions.has(question.id) ? styles.numberDoubtful : "",
+                  ].filter(Boolean).join(" ");
+                  return (
+                    <button
+                      aria-label={`Buka soal ${index + 1}${answered ? ", sudah dijawab" : ", belum dijawab"}${doubtfulQuestions.has(question.id) ? ", ragu-ragu" : ""}`}
+                      aria-current={index === currentQuestionIndex ? "step" : undefined}
+                      className={classes}
+                      key={question.id}
+                      onClick={() => setCurrentQuestionIndex(index)}
+                      type="button"
+                    >
+                      {index + 1}
+                      {doubtfulQuestions.has(question.id) && <span aria-hidden="true">!</span>}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className={styles.questionLegend}>
+                <span><i className={styles.legendUnanswered} />Belum dijawab</span>
+                <span><i className={styles.legendAnswered} />Sudah dijawab</span>
+                <span><i className={styles.legendActive} />Soal aktif</span>
+                <span><i className={styles.legendDoubtful} />Ragu-ragu</span>
+              </div>
               <button
-                className={styles.questionNavigationTrigger}
-                onClick={() => setQuestionNavigationOpen(true)}
+                className={styles.finishButton}
+                onClick={() => setFinishConfirmationOpen(true)}
                 type="button"
-                aria-haspopup="dialog"
               >
-                <span aria-hidden="true">▦</span>
-                Daftar Soal
-                <strong>{answeredCount}/{questions.length}</strong>
+                Selesai Ujian
               </button>
+            </aside>
+
+            <div className={styles.questionMain}>
               <article className={styles.questionItem} key={currentQuestion.id}>
                 <div className={styles.questionHeading}>
                   <span>Soal {currentQuestionIndex + 1} <small>/ {questions.length}</small></span>
@@ -470,96 +431,17 @@ export default function CbtExamPage() {
                 </button>
                 <button
                   className={styles.nextButton}
-                  disabled={currentQuestionIndex === questions.length - 1 && !canFinishExam}
-                  onClick={() => {
-                    if (currentQuestionIndex === questions.length - 1) {
-                      setSubmissionError("");
-                      setFinishConfirmationOpen(true);
-                    } else {
-                      setCurrentQuestionIndex((index) => index + 1);
-                    }
-                  }}
+                  disabled={currentQuestionIndex === questions.length - 1}
+                  onClick={() => setCurrentQuestionIndex((index) => Math.min(questions.length - 1, index + 1))}
                   type="button"
                 >
-                  {currentQuestionIndex === questions.length - 1
-                    ? canFinishExam ? "Selesai Ujian dan Simpan" : "Berikutnya"
-                    : "Berikutnya →"}
+                  Berikutnya →
                 </button>
               </div>
-              {currentQuestionIndex === questions.length - 1 && !canFinishExam && (
-                <p className={styles.finishRequirement}>
-                  Lengkapi semua jawaban dan hapus semua tanda ragu-ragu untuk menyelesaikan ujian.
-                </p>
-              )}
             </div>
           </section>
         )}
       </div>
-      {questionNavigationOpen && (
-        <div
-          className={styles.finishOverlay}
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget) setQuestionNavigationOpen(false);
-          }}
-          role="presentation"
-        >
-          <section
-            aria-labelledby="question-navigation-title"
-            aria-modal="true"
-            className={styles.navigationDialog}
-            role="dialog"
-          >
-            <div className={styles.navigationDialogHeader}>
-              <div>
-                <h2 id="question-navigation-title">Navigasi soal</h2>
-                <p>{answeredCount} dari {questions.length} terjawab</p>
-              </div>
-              <button
-                aria-label="Tutup navigasi soal"
-                className={styles.navigationCloseButton}
-                onClick={() => setQuestionNavigationOpen(false)}
-                type="button"
-              >
-                ×
-              </button>
-            </div>
-            <div className={styles.questionGrid}>
-              {questions.map((question, index) => {
-                const answered = isQuestionAnswered(question, answers[question.id]);
-                const isDoubtful = doubtfulQuestions.has(question.id);
-                const classes = [
-                  styles.questionNumber,
-                  answered ? styles.numberAnswered : "",
-                  index === currentQuestionIndex ? styles.numberActive : "",
-                  isDoubtful ? styles.numberDoubtful : "",
-                ].filter(Boolean).join(" ");
-                return (
-                  <button
-                    aria-label={`Buka soal ${index + 1}${answered ? ", sudah dijawab" : ", belum dijawab"}${isDoubtful ? ", ragu-ragu" : ""}`}
-                    aria-current={index === currentQuestionIndex ? "step" : undefined}
-                    className={classes}
-                    key={question.id}
-                    onClick={() => {
-                      setCurrentQuestionIndex(index);
-                      setQuestionNavigationOpen(false);
-                    }}
-                    type="button"
-                  >
-                    {index + 1}
-                    {isDoubtful && <span aria-hidden="true">!</span>}
-                  </button>
-                );
-              })}
-            </div>
-            <div className={styles.questionLegend}>
-              <span><i className={styles.legendUnanswered} />Belum dijawab</span>
-              <span><i className={styles.legendAnswered} />Sudah dijawab</span>
-              <span><i className={styles.legendActive} />Soal aktif</span>
-              <span><i className={styles.legendDoubtful} />Ragu-ragu</span>
-            </div>
-          </section>
-        </div>
-      )}
       {finishConfirmationOpen && (
         <div className={styles.finishOverlay} role="presentation">
           <section
@@ -571,14 +453,12 @@ export default function CbtExamPage() {
             <span className={styles.finishDialogIcon} aria-hidden="true">✓</span>
             <h2 id="finish-title">Selesaikan ujian?</h2>
             <p>
-              Semua {questions.length} soal sudah dijawab dan tidak ada yang ditandai ragu-ragu.
-              Jawaban Anda akan disimpan dan ujian diakhiri.
+              {answeredCount} dari {questions.length} soal sudah dijawab.
+              {answeredCount < questions.length ? " Soal yang belum dijawab tetap akan dihitung kosong." : ""}
             </p>
-            {submissionError && <p className={styles.submissionError} role="alert">{submissionError}</p>}
             <div className={styles.finishDialogActions}>
               <button
                 className={styles.previousButton}
-                disabled={savingSubmission}
                 onClick={() => setFinishConfirmationOpen(false)}
                 type="button"
               >
@@ -586,11 +466,13 @@ export default function CbtExamPage() {
               </button>
               <button
                 className={styles.finishConfirmButton}
-                disabled={savingSubmission}
-                onClick={() => void saveAndFinishExam()}
+                onClick={() => {
+                  setExamFinished(true);
+                  setFinishConfirmationOpen(false);
+                }}
                 type="button"
               >
-                {savingSubmission ? "Menyimpan..." : "Simpan dan akhiri ujian"}
+                Ya, selesai
               </button>
             </div>
           </section>
@@ -604,7 +486,7 @@ export default function CbtExamPage() {
             <p>{answeredCount} dari {questions.length} soal sudah dijawab.</p>
             <button
               className={styles.finishConfirmButton}
-              onClick={() => router.push("/cbt")}
+              onClick={() => router.push("/cbt/dashboard")}
               type="button"
             >
               Kembali ke dashboard
