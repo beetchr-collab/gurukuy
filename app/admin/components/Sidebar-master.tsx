@@ -531,6 +531,20 @@ export default function Sidebar() {
                   >
                     <li className="nav-item">
                       <Link
+                        href="/admin/guru/eujian"
+                        className={`nav-link ${
+                          isActive("/admin/guru/eujian")
+                            ? "active bg-primary text-white"
+                            : ""
+                        }`}
+                      >
+                        <i className="far fa-edit nav-icon"></i>
+                        <p>Status Ujian</p>
+                      </Link>
+                    </li>
+
+                    <li className="nav-item">
+                      <Link
                         href="/admin/guru/eujian/bank_soal"
                         className={`nav-link ${
                           isActive("/admin/guru/eujian/bank_soal")

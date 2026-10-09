@@ -42,10 +42,17 @@ export async function POST(request: Request) {
       .toLocaleLowerCase();
 
     const exams = snapshot.docs
-      .map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }))
+      .map((doc) => {
+        const exam = doc.data();
+        return {
+          id: doc.id,
+          namaBankSoal: exam.namaBankSoal,
+          mataPelajaran: exam.mataPelajaran,
+          kelas: exam.kelas,
+          examStatus: exam.examStatus,
+          allowAccess: exam.allowAccess,
+        };
+      })
       .filter((exam) => {
         const data = exam as {
           schoolId?: string;

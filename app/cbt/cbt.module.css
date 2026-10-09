@@ -522,6 +522,154 @@
   background: #205d4c;
 }
 
+.startExamOverlay {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgb(18 37 33 / 55%);
+}
+
+.startExamDialog {
+  position: relative;
+  width: min(440px, 100%);
+  padding: 30px;
+  border: 1px solid #e0e9e2;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 22px 70px rgb(15 42 33 / 24%);
+}
+
+.closeStartExamDialog {
+  position: absolute;
+  top: 13px;
+  right: 13px;
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  color: #71827a;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
+.closeStartExamDialog:hover {
+  color: #294b41;
+  background: #f0f5f1;
+}
+
+.startExamDialogIcon {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border-radius: 50%;
+  color: #176e68;
+  background: #e8f3ed;
+  font-size: 19px;
+}
+
+.startExamDialog h2 {
+  margin: 18px 0 7px;
+  color: #203c3a;
+  font-size: 20px;
+}
+
+.startExamDialog > p {
+  margin: 0;
+  color: #718282;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.startExamDialog form {
+  margin-top: 22px;
+}
+
+.startExamDialog label {
+  display: block;
+  margin-bottom: 7px;
+  color: #405b52;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.startExamDialog input {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid #cfddd4;
+  border-radius: 5px;
+  color: #203c3a;
+  background: #fff;
+  font: inherit;
+  font-size: 14px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.startExamDialog input:focus {
+  border-color: #28745e;
+  outline: 3px solid rgb(40 116 94 / 14%);
+}
+
+.startExamDialog input[aria-invalid="true"] {
+  border-color: #bd554b;
+}
+
+.startExamError {
+  margin: 8px 0 0;
+  color: #a33e36;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.startExamDialogActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 9px;
+  margin-top: 22px;
+}
+
+.cancelStartExamButton,
+.confirmStartExamButton {
+  min-height: 39px;
+  padding: 0 15px;
+  border: 1px solid #d4e0d8;
+  border-radius: 5px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.cancelStartExamButton {
+  color: #526a60;
+  background: #fff;
+}
+
+.confirmStartExamButton {
+  border-color: #28745e;
+  color: #fff;
+  background: #28745e;
+}
+
+.confirmStartExamButton:hover:not(:disabled) {
+  background: #205d4c;
+}
+
+.cancelStartExamButton:disabled,
+.confirmStartExamButton:disabled,
+.closeStartExamDialog:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 .examPage {
   --exam-ink: #203c3a;
   min-height: 100vh;

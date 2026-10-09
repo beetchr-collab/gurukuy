@@ -88,10 +88,12 @@ export async function POST(request: Request) {
       );
     }
 
-    const [examSnapshot, studentSnapshot, questionSnapshot] = await Promise.all([
+    const submissionId = Buffer.from(`${examId}:${studentId}`).toString("base64url");
+    const [examSnapshot, studentSnapshot, questionSnapshot, sessionSnapshot] = await Promise.all([
       adminDb.collection("bank_soal").doc(examId).get(),
       adminDb.collection("students").doc(studentId).get(),
       adminDb.collection("bank_soal").doc(examId).collection("soal").get(),
+      adminDb.collection("cbt_sessions").doc(submissionId).get(),
     ]);
 
     if (!examSnapshot.exists) {
@@ -105,6 +107,16 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { success: false, message: "Sesi siswa tidak valid. Silakan masuk kembali." },
         { status: 401 }
+      );
+    }
+
+    if (
+      !sessionSnapshot.exists ||
+      sessionSnapshot.data()?.status === "Selesai"
+    ) {
+      return NextResponse.json(
+        { success: false, message: "Sesi ujian sudah direset atau telah selesai." },
+        { status: 409 }
       );
     }
 
@@ -148,8 +160,9 @@ export async function POST(request: Request) {
       );
     }
 
-    const submissionId = Buffer.from(`${examId}:${studentId}`).toString("base64url");
-    await adminDb.collection("cbt_submissions").doc(submissionId).set({
+    const submittedAt = new Date();
+    const batch = adminDb.batch();
+    batch.set(adminDb.collection("cbt_submissions").doc(submissionId), {
       examId,
       studentId,
       studentName: student.nama || "",
@@ -159,8 +172,24 @@ export async function POST(request: Request) {
       answers: submittedAnswers,
       doubtfulQuestionIds: [],
       totalQuestions: questions.length,
-      submittedAt: new Date(),
+      submittedAt,
     });
+    batch.set(
+      adminDb.collection("cbt_sessions").doc(submissionId),
+      {
+        examId,
+        studentId,
+        nis: String(student.nis || ""),
+        nisn: String(student.nisn || ""),
+        nama: String(student.nama || "Siswa"),
+        jk: String(student.jk || student.jenisKelamin || ""),
+        status: "Selesai",
+        completedAt: submittedAt,
+        lastSeenAt: submittedAt,
+      },
+      { merge: true }
+    );
+    await batch.commit();
 
     return NextResponse.json({ success: true, message: "Jawaban ujian berhasil disimpan." });
   } catch (error) {
@@ -171,4 +200,3 @@ export async function POST(request: Request) {
     );
   }
 }
-

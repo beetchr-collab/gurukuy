@@ -33,7 +33,6 @@ type SummernoteEditorInstance = {
 type QuestionItem = {
     id: string;
     tipeSoal?: string;
-    skor?: number;
     pertanyaan?: string;
     gambarUrl?: string;
     opsi?: string[];
@@ -79,7 +78,6 @@ export default function TambahSoalPage() {
 
     const initialFormData = {
         tipeSoal: "PG",
-        skor: "1",
         pertanyaan: "",
         gambarUrl: "",
         opsi: ["", "", "", ""],
@@ -261,7 +259,6 @@ export default function TambahSoalPage() {
         const nextFormData = {
             ...initialFormData,
             tipeSoal: item.tipeSoal || "PG",
-            skor: String(item.skor ?? 1),
             pertanyaan: item.pertanyaan || "",
             gambarUrl: item.gambarUrl || "",
             opsi: Array.isArray(item.opsi) ? item.opsi : initialFormData.opsi,
@@ -366,18 +363,11 @@ export default function TambahSoalPage() {
             return;
         }
 
-        const skor = Number(formData.skor);
-        if (!Number.isFinite(skor) || skor < 0) {
-            alert("Skor harus berupa angka nol atau lebih");
-            return;
-        }
-
         setLoading(true);
 
         try {
             const payload: any = {
                 tipeSoal: formData.tipeSoal,
-                skor,
                 pertanyaan: cleanQuestion,
                 gambarUrl: normalizeImageUrl(formData.gambarUrl),
                 createdAt: serverTimestamp(),
@@ -488,41 +478,21 @@ export default function TambahSoalPage() {
                             <form onSubmit={handleSubmit}>
                                 <div className="card-body">
 
-                                    <div className="row g-3 mb-3">
-                                        <div className="col-md-8">
-                                            <label className="form-label fw-semibold">Tipe Soal</label>
-                                            <select
-                                                className="form-select"
-                                                name="tipeSoal"
-                                                value={formData.tipeSoal}
-                                                onChange={handleChange}
-                                            >
-                                                <option value="PG">Pilihan Ganda</option>
-                                                <option value="PGK">Pilihan Ganda Kompleks</option>
-                                                <option value="Menjodohkan">Menjodohkan</option>
-                                                <option value="Benar/Salah">Benar/Salah</option>
-                                                <option value="Isian Singkat">Isian Singkat</option>
-                                                <option value="Uraian">Uraian</option>
-                                            </select>
-                                        </div>
-
-                                        <div className="col-md-4">
-                                            <label className="form-label fw-semibold" htmlFor="skor">
-                                                Skor / Nilai
-                                            </label>
-                                            <input
-                                                id="skor"
-                                                type="number"
-                                                className="form-control"
-                                                name="skor"
-                                                min="0"
-                                                step="any"
-                                                value={formData.skor}
-                                                onChange={handleChange}
-                                                required
-                                            />
-                                            <div className="form-text">Nilai yang diberikan untuk soal ini.</div>
-                                        </div>
+                                    <div className="mb-3">
+                                        <label className="form-label fw-semibold">Tipe Soal</label>
+                                        <select
+                                            className="form-select"
+                                            name="tipeSoal"
+                                            value={formData.tipeSoal}
+                                            onChange={handleChange}
+                                        >
+                                            <option value="PG">Pilihan Ganda</option>
+                                            <option value="PGK">Pilihan Ganda Kompleks</option>
+                                            <option value="Menjodohkan">Menjodohkan</option>
+                                            <option value="Benar/Salah">Benar/Salah</option>
+                                            <option value="Isian Singkat">Isian Singkat</option>
+                                            <option value="Uraian">Uraian</option>
+                                        </select>
                                     </div>
 
                                     <div className="mb-3">
@@ -830,9 +800,6 @@ export default function TambahSoalPage() {
                                                     <h6 className="fw-bold mb-1">Soal {index + 1}</h6>
                                                     <span className="badge bg-info text-dark">
                                                         {item.tipeSoal || "Tidak diketahui"}
-                                                    </span>
-                                                    <span className="badge bg-warning text-dark ms-2">
-                                                        Skor: {item.skor ?? 1}
                                                     </span>
                                                 </div>
                                                 <div className="d-flex align-items-center gap-2">

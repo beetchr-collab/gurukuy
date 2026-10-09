@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import EujianMenu from "./components/EujianMenu";
 import {
     collection,
     query,
@@ -347,32 +348,7 @@ export default function UsersPage() {
                                     pengaturan jadwal, bank soal, hingga monitoring pelaksanaan ujian siswa.
                                 </p>
 
-                                <div className="d-flex flex-wrap gap-2">
-                                    <span className="badge bg-light px-3 py-2">
-                                        <a
-                                            href="/admin/guru/eujian/bank_soal"
-                                            className="text-decoration-none text-primary fw-semibold"
-                                        >
-                                            <i className="fas fa-book-open me-1"></i>
-                                            Bank Soal
-                                        </a>
-                                    </span>
-
-                                    <span className="badge bg-light text-primary px-3 py-2">
-                                        <i className="fas fa-clock me-1"></i>
-                                        Jadwal Ujian
-                                    </span>
-
-                                    <span className="badge bg-light text-primary px-3 py-2">
-                                        <i className="fas fa-users me-1"></i>
-                                        Peserta
-                                    </span>
-
-                                    <span className="badge bg-light text-primary px-3 py-2">
-                                        <i className="fas fa-chart-line me-1"></i>
-                                        Monitoring
-                                    </span>
-                                </div>
+                                <EujianMenu active="overview" />
                             </div>
                         </div>
                     </div>

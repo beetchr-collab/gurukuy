@@ -8,6 +8,8 @@ type CbtStudent = {
   id: string;
   nama: string;
   nisn: string;
+  nis: string;
+  jk: string;
   kelas: string;
   tingkatKelas: string;
   schoolId: string;

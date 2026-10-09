@@ -17,6 +17,7 @@ import {
 } from "firebase/firestore";
 import DeleteModal from "@/components/modals/DeleteModal";
 import Modal from "bootstrap/js/dist/modal";
+import EujianMenu from "../components/EujianMenu";
 
 export default function BankSoalPage() {
     const auth = getAuth();
@@ -474,6 +475,9 @@ export default function BankSoalPage() {
                                         Analisis
                                     </span>
 
+                                </div>
+                                <div className="mt-3">
+                                    <EujianMenu active="bank-soal" />
                                 </div>
                             </div>
 

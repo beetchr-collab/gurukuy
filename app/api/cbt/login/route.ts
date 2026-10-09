@@ -75,6 +75,7 @@ export async function POST(request: Request) {
         nama: String(student.nama ?? "Siswa"),
         nisn: String(student.nisn ?? ""),
         nis: String(student.nis ?? ""),
+        jk: String(student.jk ?? student.jenisKelamin ?? ""),
         kelas: String(student.kelas ?? ""),
         tingkatKelas: String(
           student.tingkatKelas ?? ""
