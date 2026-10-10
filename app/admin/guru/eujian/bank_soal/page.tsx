@@ -450,32 +450,6 @@ export default function BankSoalPage() {
                                     </div>
                                 </div>
 
-                                {/* BADGE */}
-                                <div className="d-flex flex-wrap gap-2">
-
-                                    <span className="badge bg-light text-primary px-3 py-2">
-                                        <a href="/admin/guru/eujian" className="text-decoration-none text-primary fw-semibold">
-                                            <i className="fas fa-layer-group me-1"></i>
-                                            Status Ujian
-                                        </a>
-                                    </span>
-
-                                    <span className="badge bg-light text-primary px-3 py-2">
-                                        <i className="fas fa-file-import me-1"></i>
-                                        Import Soal
-                                    </span>
-
-                                    <span className="badge bg-light text-primary px-3 py-2">
-                                        <i className="fas fa-random me-1"></i>
-                                        Acak Soal
-                                    </span>
-
-                                    <span className="badge bg-light text-primary px-3 py-2">
-                                        <i className="fas fa-chart-pie me-1"></i>
-                                        Analisis
-                                    </span>
-
-                                </div>
                                 <div className="mt-3">
                                     <EujianMenu active="bank-soal" />
                                 </div>
@@ -628,9 +602,18 @@ export default function BankSoalPage() {
                                                         <div className="d-flex align-items-center gap-2">
 
                                                             {/* JUMLAH SOAL */}
-                                                            <span className="badge bg-dark px-3 py-2">
+                                                            <button
+                                                                type="button"
+                                                                className="badge bg-dark px-3 py-2 border-0"
+                                                                title="Lihat preview soal"
+                                                                onClick={() =>
+                                                                    router.push(
+                                                                        `/admin/guru/eujian/bank_soal/${item.id}/preview`
+                                                                    )
+                                                                }
+                                                            >
                                                                 {jumlahSoalMap[item.id] || 0} Soal
-                                                            </span>
+                                                            </button>
 
                                                             {/* TAMBAH SOAL */}
                                                             <button
@@ -668,6 +651,11 @@ export default function BankSoalPage() {
                                                             <button
                                                                 className="btn btn-sm btn-light border"
                                                                 title="Preview"
+                                                                onClick={() =>
+                                                                    router.push(
+                                                                        `/admin/guru/eujian/bank_soal/${item.id}/preview`
+                                                                    )
+                                                                }
                                                             >
                                                                 <i className="fas fa-eye text-primary"></i>
                                                             </button>

@@ -17,6 +17,7 @@ import {
     updateDoc,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import MathFormulaEditor from "./MathFormulaEditor";
 
 type SummernoteEditorInstance = {
     summernote: {
@@ -26,6 +27,7 @@ type SummernoteEditorInstance = {
             callbacks: { onChange: (contents: string) => void };
         }): unknown;
         (command: "code", value: string): unknown;
+        (command: "pasteHTML", value: string): unknown;
         (command: "destroy"): unknown;
     };
 };
@@ -74,6 +76,7 @@ export default function TambahSoalPage() {
     const [soalList, setSoalList] = useState<any[]>([]);
     const [soalLoadError, setSoalLoadError] = useState("");
     const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
+    const [mathEditorOpen, setMathEditorOpen] = useState(false);
     const questionEditorRef = useRef<HTMLTextAreaElement>(null);
     const summernoteRef = useRef<SummernoteEditorInstance | null>(null);
 
@@ -115,7 +118,7 @@ export default function TambahSoalPage() {
                     ["color", ["color"]],
                     ["para", ["ul", "ol", "paragraph", "height"]],
                     ["table", ["table"]],
-                    ["insert", ["link", "hr"]],
+                    ["insert", ["picture", "link", "hr"]],
                     ["history", ["undo", "redo"]],
                     ["view", ["fullscreen", "codeview", "help"]],
                 ],
@@ -529,6 +532,19 @@ export default function TambahSoalPage() {
                                         <label className="form-label fw-semibold">
                                             {formData.tipeSoal === "Benar/Salah" ? "Pernyataan" : "Pertanyaan"}
                                         </label>
+                                        <div className="border border-bottom-0 rounded-top p-2 bg-light d-flex flex-wrap align-items-center gap-2">
+                                            <button
+                                                type="button"
+                                                className="btn btn-sm btn-outline-primary"
+                                                onClick={() => setMathEditorOpen(true)}
+                                            >
+                                                <i className="fas fa-square-root-variable me-2"></i>
+                                                Rumus Matematika
+                                            </button>
+                                            <span className="small text-muted">
+                                                Teks, tabel, gambar, dan rumus dapat digabungkan dalam satu soal.
+                                            </span>
+                                        </div>
                                         <textarea
                                             ref={questionEditorRef}
                                             className="form-control"
@@ -536,6 +552,21 @@ export default function TambahSoalPage() {
                                             defaultValue={formData.pertanyaan}
                                             aria-label="Editor pertanyaan"
                                         />
+                                        {mathEditorOpen && (
+                                            <MathFormulaEditor
+                                                onClose={() => setMathEditorOpen(false)}
+                                                onInsert={(mathML) => {
+                                                    if (!summernoteRef.current) {
+                                                        alert("Editor soal belum siap. Silakan coba lagi.");
+                                                        return;
+                                                    }
+                                                    summernoteRef.current.summernote(
+                                                        "pasteHTML",
+                                                        `<span class="math-formula">${mathML}</span>`,
+                                                    );
+                                                }}
+                                            />
+                                        )}
                                     </div>
 
                                     <div className="mb-3">

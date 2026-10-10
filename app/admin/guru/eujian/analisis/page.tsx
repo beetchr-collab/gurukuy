@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import DOMPurify from "isomorphic-dompurify";
+import * as XLSX from "xlsx";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { useAuth } from "@/context/AuthContext";
 import { auth, db } from "@/lib/firebase";
@@ -111,6 +112,7 @@ export default function AnalisisUjianPage() {
   const [gradingTarget, setGradingTarget] = useState<GradingTarget | null>(
     null,
   );
+  const [detailStudent, setDetailStudent] = useState<StudentResult | null>(null);
   const [gradeValue, setGradeValue] = useState("");
   const [savingGrade, setSavingGrade] = useState(false);
   const [gradeError, setGradeError] = useState("");
@@ -280,6 +282,40 @@ export default function AnalisisUjianPage() {
     } finally {
       setSavingGrade(false);
     }
+  };
+
+  const downloadScores = () => {
+    if (!analysis) return;
+
+    const rows = analysis.students.map((student, index) => {
+      const row: Record<string, string | number> = {
+        No: index + 1,
+        NIS: student.nis || "-",
+        NISN: student.nisn || "-",
+        "Nama Siswa": student.nama,
+        Kelas: student.className || "-",
+        "Jenis Kelamin": student.jk || "-",
+      };
+      analysis.questions.forEach((question, questionIndex) => {
+        const result = student.questionResults.find(
+          (item) => item.questionId === question.id,
+        );
+        row[`Soal ${questionIndex + 1}`] = result?.earnedScore ?? 0;
+      });
+      row["Total Skor"] = Number(student.score.toFixed(2));
+      row["Skor Maksimal"] = student.possibleScore;
+      row["Nilai (%)"] = student.percentage ?? "-";
+      return row;
+    });
+
+    const workbook = XLSX.utils.book_new();
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Nilai Siswa");
+    const fileName = (analysis.exam.namaBankSoal || "hasil-ujian")
+      .trim()
+      .replace(/[<>:"/\\|?*\u0000-\u001F]+/g, "-")
+      .replace(/\s+/g, "-");
+    XLSX.writeFile(workbook, `Nilai-${fileName}.xlsx`);
   };
 
   const getResultCellStyle = (
@@ -486,8 +522,17 @@ export default function AnalisisUjianPage() {
                 </div>
 
                 <section className="card mb-3">
-                  <div className="card-header">
+                  <div className="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
                     <h3 className="card-title mb-0">Nilai Siswa</h3>
+                    <button
+                      className="btn btn-sm btn-success"
+                      disabled={analysis.students.length === 0}
+                      onClick={downloadScores}
+                      type="button"
+                    >
+                      <i className="fas fa-download me-2" />
+                      Download Nilai
+                    </button>
                   </div>
                   <div className="card-body">
                     <p className="text-muted small">
@@ -530,6 +575,9 @@ export default function AnalisisUjianPage() {
                               </th>
                               <th rowSpan={2} scope="col">
                                 Skor
+                              </th>
+                              <th rowSpan={2} scope="col">
+                                Jawaban Siswa
                               </th>
                             </tr>
                             <tr>
@@ -619,6 +667,16 @@ export default function AnalisisUjianPage() {
                                       {student.percentage}
                                     </span>
                                   )}
+                                </td>
+                                <td>
+                                  <button
+                                    className="btn btn-sm btn-outline-primary text-nowrap"
+                                    onClick={() => setDetailStudent(student)}
+                                    type="button"
+                                  >
+                                    <i className="fas fa-eye me-1" />
+                                    Detail
+                                  </button>
                                 </td>
                               </tr>
                             ))}
@@ -813,6 +871,92 @@ export default function AnalisisUjianPage() {
                       (result) =>
                         result.questionId === gradingTarget.question.id,
                     )?.answer ?? null,
+                  )}
+                  {detailStudent && analysis && (
+                    <div
+                      className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center p-3"
+                      onMouseDown={(event) => {
+                        if (event.target === event.currentTarget) setDetailStudent(null);
+                      }}
+                      style={{ background: "rgba(0,0,0,0.5)", zIndex: 1060 }}
+                    >
+                      <section
+                        aria-labelledby="student-answers-title"
+                        aria-modal="true"
+                        className="card shadow-lg w-100"
+                        role="dialog"
+                        style={{ maxWidth: 900, maxHeight: "90vh", overflowY: "auto" }}
+                      >
+                        <div className="card-header d-flex justify-content-between align-items-center gap-3">
+                          <div>
+                            <h3 className="card-title mb-1" id="student-answers-title">
+                              Jawaban Siswa
+                            </h3>
+                            <div className="small text-muted">
+                              {detailStudent.nama} · NIS {detailStudent.nis || "-"} · Skor{" "}
+                              {Number(detailStudent.score.toFixed(2))}/
+                              {detailStudent.possibleScore}
+                            </div>
+                          </div>
+                          <button
+                            aria-label="Tutup detail jawaban"
+                            className="btn-close"
+                            onClick={() => setDetailStudent(null)}
+                            type="button"
+                          />
+                        </div>
+                        <div className="card-body d-flex flex-column gap-3">
+                          {analysis.questions.map((question, index) => {
+                            const result = detailStudent.questionResults.find(
+                              (item) => item.questionId === question.id,
+                            );
+                            return (
+                              <article className="border rounded p-3" key={question.id}>
+                                <div className="d-flex flex-wrap justify-content-between gap-2 mb-2">
+                                  <strong>
+                                    Soal {index + 1} · {question.tipeSoal}
+                                  </strong>
+                                  <span className="badge text-bg-light border">
+                                    Skor: {Number(result?.earnedScore.toFixed(2) || 0)}/
+                                    {question.skor}
+                                  </span>
+                                </div>
+                                <div
+                                  className="mb-3"
+                                  dangerouslySetInnerHTML={{
+                                    __html: DOMPurify.sanitize(
+                                      question.pertanyaan || "Soal tanpa teks",
+                                    ),
+                                  }}
+                                />
+                                <div className="border rounded bg-light p-3">
+                                  <div className="fw-semibold mb-1">Jawaban siswa</div>
+                                  <pre
+                                    className="mb-0"
+                                    style={{
+                                      whiteSpace: "pre-wrap",
+                                      overflowWrap: "anywhere",
+                                      font: "inherit",
+                                    }}
+                                  >
+                                    {formatStudentAnswer(result?.answer ?? null)}
+                                  </pre>
+                                </div>
+                              </article>
+                            );
+                          })}
+                        </div>
+                        <div className="card-footer d-flex justify-content-end">
+                          <button
+                            className="btn btn-outline-secondary"
+                            onClick={() => setDetailStudent(null)}
+                            type="button"
+                          >
+                            Tutup
+                          </button>
+                        </div>
+                      </section>
+                    </div>
                   )}
                 </pre>
               </div>

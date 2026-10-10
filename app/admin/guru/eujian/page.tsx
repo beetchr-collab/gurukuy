@@ -430,7 +430,7 @@ export default function UsersPage() {
                                                                         Sedang Berlangsung
                                                                     </span>
                                                                     {getRemainingTimeText(item) && (
-                                                                        <div className="small text-white-50 mt-1">
+                                                                        <div className="small text-dark-50 mt-1">
                                                                             {getRemainingTimeText(item)}
                                                                         </div>
                                                                     )}
