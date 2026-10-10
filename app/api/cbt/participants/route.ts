@@ -1,6 +1,5 @@
-import { getAuth } from "firebase-admin/auth";
 import { NextResponse } from "next/server";
-import { adminDb } from "@/lib/firebase-admin";
+import { adminAuth, adminDb } from "@/lib/firebase-admin";
 
 export const runtime = "nodejs";
 
@@ -25,7 +24,7 @@ const getTeacherId = async (request: Request) => {
   if (!token) return null;
 
   try {
-    const decodedToken = await getAuth(adminDb.app).verifyIdToken(token);
+    const decodedToken = await adminAuth.verifyIdToken(token);
     const userSnapshot = await adminDb.collection("users").doc(decodedToken.uid).get();
     const role = userSnapshot.data()?.role;
 
