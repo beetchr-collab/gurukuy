@@ -1,6 +1,10 @@
 import { FieldPath } from "firebase-admin/firestore";
 import { NextResponse } from "next/server";
-import { adminAuth, adminDb } from "@/lib/firebase-admin";
+import {
+  adminAuth,
+  adminDb,
+  initializeFirebaseAdmin,
+} from "@/lib/firebase-admin";
 
 export const runtime = "nodejs";
 
@@ -94,6 +98,7 @@ const toIsoString = (value: unknown) => {
 
 export async function GET(request: Request) {
   try {
+    initializeFirebaseAdmin();
     const teacherId = await getTeacherId(request);
     if (!teacherId) {
       return NextResponse.json(
@@ -309,6 +314,7 @@ export async function GET(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
+    initializeFirebaseAdmin();
     const teacherId = await getTeacherId(request);
     if (!teacherId) {
       return NextResponse.json(

@@ -11,10 +11,11 @@ import {
   getFirestore,
   type Firestore,
 } from "firebase-admin/firestore";
-import { getAuth } from "firebase-admin/auth";
+import { getAuth, type Auth } from "firebase-admin/auth";
 
 function getFirebaseAdminApp(): App {
-  const existingApp = getApps()[0];
+  const appName = "gurukuy-admin";
+  const existingApp = getApps().find((app) => app.name === appName);
 
   if (existingApp) {
     return existingApp;
@@ -42,17 +43,49 @@ function getFirebaseAdminApp(): App {
     );
   }
 
+  const normalizedPrivateKey = privateKey
+    .trim()
+    .replace(/^["']|["']$/g, "")
+    .replace(/\\+([rn])/g, (_match, escapedChar: string) =>
+      escapedChar === "n" ? "\n" : "\r"
+    );
+
+  if (
+    !normalizedPrivateKey.startsWith("-----BEGIN PRIVATE KEY-----") ||
+    !normalizedPrivateKey.includes("-----END PRIVATE KEY-----")
+  ) {
+    throw new Error(
+      "FIREBASE_PRIVATE_KEY bukan private key PEM yang valid. Pastikan nilainya mencakup header dan footer PEM."
+    );
+  }
+
   return initializeApp({
     credential: cert({
       projectId,
       clientEmail,
-      privateKey: privateKey.replace(/\\n/g, "\n"),
+      privateKey: normalizedPrivateKey,
     }),
-  });
+  }, appName);
 }
 
-const adminApp = getFirebaseAdminApp();
+export function initializeFirebaseAdmin(): void {
+  const app = getFirebaseAdminApp();
+  getFirestore(app);
+  getAuth(app);
+}
 
-export const adminDb: Firestore =
-  getFirestore(adminApp);
-export const adminAuth = getAuth(adminApp);
+export const adminDb = new Proxy({} as Firestore, {
+  get(_target, property) {
+    const firestore = getFirestore(getFirebaseAdminApp());
+    const value = Reflect.get(firestore, property, firestore);
+    return typeof value === "function" ? value.bind(firestore) : value;
+  },
+});
+
+export const adminAuth = new Proxy({} as Auth, {
+  get(_target, property) {
+    const auth = getAuth(getFirebaseAdminApp());
+    const value = Reflect.get(auth, property, auth);
+    return typeof value === "function" ? value.bind(auth) : value;
+  },
+});

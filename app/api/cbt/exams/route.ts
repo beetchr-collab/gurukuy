@@ -1,14 +1,5 @@
 import { NextResponse } from "next/server";
-import { getApps, initializeApp } from "firebase-admin/app";
-import { getFirestore } from "firebase-admin/firestore";
-
-const firebaseAdminApp = getApps().length
-  ? getApps()[0]
-  : initializeApp();
-
-function getFirebaseAdminApp() {
-  return firebaseAdminApp;
-}
+import { adminDb } from "@/lib/firebase-admin";
 
 export async function POST(request: Request) {
   try {
@@ -28,10 +19,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const app = getFirebaseAdminApp();
-    const firestore = getFirestore(app);
-
-    const snapshot = await firestore
+    const snapshot = await adminDb
       .collection("bank_soal")
       .where("status", "==", "Aktif")
       .where("examStatus", "==", "mulai")

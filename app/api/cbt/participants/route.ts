@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
-import { adminAuth, adminDb } from "@/lib/firebase-admin";
+import {
+  adminAuth,
+  adminDb,
+  initializeFirebaseAdmin,
+} from "@/lib/firebase-admin";
 
 export const runtime = "nodejs";
 
@@ -94,6 +98,7 @@ const getExamForTeacher = async (examId: string, teacherId: string) => {
 
 export async function GET(request: Request) {
   try {
+    initializeFirebaseAdmin();
     const teacherId = await getTeacherId(request);
     if (!teacherId) {
       return NextResponse.json(
@@ -180,7 +185,11 @@ export async function GET(request: Request) {
   } catch (error) {
     console.error("CBT participants API error:", error);
     return NextResponse.json(
-      { success: false, message: "Gagal memuat daftar peserta ujian." },
+      {
+        success: false,
+        message:
+          "Gagal memuat daftar peserta ujian. Periksa konfigurasi Firebase Admin dan Function Logs Vercel.",
+      },
       { status: 500 }
     );
   }
@@ -188,6 +197,7 @@ export async function GET(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
+    initializeFirebaseAdmin();
     const teacherId = await getTeacherId(request);
     if (!teacherId) {
       return NextResponse.json(
@@ -247,6 +257,7 @@ export async function PATCH(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
+    initializeFirebaseAdmin();
     const teacherId = await getTeacherId(request);
     if (!teacherId) {
       return NextResponse.json(
