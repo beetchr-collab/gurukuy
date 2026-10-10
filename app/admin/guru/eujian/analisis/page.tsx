@@ -5,6 +5,7 @@ import DOMPurify from "isomorphic-dompurify";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { useAuth } from "@/context/AuthContext";
 import { auth, db } from "@/lib/firebase";
+import { parseCbtApiResponse } from "@/lib/cbt-api-response";
 import EujianMenu from "../components/EujianMenu";
 
 type ExamOption = {
@@ -178,21 +179,16 @@ export default function AnalisisUjianPage() {
           `/api/cbt/analysis?examId=${encodeURIComponent(selectedExamId)}`,
           { headers: { Authorization: `Bearer ${idToken}` } },
         );
-        const result = (await response.json()) as {
+        const result = await parseCbtApiResponse<{
           success: boolean;
           message?: string;
           exam?: AnalysisData["exam"];
           summary?: AnalysisData["summary"];
           students?: StudentResult[];
           questions?: QuestionAnalysis[];
-        };
+        }>(response, "Gagal memuat analisis ujian.");
 
-        if (
-          !response.ok ||
-          !result.success ||
-          !result.exam ||
-          !result.summary
-        ) {
+        if (!result.exam || !result.summary) {
           throw new Error(result.message || "Gagal memuat analisis ujian.");
         }
 
@@ -267,13 +263,10 @@ export default function AnalisisUjianPage() {
           score,
         }),
       });
-      const result = (await response.json()) as {
+      await parseCbtApiResponse<{
         success: boolean;
         message?: string;
-      };
-      if (!response.ok || !result.success) {
-        throw new Error(result.message || "Gagal menyimpan nilai koreksi.");
-      }
+      }>(response, "Gagal menyimpan nilai koreksi.");
 
       setGradingTarget(null);
       setRefreshKey((current) => current + 1);

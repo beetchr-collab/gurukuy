@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { useAuth } from "@/context/AuthContext";
 import { auth, db } from "@/lib/firebase";
+import { parseCbtApiResponse } from "@/lib/cbt-api-response";
 import EujianMenu from "../components/EujianMenu";
 
 type ExamOption = {
@@ -108,15 +109,11 @@ export default function PesertaExamPage() {
           `/api/cbt/participants?examId=${encodeURIComponent(selectedExamId)}`,
           { headers: { Authorization: `Bearer ${idToken}` } }
         );
-        const result = await response.json() as {
+        const result = await parseCbtApiResponse<{
           success: boolean;
           message?: string;
           participants?: Participant[];
-        };
-
-        if (!response.ok || !result.success) {
-          throw new Error(result.message || "Gagal memuat peserta ujian.");
-        }
+        }>(response, "Gagal memuat peserta ujian.");
 
         if (!cancelled) {
           setParticipants(result.participants || []);
@@ -190,14 +187,10 @@ export default function PesertaExamPage() {
           studentId: participant.studentId,
         }),
       });
-      const result = await response.json() as {
+      await parseCbtApiResponse<{
         success: boolean;
         message?: string;
-      };
-
-      if (!response.ok || !result.success) {
-        throw new Error(result.message || "Gagal mereset percobaan siswa.");
-      }
+      }>(response, "Gagal mereset percobaan siswa.");
 
       setRefreshKey((current) => current + 1);
     } catch (resetError) {
