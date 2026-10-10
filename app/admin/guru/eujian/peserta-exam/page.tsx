@@ -19,7 +19,8 @@ type Participant = {
   nisn: string;
   nama: string;
   jk: string;
-  status: "Sedang mengerjakan" | "Selesai";
+  status: "Sedang mengerjakan" | "Selesai" | "locked";
+  violationCount: number;
   remainingSeconds: number | null;
 };
 
@@ -318,6 +319,7 @@ export default function PesertaExamPage() {
                       <th scope="col">Nama siswa</th>
                       <th scope="col">L/P</th>
                       <th scope="col">Status</th>
+                      <th scope="col">Pelanggaran</th>
                       <th scope="col">Sisa durasi</th>
                       <th scope="col" className="text-center">Aksi</th>
                     </tr>
@@ -325,19 +327,19 @@ export default function PesertaExamPage() {
                   <tbody>
                     {loadingExams || loadingParticipants ? (
                       <tr>
-                        <td className="text-center py-4" colSpan={8}>
+                        <td className="text-center py-4" colSpan={9}>
                           Memuat data peserta...
                         </td>
                       </tr>
                     ) : !selectedExamId ? (
                       <tr>
-                        <td className="text-center text-muted py-4" colSpan={8}>
+                        <td className="text-center text-muted py-4" colSpan={9}>
                           Belum ada ujian yang dapat dipantau.
                         </td>
                       </tr>
                     ) : participants.length === 0 ? (
                       <tr>
-                        <td className="text-center text-muted py-4" colSpan={8}>
+                        <td className="text-center text-muted py-4" colSpan={9}>
                           Belum ada siswa yang masuk ke ujian ini.
                         </td>
                       </tr>
@@ -354,14 +356,21 @@ export default function PesertaExamPage() {
                               className={`badge ${
                                 participant.status === "Selesai"
                                   ? "bg-success"
-                                  : "bg-primary"
+                                  : participant.status === "locked"
+                                    ? "bg-danger"
+                                    : "bg-primary"
                               }`}
                             >
-                              {participant.status}
+                              {participant.status === "locked" ? "Terkunci" : participant.status}
                             </span>
                           </td>
                           <td>
-                            {participant.status === "Selesai"
+                            <span className={`badge ${participant.violationCount >= 2 ? "text-bg-danger" : participant.violationCount > 0 ? "text-bg-warning" : "text-bg-light"}`}>
+                              {participant.violationCount}
+                            </span>
+                          </td>
+                          <td>
+                            {participant.status === "Selesai" || participant.status === "locked"
                               ? "Selesai"
                               : formatRemainingTime(participant.remainingSeconds)}
                           </td>

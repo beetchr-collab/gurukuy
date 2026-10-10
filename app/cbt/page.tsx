@@ -38,6 +38,7 @@ const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
       body: JSON.stringify({
         nisn: nisn.trim(),
         nis: nis.trim(),
+        examId: new URLSearchParams(window.location.search).get("examId") || undefined,
       }),
     });
 

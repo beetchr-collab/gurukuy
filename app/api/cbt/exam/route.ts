@@ -78,6 +78,17 @@ export async function POST(request: Request) {
       );
     }
 
+    if (sessionSnapshot.data()?.status === "locked") {
+      return NextResponse.json(
+        {
+          success: false,
+          locked: true,
+          message: "Akses Anda ke ujian ini dikunci karena pelanggaran. Hubungi guru untuk membuka kunci.",
+        },
+        { status: 423 }
+      );
+    }
+
     if (
       String(exam.token || "").trim().toLocaleUpperCase() !==
       token.toLocaleUpperCase()
@@ -88,6 +99,7 @@ export async function POST(request: Request) {
       );
     }
 
+    const existingSession = sessionSnapshot.data() || {};
     const sessionData: Record<string, unknown> = {
       examId,
       studentId,
@@ -97,6 +109,10 @@ export async function POST(request: Request) {
       jk: String(student.jk || student.jenisKelamin || ""),
       lastSeenAt: new Date(),
       status: "Sedang mengerjakan",
+      violationCount: Number(existingSession.violationCount || 0),
+      currentViolationCount: Number(
+        existingSession.currentViolationCount ?? existingSession.violationCount ?? 0
+      ),
     };
 
     if (!sessionSnapshot.exists) {
@@ -106,7 +122,10 @@ export async function POST(request: Request) {
     await sessionRef.set(sessionData, { merge: true });
 
     if (startOnly) {
-      return NextResponse.json({ success: true });
+      return NextResponse.json({
+        success: true,
+        violationCount: Number(existingSession.violationCount || 0),
+      });
     }
 
     const questionSnapshot = await adminDb
@@ -129,6 +148,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       exam: publicExam,
+      violationCount: Number(existingSession.violationCount || 0),
       questions: questionSnapshot.docs.map((questionDoc) => ({
         id: questionDoc.id,
         ...questionDoc.data(),

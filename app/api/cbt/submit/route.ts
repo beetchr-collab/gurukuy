@@ -120,6 +120,13 @@ export async function POST(request: Request) {
       );
     }
 
+    if (sessionSnapshot.data()?.status === "locked") {
+      return NextResponse.json(
+        { success: false, message: "Ujian dikunci karena pelanggaran. Hubungi guru untuk membuka kunci." },
+        { status: 423 }
+      );
+    }
+
     const exam = examSnapshot.data()!;
     const student = studentSnapshot.data()!;
     const studentClass = String(student.kelas || student.tingkatKelas || "")

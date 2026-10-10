@@ -39,6 +39,17 @@ type Question = {
 
 type Answer = string | string[] | Record<string, string>;
 
+const shuffleQuestions = (questions: Question[]) => {
+  const shuffled = [...questions];
+
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const randomIndex = Math.floor(Math.random() * (index + 1));
+    [shuffled[index], shuffled[randomIndex]] = [shuffled[randomIndex], shuffled[index]];
+  }
+
+  return shuffled;
+};
+
 const isQuestionAnswered = (question: Question, answer: Answer | undefined) => {
   if (question.tipeSoal === "PG") {
     return typeof answer === "string" && answer.trim().length > 0;
@@ -138,7 +149,7 @@ export default function CbtExamPage() {
         if (cancelled) return;
 
         setExam(result.exam);
-        setQuestions(result.questions || []);
+        setQuestions(shuffleQuestions(result.questions || []));
       } catch (loadError) {
         console.error("Gagal memuat soal CBT:", loadError);
         setError("Soal ujian gagal dimuat. Silakan kembali dan coba lagi.");

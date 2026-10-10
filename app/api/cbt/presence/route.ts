@@ -27,10 +27,21 @@ export async function POST(request: Request) {
       );
     }
 
-    if (sessionSnapshot.data()?.status !== "Selesai") {
-      await sessionRef.update({ lastSeenAt: new Date() });
+    if (sessionSnapshot.data()?.status === "locked") {
+      return NextResponse.json(
+        { success: false, locked: true, message: "Akses ujian Anda dikunci oleh guru." },
+        { status: 423 }
+      );
     }
 
+    if (sessionSnapshot.data()?.status === "Selesai") {
+      return NextResponse.json(
+        { success: false, message: "Ujian sudah diselesaikan." },
+        { status: 409 }
+      );
+    }
+
+    await sessionRef.update({ lastSeenAt: new Date() });
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("CBT presence API error:", error);

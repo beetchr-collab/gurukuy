@@ -10,7 +10,8 @@ type ParticipantRow = {
   nisn: string;
   nama: string;
   jk: string;
-  status: "Sedang mengerjakan" | "Selesai";
+  status: "Sedang mengerjakan" | "Selesai" | "locked";
+  violationCount: number;
   remainingSeconds: number | null;
   startedAt: number | null;
 };
@@ -158,8 +159,13 @@ export async function GET(request: Request) {
           nisn: String(data.nisn || student.nisn || "-"),
           nama: String(data.nama || data.studentName || student.nama || "Siswa"),
           jk: String(data.jk || student.jk || student.jenisKelamin || "-"),
-          status: submitted ? "Selesai" : "Sedang mengerjakan",
-          remainingSeconds: submitted || deadline === null
+          status: submitted
+            ? "Selesai"
+            : data.status === "locked"
+              ? "locked"
+              : "Sedang mengerjakan",
+          violationCount: Number(data.violationCount || 0),
+          remainingSeconds: submitted || data.status === "locked" || deadline === null
             ? null
             : Math.max(0, Math.ceil((deadline - now) / 1000)),
           startedAt,
@@ -176,6 +182,65 @@ export async function GET(request: Request) {
     console.error("CBT participants API error:", error);
     return NextResponse.json(
       { success: false, message: "Gagal memuat daftar peserta ujian." },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PATCH(request: Request) {
+  try {
+    const teacherId = await getTeacherId(request);
+    if (!teacherId) {
+      return NextResponse.json(
+        { success: false, message: "Sesi pengguna tidak valid." },
+        { status: 401 }
+      );
+    }
+
+    const body = await request.json();
+    const examId = typeof body?.examId === "string" ? body.examId.trim() : "";
+    const studentId = typeof body?.studentId === "string" ? body.studentId.trim() : "";
+    if (!examId || !studentId) {
+      return NextResponse.json(
+        { success: false, message: "Ujian dan siswa wajib dipilih." },
+        { status: 400 }
+      );
+    }
+
+    const { response } = await getExamForTeacher(examId, teacherId);
+    if (response) return response;
+
+    const sessionRef = adminDb
+      .collection("cbt_sessions")
+      .doc(getAttemptId(examId, studentId));
+    const sessionSnapshot = await sessionRef.get();
+    if (
+      !sessionSnapshot.exists ||
+      sessionSnapshot.data()?.studentId !== studentId ||
+      sessionSnapshot.data()?.status !== "locked"
+    ) {
+      return NextResponse.json(
+        { success: false, message: "Sesi siswa tidak sedang terkunci." },
+        { status: 409 }
+      );
+    }
+
+    await sessionRef.update({
+      status: "Sedang mengerjakan",
+      currentViolationCount: 0,
+      unlockedAt: new Date(),
+      unlockedBy: teacherId,
+      lastSeenAt: new Date(),
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: "Kunci siswa berhasil dibuka untuk ujian ini.",
+    });
+  } catch (error) {
+    console.error("CBT participant unlock API error:", error);
+    return NextResponse.json(
+      { success: false, message: "Gagal membuka kunci siswa." },
       { status: 500 }
     );
   }

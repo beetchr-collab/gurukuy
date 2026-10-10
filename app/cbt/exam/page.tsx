@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import DOMPurify from "isomorphic-dompurify";
 import styles from "../cbt.module.css";
@@ -92,8 +92,14 @@ export default function CbtExamPage() {
   const [examFinished, setExamFinished] = useState(false);
   const [savingSubmission, setSavingSubmission] = useState(false);
   const [submissionError, setSubmissionError] = useState("");
+  const [violationMessage, setViolationMessage] = useState("");
+  const [violationWarningOpen, setViolationWarningOpen] = useState(false);
+  const [examLocked, setExamLocked] = useState(false);
+  const [fullscreenActive, setFullscreenActive] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const lastViolationAt = useRef(0);
+  const fullscreenWasActive = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -101,8 +107,9 @@ export default function CbtExamPage() {
     const loadExam = async () => {
       try {
         const storedStudent = localStorage.getItem("cbtStudent");
+        const examId = new URLSearchParams(window.location.search).get("examId");
         if (!storedStudent) {
-          router.replace("/cbt/login");
+          router.replace(`/cbt${examId ? `?examId=${encodeURIComponent(examId)}` : ""}`);
           return;
         }
 
@@ -111,12 +118,11 @@ export default function CbtExamPage() {
           student = JSON.parse(storedStudent) as CbtStudent;
         } catch {
           localStorage.removeItem("cbtStudent");
-          router.replace("/cbt/login");
+          router.replace(`/cbt${examId ? `?examId=${encodeURIComponent(examId)}` : ""}`);
           return;
         }
 
         setStudent(student);
-        const examId = new URLSearchParams(window.location.search).get("examId");
         if (!examId) {
           setError("Ujian tidak ditemukan.");
           return;
@@ -139,10 +145,15 @@ export default function CbtExamPage() {
           success: boolean;
           message?: string;
           exam?: Exam;
+          violationCount?: number;
           questions?: Question[];
         };
 
         if (!response.ok || !result.success || !result.exam) {
+          if (response.status === 423) {
+            setExamLocked(true);
+            setViolationMessage(result.message || "Akses ujian ini dikunci. Hubungi guru.");
+          }
           setError(result.message || "Soal ujian gagal dimuat. Silakan kembali dan coba lagi.");
           return;
         }
@@ -150,6 +161,12 @@ export default function CbtExamPage() {
 
         setExam(result.exam);
         setQuestions(shuffleQuestions(result.questions || []));
+        if ((result.violationCount || 0) === 1) {
+          setViolationMessage(
+            "Peringatan: satu pelanggaran telah tercatat pada ujian ini. Pelanggaran berikutnya akan mengunci akses Anda."
+          );
+          setViolationWarningOpen(true);
+        }
       } catch (loadError) {
         console.error("Gagal memuat soal CBT:", loadError);
         setError("Soal ujian gagal dimuat. Silakan kembali dan coba lagi.");
@@ -163,6 +180,126 @@ export default function CbtExamPage() {
       cancelled = true;
     };
   }, [router]);
+
+  const recordViolation = useCallback(async (kind: string) => {
+    if (!student || examFinished || examLocked) return;
+    const now = Date.now();
+    if (now - lastViolationAt.current < 1_200) return;
+    lastViolationAt.current = now;
+
+    const examId = new URLSearchParams(window.location.search).get("examId");
+    if (!examId) return;
+
+    try {
+      const response = await fetch("/api/cbt/violations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ examId, studentId: student.id, kind }),
+        keepalive: kind === "leave-attempt",
+      });
+      const result = await response.json() as {
+        success: boolean;
+        message?: string;
+        violations?: number;
+        locked?: boolean;
+      };
+      if (!response.ok || !result.success) {
+        if (response.status === 409) return;
+        throw new Error(result.message || "Pelanggaran gagal dicatat.");
+      }
+
+      setViolationMessage(result.message || "");
+      if (result.locked) {
+        setExamLocked(true);
+        setViolationWarningOpen(false);
+      } else {
+        setViolationWarningOpen(true);
+      }
+    } catch (violationError) {
+      console.error("Gagal mencatat pelanggaran CBT:", violationError);
+    }
+  }, [examFinished, examLocked, student]);
+
+  useEffect(() => {
+    if (!exam || !student || examFinished || examLocked) return;
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        void recordViolation("tab-hidden");
+      }
+    };
+    const handleFullscreenChange = () => {
+      const isFullscreen = Boolean(document.fullscreenElement);
+      setFullscreenActive(isFullscreen);
+      if (isFullscreen) {
+        fullscreenWasActive.current = true;
+      } else if (fullscreenWasActive.current) {
+        fullscreenWasActive.current = false;
+        void recordViolation("fullscreen-exit");
+      }
+    };
+    const handleDocumentClick = (event: MouseEvent) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const link = target.closest("a[href]");
+      if (!link) return;
+      const destination = new URL(link.getAttribute("href") || "", window.location.href);
+      if (destination.origin === window.location.origin &&
+          destination.pathname === window.location.pathname) return;
+      event.preventDefault();
+      event.stopPropagation();
+      void recordViolation("leave-attempt");
+    };
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      const examId = new URLSearchParams(window.location.search).get("examId");
+      if (!examId || !student || Date.now() - lastViolationAt.current < 1_200) return;
+      lastViolationAt.current = Date.now();
+      const payload = JSON.stringify({
+        examId,
+        studentId: student.id,
+        kind: "leave-attempt",
+      });
+      navigator.sendBeacon(
+        "/api/cbt/violations",
+        new Blob([payload], { type: "application/json" })
+      );
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    const examUrl = window.location.href;
+    const handlePopState = () => {
+      window.history.pushState({ cbtExamGuard: true }, "", examUrl);
+      void recordViolation("leave-attempt");
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    document.addEventListener("click", handleDocumentClick, true);
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    window.history.pushState({ cbtExamGuard: true }, "", examUrl);
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+      document.removeEventListener("click", handleDocumentClick, true);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, [exam, examFinished, examLocked, recordViolation, student]);
+
+  const toggleFullscreen = async () => {
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+      } else {
+        await document.documentElement.requestFullscreen();
+      }
+    } catch (fullscreenError) {
+      console.error("Gagal mengubah mode fullscreen CBT:", fullscreenError);
+      setSubmissionError("Mode layar penuh tidak dapat diaktifkan pada browser ini.");
+    }
+  };
 
   const setAnswer = (questionId: string, answer: Answer) => {
     setAnswers((current) => ({ ...current, [questionId]: answer }));
@@ -192,7 +329,7 @@ export default function CbtExamPage() {
   }, [exam]);
 
   useEffect(() => {
-    if (!exam || !student || examFinished) return;
+    if (!exam || !student || examFinished || examLocked) return;
 
     const sendPresence = async () => {
       try {
@@ -207,6 +344,14 @@ export default function CbtExamPage() {
 
         if (!response.ok) {
           console.error("CBT presence heartbeat failed:", response.status);
+          if (response.status === 423) {
+            const result = await response.json() as { message?: string };
+            setViolationMessage(
+              result.message || "Akses ujian Anda dikunci karena pelanggaran."
+            );
+            setExamLocked(true);
+            return;
+          }
           if (response.status === 404) {
             router.replace("/cbt/dashboard");
           }
@@ -222,7 +367,7 @@ export default function CbtExamPage() {
     }, 20_000);
 
     return () => window.clearInterval(interval);
-  }, [exam, examFinished, router, student]);
+  }, [exam, examFinished, examLocked, router, student]);
 
   const answeredCount = useMemo(
     () => questions.filter((question) => isQuestionAnswered(question, answers[question.id])).length,
@@ -302,10 +447,35 @@ export default function CbtExamPage() {
     return (
       <main className={styles.examPage}>
         <div className={styles.examShell}>
-          <p className={styles.examError} role="alert">{error || "Ujian tidak tersedia."}</p>
-          <button className={styles.examBackButton} onClick={() => router.push("/cbt/dashboard")}>
-            Kembali ke dashboard
-          </button>
+          {examLocked ? (
+            <div className={styles.finishOverlay} role="presentation">
+              <section className={styles.finishDialog} role="alert">
+                <div className={styles.finishDialogIcon} aria-hidden="true">!</div>
+                <h2>Akses ujian dikunci</h2>
+                <p>{violationMessage || error}</p>
+                <div className={styles.finishDialogActions}>
+                  <button
+                    className={styles.finishConfirmButton}
+                    onClick={() => {
+                      const examId = new URLSearchParams(window.location.search).get("examId");
+                      localStorage.removeItem("cbtStudent");
+                      router.replace(`/cbt${examId ? `?examId=${encodeURIComponent(examId)}` : ""}`);
+                    }}
+                    type="button"
+                  >
+                    Kembali ke login
+                  </button>
+                </div>
+              </section>
+            </div>
+          ) : (
+            <>
+              <p className={styles.examError} role="alert">{error || "Ujian tidak tersedia."}</p>
+              <button className={styles.examBackButton} onClick={() => router.push("/cbt/dashboard")}>
+                Kembali ke dashboard
+              </button>
+            </>
+          )}
         </div>
       </main>
     );
@@ -341,6 +511,14 @@ export default function CbtExamPage() {
                 <strong>{formatTime(remainingSeconds)}</strong>
               </span>
             </section>
+            <button
+              className={styles.questionNavigationTrigger}
+              onClick={() => void toggleFullscreen()}
+              type="button"
+            >
+              <i className={`bi ${fullscreenActive ? "bi-fullscreen-exit" : "bi-fullscreen"}`} aria-hidden="true" />
+              {fullscreenActive ? "Keluar fullscreen" : "Aktifkan fullscreen"}
+            </button>
           </div>
         </header>
 
@@ -610,6 +788,56 @@ export default function CbtExamPage() {
               <span><i className={styles.legendAnswered} />Sudah dijawab</span>
               <span><i className={styles.legendActive} />Soal aktif</span>
               <span><i className={styles.legendDoubtful} />Ragu-ragu</span>
+            </div>
+          </section>
+        </div>
+      )}
+      {violationWarningOpen && !examLocked && (
+        <div className={styles.finishOverlay} role="presentation">
+          <section
+            aria-labelledby="violation-warning-title"
+            aria-modal="true"
+            className={styles.finishDialog}
+            role="alertdialog"
+          >
+            <div className={styles.finishDialogIcon} aria-hidden="true">!</div>
+            <h2 id="violation-warning-title">Peringatan pelanggaran pertama</h2>
+            <p>{violationMessage}</p>
+            <div className={styles.finishDialogActions}>
+              <button
+                className={styles.finishConfirmButton}
+                onClick={() => setViolationWarningOpen(false)}
+                type="button"
+              >
+                Saya mengerti
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
+      {examLocked && (
+        <div className={styles.finishOverlay} role="presentation">
+          <section
+            aria-labelledby="violation-locked-title"
+            aria-modal="true"
+            className={styles.finishDialog}
+            role="alertdialog"
+          >
+            <div className={styles.finishDialogIcon} aria-hidden="true">!</div>
+            <h2 id="violation-locked-title">Ujian dikunci</h2>
+            <p>{violationMessage || "Pelanggaran kedua tercatat. Hubungi guru untuk membuka kunci ujian ini."}</p>
+            <div className={styles.finishDialogActions}>
+              <button
+                className={styles.finishConfirmButton}
+                onClick={() => {
+                  const examId = new URLSearchParams(window.location.search).get("examId");
+                  localStorage.removeItem("cbtStudent");
+                  router.replace(`/cbt${examId ? `?examId=${encodeURIComponent(examId)}` : ""}`);
+                }}
+                type="button"
+              >
+                Keluar dari ujian
+              </button>
             </div>
           </section>
         </div>
