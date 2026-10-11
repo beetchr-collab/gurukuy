@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
-import DOMPurify from "isomorphic-dompurify";
 import * as XLSX from "xlsx";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { useAuth } from "@/context/AuthContext";
 import { auth, db } from "@/lib/firebase";
 import { parseCbtApiResponse } from "@/lib/cbt-api-response";
+import { sanitizeQuestionHtml } from "@/lib/sanitize-question-html";
 import EujianMenu from "../components/EujianMenu";
 
 type ExamOption = {
@@ -751,7 +751,7 @@ export default function AnalisisUjianPage() {
                             <div
                               className="mb-3"
                               dangerouslySetInnerHTML={{
-                                __html: DOMPurify.sanitize(
+                                __html: sanitizeQuestionHtml(
                                   question.pertanyaan || "Soal tanpa teks",
                                 ),
                               }}
@@ -851,7 +851,7 @@ export default function AnalisisUjianPage() {
               <div
                 className="mb-3"
                 dangerouslySetInnerHTML={{
-                  __html: DOMPurify.sanitize(
+                  __html: sanitizeQuestionHtml(
                     gradingTarget.question.pertanyaan || "Soal tanpa teks",
                   ),
                 }}
@@ -924,7 +924,7 @@ export default function AnalisisUjianPage() {
                                 <div
                                   className="mb-3"
                                   dangerouslySetInnerHTML={{
-                                    __html: DOMPurify.sanitize(
+                                    __html: sanitizeQuestionHtml(
                                       question.pertanyaan || "Soal tanpa teks",
                                     ),
                                   }}

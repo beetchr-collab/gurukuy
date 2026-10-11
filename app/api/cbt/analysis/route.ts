@@ -50,16 +50,34 @@ const getCorrectness = (
   if (isManualQuestion(type)) return null;
 
   if (type === "PG") {
-    return typeof question.jawabanBenar === "string" && typeof answer === "string"
-      ? answer === question.jawabanBenar
-      : false;
+    const correctAnswers = Array.isArray(question.jawabanBenar)
+      ? question.jawabanBenar
+      : typeof question.jawabanBenar === "string"
+        ? [question.jawabanBenar]
+        : [];
+    const selectedAnswers = Array.isArray(answer)
+      ? answer
+      : typeof answer === "string"
+        ? [answer]
+        : [];
+    return selectedAnswers.length === correctAnswers.length &&
+      selectedAnswers.every((label) => correctAnswers.includes(label));
   }
 
   if (type === "PGK") {
-    if (!Array.isArray(question.jawabanBenar) || !isRecord(answer)) return false;
     const correctLabels = new Set(
-      question.jawabanBenar.filter((label): label is string => typeof label === "string")
+      (Array.isArray(question.jawabanBenar)
+        ? question.jawabanBenar
+        : typeof question.jawabanBenar === "string"
+          ? [question.jawabanBenar]
+          : []
+      ).filter((label): label is string => typeof label === "string")
     );
+    if (Array.isArray(answer)) {
+      return answer.length === correctLabels.size &&
+        answer.every((label) => correctLabels.has(label));
+    }
+    if (!isRecord(answer)) return false;
     return (question.opsi as unknown[] || []).every((_, index) => {
       const expected = correctLabels.has(String.fromCharCode(65 + index)) ? "Benar" : "Salah";
       return answer[String(index)] === expected;

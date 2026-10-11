@@ -2,7 +2,6 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import DOMPurify from "isomorphic-dompurify";
 import "summernote/dist/summernote-lite.min.css";
 import {
     addDoc,
@@ -17,7 +16,10 @@ import {
     updateDoc,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { normalizeImageUrl } from "@/lib/normalize-image-url";
+import { sanitizeQuestionHtml } from "@/lib/sanitize-question-html";
 import MathFormulaEditor from "./MathFormulaEditor";
+import MathAnswerEditor from "./MathAnswerEditor";
 
 type SummernoteEditorInstance = {
     summernote: {
@@ -27,7 +29,9 @@ type SummernoteEditorInstance = {
             callbacks: { onChange: (contents: string) => void };
         }): unknown;
         (command: "code", value: string): unknown;
+        (command: "code"): string;
         (command: "pasteHTML", value: string): unknown;
+        (command: "restoreRange"): unknown;
         (command: "destroy"): unknown;
     };
 };
@@ -46,25 +50,6 @@ type QuestionItem = {
     jawabanEssay?: string;
 };
 
-const normalizeImageUrl = (value: string) => {
-    try {
-        const url = new URL(value.trim());
-        if (url.protocol !== "http:" && url.protocol !== "https:") return "";
-
-        if (url.hostname === "drive.google.com") {
-            const fileId = url.pathname.match(/\/file\/d\/([^/]+)/)?.[1]
-                || url.searchParams.get("id");
-            if (fileId) {
-                return `https://drive.google.com/uc?export=view&id=${encodeURIComponent(fileId)}`;
-            }
-        }
-
-        return url.toString();
-    } catch {
-        return "";
-    }
-};
-
 export default function TambahSoalPage() {
     const router = useRouter();
     const params = useParams();
@@ -77,8 +62,10 @@ export default function TambahSoalPage() {
     const [soalLoadError, setSoalLoadError] = useState("");
     const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
     const [mathEditorOpen, setMathEditorOpen] = useState(false);
+    const [imagePreviewError, setImagePreviewError] = useState("");
     const questionEditorRef = useRef<HTMLTextAreaElement>(null);
     const summernoteRef = useRef<SummernoteEditorInstance | null>(null);
+    const pendingEditorContentRef = useRef<string | null>(null);
 
     const initialFormData = {
         tipeSoal: "PG",
@@ -86,7 +73,7 @@ export default function TambahSoalPage() {
         pertanyaan: "",
         gambarUrl: "",
         opsi: ["", "", "", ""],
-        jawabanBenar: "A",
+        jawabanBenar: [] as string[],
         jawabanBenarComplex: [] as string[],
         benarSalah: [{ statement: "", jawaban: "Benar" }],
         pasangan: [{ left: "", right: "" }],
@@ -129,6 +116,10 @@ export default function TambahSoalPage() {
                 },
             });
             summernoteRef.current = editor;
+            if (pendingEditorContentRef.current !== null) {
+                editor.summernote("code", pendingEditorContentRef.current);
+                pendingEditorContentRef.current = null;
+            }
         };
 
         void initializeEditor();
@@ -211,9 +202,16 @@ export default function TambahSoalPage() {
                     const labelIndex = jawabanToIndex(jawaban);
                     return labelIndex > index ? labelIndexToLabel(labelIndex - 1) : jawaban;
                 });
+            const jawabanBenar = prev.jawabanBenar
+                .filter((jawaban) => jawaban !== indexToLabel(index))
+                .map((jawaban) => {
+                    const labelIndex = jawabanToIndex(jawaban);
+                    return labelIndex > index ? labelIndexToLabel(labelIndex - 1) : jawaban;
+                });
             return {
                 ...prev,
                 opsi,
+                jawabanBenar,
                 jawabanBenarComplex,
             };
         });
@@ -226,6 +224,18 @@ export default function TambahSoalPage() {
                 ? prev.jawabanBenarComplex.filter((item) => item !== label)
                 : [...prev.jawabanBenarComplex, label];
             return { ...prev, jawabanBenarComplex };
+        });
+    };
+
+    const handleToggleCorrectAnswer = (label: string) => {
+        setFormData((prev) => {
+            const exists = prev.jawabanBenar.includes(label);
+            return {
+                ...prev,
+                jawabanBenar: exists
+                    ? prev.jawabanBenar.filter((item) => item !== label)
+                    : [...prev.jawabanBenar, label],
+            };
         });
     };
 
@@ -256,7 +266,11 @@ export default function TambahSoalPage() {
     const cancelEdit = () => {
         setEditingQuestionId(null);
         resetForm();
-        summernoteRef.current?.summernote("code", "");
+        if (summernoteRef.current) {
+            summernoteRef.current.summernote("code", "");
+        } else {
+            pendingEditorContentRef.current = "";
+        }
     };
 
     const handleEditQuestion = (item: QuestionItem) => {
@@ -268,7 +282,11 @@ export default function TambahSoalPage() {
             pertanyaan: item.pertanyaan || "",
             gambarUrl: item.gambarUrl || "",
             opsi: Array.isArray(item.opsi) ? item.opsi : initialFormData.opsi,
-            jawabanBenar: typeof answer === "string" ? answer : "A",
+            jawabanBenar: Array.isArray(answer)
+                ? answer
+                : typeof answer === "string"
+                    ? [answer]
+                    : [],
             jawabanBenarComplex: Array.isArray(answer) ? answer : [],
             benarSalah: Array.isArray(item.benarSalah)
                 ? item.benarSalah
@@ -282,7 +300,11 @@ export default function TambahSoalPage() {
 
         setEditingQuestionId(item.id);
         setFormData(nextFormData);
-        summernoteRef.current?.summernote("code", nextFormData.pertanyaan);
+        if (summernoteRef.current) {
+            summernoteRef.current.summernote("code", nextFormData.pertanyaan);
+        } else {
+            pendingEditorContentRef.current = nextFormData.pertanyaan;
+        }
         document.getElementById("form-tambah-soal")?.scrollIntoView({ behavior: "smooth" });
     };
 
@@ -363,9 +385,27 @@ export default function TambahSoalPage() {
         e: React.FormEvent<HTMLFormElement>
     ) => {
         e.preventDefault();
-        const cleanQuestion = DOMPurify.sanitize(formData.pertanyaan);
+        const editorQuestion =
+            summernoteRef.current?.summernote("code") ?? formData.pertanyaan;
+        const cleanQuestion = sanitizeQuestionHtml(editorQuestion);
         if (!cleanQuestion.replace(/<[^>]*>/g, "").trim()) {
             alert("Pertanyaan tidak boleh kosong");
+            return;
+        }
+        const correctAnswers =
+            formData.tipeSoal === "PG"
+                ? formData.jawabanBenar
+                : formData.jawabanBenarComplex;
+        if (["PG", "PGK"].includes(formData.tipeSoal) && correctAnswers.length === 0) {
+            alert("Pilih minimal satu jawaban yang benar");
+            return;
+        }
+        const cleanOptions = formData.opsi.map(sanitizeQuestionHtml);
+        if (
+            ["PG", "PGK"].includes(formData.tipeSoal) &&
+            cleanOptions.some((option) => !option.replace(/<[^>]*>/g, "").trim())
+        ) {
+            alert("Semua opsi jawaban wajib diisi");
             return;
         }
 
@@ -387,12 +427,12 @@ export default function TambahSoalPage() {
             };
 
             if (formData.tipeSoal === "PG") {
-                payload.opsi = formData.opsi;
+                payload.opsi = cleanOptions;
                 payload.jawabanBenar = formData.jawabanBenar;
             }
 
             if (formData.tipeSoal === "PGK") {
-                payload.opsi = formData.opsi;
+                payload.opsi = cleanOptions;
                 payload.jawabanBenar = formData.jawabanBenarComplex;
             }
 
@@ -560,10 +600,17 @@ export default function TambahSoalPage() {
                                                         alert("Editor soal belum siap. Silakan coba lagi.");
                                                         return;
                                                     }
+                                                    summernoteRef.current.summernote("restoreRange");
                                                     summernoteRef.current.summernote(
                                                         "pasteHTML",
                                                         `<span class="math-formula">${mathML}</span>`,
                                                     );
+                                                    const updatedQuestion =
+                                                        summernoteRef.current.summernote("code");
+                                                    setFormData((prev) => ({
+                                                        ...prev,
+                                                        pertanyaan: updatedQuestion,
+                                                    }));
                                                 }}
                                             />
                                         )}
@@ -579,6 +626,7 @@ export default function TambahSoalPage() {
                                             value={formData.gambarUrl}
                                             onChange={(event) => {
                                                 const value = event.target.value;
+                                                setImagePreviewError("");
                                                 setFormData((prev) => ({ ...prev, gambarUrl: value }));
                                             }}
                                             placeholder="https://..."
@@ -586,14 +634,27 @@ export default function TambahSoalPage() {
                                         <div className="form-text">Masukkan URL gambar publik, termasuk tautan berbagi Google Drive.</div>
                                         {formData.gambarUrl && (
                                             <div className="mt-3">
-                                                <img
-                                                    src={normalizeImageUrl(formData.gambarUrl)}
-                                                    alt="Preview gambar soal"
-                                                    className="img-fluid rounded"
-                                                    onError={(event) => {
-                                                        event.currentTarget.style.display = "none";
-                                                    }}
-                                                />
+                                                {normalizeImageUrl(formData.gambarUrl) ? (
+                                                    <img
+                                                        src={normalizeImageUrl(formData.gambarUrl)}
+                                                        alt="Preview gambar soal"
+                                                        className="img-fluid rounded"
+                                                        onError={() =>
+                                                            setImagePreviewError(
+                                                                "Gambar tidak dapat dimuat. Pastikan tautan Google Drive dapat diakses oleh siapa saja yang memiliki link.",
+                                                            )
+                                                        }
+                                                    />
+                                                ) : (
+                                                    <div className="text-danger small">
+                                                        URL gambar tidak valid. Masukkan URL gambar http atau https.
+                                                    </div>
+                                                )}
+                                                {imagePreviewError && (
+                                                    <div className="text-danger small mt-2" role="alert">
+                                                        {imagePreviewError}
+                                                    </div>
+                                                )}
                                             </div>
                                         )}
                                     </div>
@@ -656,12 +717,10 @@ export default function TambahSoalPage() {
                                                         <span className="fw-semibold">{indexToLabel(index)}.</span>
                                                     </div>
                                                     <div className="col-9">
-                                                        <input
-                                                            type="text"
-                                                            className="form-control"
+                                                        <MathAnswerEditor
+                                                            label={`Isi opsi ${indexToLabel(index)}`}
                                                             value={opsi}
-                                                            onChange={(e) => handleOptionChange(index, e.target.value)}
-                                                            required
+                                                            onChange={(value) => handleOptionChange(index, value)}
                                                         />
                                                     </div>
                                                     <div className="col-2 d-flex gap-2">
@@ -679,43 +738,38 @@ export default function TambahSoalPage() {
                                             ))}
 
                                             <div className="mb-3">
-                                                <label className="form-label fw-semibold">Jawaban Benar</label>
-                                                {formData.tipeSoal === "PG" ? (
-                                                    <select
-                                                        className="form-select"
-                                                        name="jawabanBenar"
-                                                        value={formData.jawabanBenar}
-                                                        onChange={handleChange}
-                                                    >
-                                                        {formData.opsi.map((_, idx) => (
-                                                            <option key={idx} value={indexToLabel(idx)}>
-                                                                {indexToLabel(idx)}
-                                                            </option>
-                                                        ))}
-                                                    </select>
-                                                ) : (
-                                                    <div className="row g-2">
-                                                        {formData.opsi.map((_, idx) => {
-                                                            const label = indexToLabel(idx);
-                                                            return (
-                                                                <div key={idx} className="col-md-6">
-                                                                    <div className="form-check">
-                                                                        <input
-                                                                            className="form-check-input"
-                                                                            type="checkbox"
-                                                                            id={`jawaban-${label}`}
-                                                                            checked={formData.jawabanBenarComplex.includes(label)}
-                                                                            onChange={() => handleToggleComplexAnswer(label)}
-                                                                        />
-                                                                        <label className="form-check-label" htmlFor={`jawaban-${label}`}>
-                                                                            {label}
-                                                                        </label>
-                                                                    </div>
+                                                <label className="form-label fw-semibold">
+                                                    Jawaban Benar (pilih satu atau lebih)
+                                                </label>
+                                                <div className="row g-2">
+                                                    {formData.opsi.map((_, idx) => {
+                                                        const label = indexToLabel(idx);
+                                                        const selected =
+                                                            formData.tipeSoal === "PG"
+                                                                ? formData.jawabanBenar.includes(label)
+                                                                : formData.jawabanBenarComplex.includes(label);
+                                                        return (
+                                                            <div key={idx} className="col-md-6">
+                                                                <div className="form-check">
+                                                                    <input
+                                                                        className="form-check-input"
+                                                                        type="checkbox"
+                                                                        id={`jawaban-${label}`}
+                                                                        checked={selected}
+                                                                        onChange={() =>
+                                                                            formData.tipeSoal === "PG"
+                                                                                ? handleToggleCorrectAnswer(label)
+                                                                                : handleToggleComplexAnswer(label)
+                                                                        }
+                                                                    />
+                                                                    <label className="form-check-label" htmlFor={`jawaban-${label}`}>
+                                                                        {label}
+                                                                    </label>
                                                                 </div>
-                                                            );
-                                                        })}
-                                                    </div>
-                                                )}
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
                                             </div>
                                         </>
                                     )}
@@ -904,13 +958,13 @@ export default function TambahSoalPage() {
                                             <div
                                                 className="mb-3"
                                                 dangerouslySetInnerHTML={{
-                                                    __html: DOMPurify.sanitize(item.pertanyaan || ""),
+                                                    __html: sanitizeQuestionHtml(item.pertanyaan || ""),
                                                 }}
                                             />
 
                                             {item.gambarUrl && (
                                                 <div className="mb-3">
-                                                    <img src={item.gambarUrl} alt="Soal" className="img-fluid rounded" />
+                                                    <img src={normalizeImageUrl(item.gambarUrl)} alt="Soal" className="img-fluid rounded" />
                                                 </div>
                                             )}
 
@@ -918,8 +972,13 @@ export default function TambahSoalPage() {
                                                 <div className="row g-2">
                                                     {item.opsi.map((opsi: string, idx: number) => (
                                                         <div key={idx} className="col-md-6">
-                                                            <div className="border rounded p-2">
-                                                                <strong>{String.fromCharCode(65 + idx)}.</strong> {opsi}
+                                                            <div className="border rounded p-2 d-flex gap-1">
+                                                                <strong>{String.fromCharCode(65 + idx)}.</strong>
+                                                                <span
+                                                                    dangerouslySetInnerHTML={{
+                                                                        __html: sanitizeQuestionHtml(opsi),
+                                                                    }}
+                                                                />
                                                             </div>
                                                         </div>
                                                     ))}
@@ -930,8 +989,13 @@ export default function TambahSoalPage() {
                                                 <div className="row g-2">
                                                     {item.opsi.map((opsi: string, idx: number) => (
                                                         <div key={idx} className="col-md-6">
-                                                            <div className="border rounded p-2">
-                                                                <strong>{String.fromCharCode(65 + idx)}.</strong> {opsi}
+                                                            <div className="border rounded p-2 d-flex gap-1">
+                                                                <strong>{String.fromCharCode(65 + idx)}.</strong>
+                                                                <span
+                                                                    dangerouslySetInnerHTML={{
+                                                                        __html: sanitizeQuestionHtml(opsi),
+                                                                    }}
+                                                                />
                                                             </div>
                                                         </div>
                                                     ))}

@@ -1078,6 +1078,47 @@
   line-height: 1.8;
 }
 
+.questionPrompt math,
+.answerOptionContent math {
+  max-width: 100%;
+  font-size: clamp(0.95em, 2.5vw, 1.15em);
+  vertical-align: middle;
+}
+
+.questionPrompt :global(.math-formula),
+.answerOptionContent :global(.math-formula) {
+  display: inline-block;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  vertical-align: middle;
+  scrollbar-width: none;
+}
+
+.questionPrompt :global(.math-formula)::-webkit-scrollbar,
+.answerOptionContent :global(.math-formula)::-webkit-scrollbar {
+  display: none;
+}
+
+.questionPrompt mfrac,
+.answerOptionContent mfrac {
+  padding: 0 0.08em;
+}
+
+.questionPrompt mfrac > :first-child,
+.answerOptionContent mfrac > :first-child {
+  padding-bottom: 0.08em;
+}
+
+.questionPrompt mfrac > :last-child,
+.answerOptionContent mfrac > :last-child {
+  padding-top: 0.08em;
+}
+
+.questionPrompt table {
+  max-width: 100%;
+}
+
 .questionPrompt > :first-child {
   margin-top: 0;
 }
@@ -1095,6 +1136,13 @@
   display: grid;
   gap: 9px;
   margin-top: 23px;
+}
+
+.multipleAnswerInstruction {
+  margin: 0 0 2px;
+  color: #405a53;
+  font-size: 14px;
+  line-height: 1.5;
 }
 
 .answerTableWrap {
@@ -1181,12 +1229,21 @@
   display: flex;
   align-items: flex-start;
   gap: 10px;
+  min-width: 0;
   padding: 14px;
   border: 1px solid #e1eae4;
   border-radius: 4px;
   color: #405a53;
   cursor: pointer;
   transition: border-color 120ms ease, background 120ms ease;
+}
+
+.answerOptionContent {
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  line-height: 1.7;
 }
 
 .answerOption:has(input:checked) {
@@ -1445,6 +1502,22 @@
 
   .questionPrompt {
     font-size: 14px;
+  }
+
+  .answerOption {
+    gap: 8px;
+    padding: 12px;
+    font-size: 14px;
+    line-height: 1.55;
+  }
+
+  .questionPrompt math,
+  .answerOptionContent math {
+    font-size: 0.95em;
+  }
+
+  .answerOptionContent {
+    line-height: 1.6;
   }
 
   .questionControls {

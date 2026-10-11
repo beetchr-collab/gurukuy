@@ -209,7 +209,7 @@ export default function MathFormulaEditor({
       <section
         aria-labelledby="math-editor-title"
         aria-modal="true"
-        className="card shadow-lg w-100"
+        className="card shadow-lg w-100 math-editor-dialog"
         role="dialog"
         style={{ maxWidth: 760, maxHeight: "90vh", overflowY: "auto" }}
       >
@@ -230,7 +230,7 @@ export default function MathFormulaEditor({
           />
         </header>
         <div className="card-body">
-          <div className="d-flex flex-wrap gap-2 mb-3" aria-label="Toolbar matematika">
+          <div className="d-flex flex-wrap gap-2 mb-3 math-editor-toolbar" aria-label="Toolbar matematika">
             {insertTemplates.map((template) => (
               <button
                 className="btn btn-sm btn-outline-secondary"
@@ -247,7 +247,7 @@ export default function MathFormulaEditor({
             Rumus (LaTeX)
           </label>
           <textarea
-            className="form-control font-monospace"
+            className="form-control font-monospace math-editor-input"
             id="math-latex-input"
             ref={inputRef}
             onChange={(event) => {
@@ -271,7 +271,7 @@ export default function MathFormulaEditor({
             Gunakan kurung kurawal untuk mengelompokkan rumus. Mendukung
             pecahan, akar, pangkat, indeks, simbol, dan huruf Yunani.
           </div>
-          <div className="border rounded bg-light p-3">
+          <div className="border rounded bg-light p-3 math-editor-preview">
             <div className="small text-muted mb-2">Pratinjau</div>
             <div
               className="fs-4 overflow-auto"
@@ -301,6 +301,48 @@ export default function MathFormulaEditor({
           </button>
         </footer>
       </section>
+      <style jsx global>{`
+        .math-editor-input {
+          min-height: 96px;
+          font-size: 16px;
+        }
+
+        .math-editor-preview {
+          min-height: 72px;
+          overflow-x: auto;
+        }
+
+        .math-editor-preview math {
+          font-size: clamp(1rem, 4vw, 1.5rem);
+        }
+
+        @media (max-width: 600px) {
+          .math-editor-dialog {
+            max-height: calc(100dvh - 24px) !important;
+            overflow-y: auto;
+          }
+
+          .math-editor-dialog .card-header,
+          .math-editor-dialog .card-body,
+          .math-editor-dialog .card-footer {
+            padding: 12px;
+          }
+
+          .math-editor-toolbar {
+            gap: 6px !important;
+          }
+
+          .math-editor-toolbar .btn {
+            min-width: 38px;
+            min-height: 38px;
+            padding: 6px 9px;
+          }
+
+          .math-editor-preview {
+            padding: 10px !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }

@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import DOMPurify from "isomorphic-dompurify";
 import { useParams, useRouter } from "next/navigation";
 import {
   collection,
@@ -13,6 +12,8 @@ import {
 } from "firebase/firestore";
 import { useAuth } from "@/context/AuthContext";
 import { db } from "@/lib/firebase";
+import { normalizeImageUrl } from "@/lib/normalize-image-url";
+import { sanitizeQuestionHtml } from "@/lib/sanitize-question-html";
 
 type Exam = {
   id: string;
@@ -260,7 +261,7 @@ export default function PreviewSoalPage() {
                             <div
                               className="question"
                               dangerouslySetInnerHTML={{
-                                __html: DOMPurify.sanitize(
+                                __html: sanitizeQuestionHtml(
                                   question.pertanyaan || "Soal tanpa teks",
                                 ),
                               }}
@@ -269,7 +270,7 @@ export default function PreviewSoalPage() {
                               <img
                                 alt={`Ilustrasi soal ${index + 1}`}
                                 className="img-fluid mb-3"
-                                src={question.gambarUrl}
+                                src={normalizeImageUrl(question.gambarUrl)}
                               />
                             )}
                             {["PG", "PGK"].includes(question.tipeSoal || "") &&
@@ -280,7 +281,13 @@ export default function PreviewSoalPage() {
                                   <strong>
                                     {String.fromCharCode(65 + optionIndex)}.
                                   </strong>
-                                  <span>{question.opsi?.[optionIndex] || ""}</span>
+                                  <span
+                                    dangerouslySetInnerHTML={{
+                                      __html: sanitizeQuestionHtml(
+                                        question.opsi?.[optionIndex] || "",
+                                      ),
+                                    }}
+                                  />
                                 </div>
                               ))}
                             {question.tipeSoal === "Benar/Salah" &&

@@ -237,11 +237,43 @@ export default function BankSoalPage() {
     const [currentPage, setCurrentPage] = useState(1);
 
     const itemsPerPage = 5;
-    const filteredData = bankSoalList.filter((item) =>
+    const getCreatedAtTime = (createdAt: unknown) => {
+        if (createdAt instanceof Date) return createdAt.getTime();
+        if (
+            typeof createdAt === "object" &&
+            createdAt !== null &&
+            "toMillis" in createdAt &&
+            typeof createdAt.toMillis === "function"
+        ) {
+            return createdAt.toMillis();
+        }
+        if (
+            typeof createdAt === "object" &&
+            createdAt !== null &&
+            "seconds" in createdAt &&
+            typeof createdAt.seconds === "number"
+        ) {
+            return createdAt.seconds * 1000;
+        }
+        if (typeof createdAt === "string" || typeof createdAt === "number") {
+            const timestamp = new Date(createdAt).getTime();
+            return Number.isFinite(timestamp) ? timestamp : 0;
+        }
+        return 0;
+    };
+
+    const filteredData = [...bankSoalList]
+        .filter((item) =>
         item.namaBankSoal
             ?.toLowerCase()
             .includes(searchTerm.toLowerCase())
-    );
+        )
+        .sort((left, right) => {
+            const activeStatusDifference =
+                Number(right.status === "Aktif") - Number(left.status === "Aktif");
+            if (activeStatusDifference !== 0) return activeStatusDifference;
+            return getCreatedAtTime(right.createdAt) - getCreatedAtTime(left.createdAt);
+        });
 
     const totalPages = Math.ceil(
         filteredData.length / itemsPerPage

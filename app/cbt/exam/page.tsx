@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import DOMPurify from "isomorphic-dompurify";
+import { sanitizeQuestionHtml } from "@/lib/sanitize-question-html";
 import styles from "../cbt.module.css";
 
 type CbtStudent = {
@@ -55,10 +55,18 @@ const isQuestionAnswered = (question: Question, answer: Answer | undefined) => {
     return typeof answer === "string" && answer.trim().length > 0;
   }
 
-  if (question.tipeSoal === "PGK" || question.tipeSoal === "Benar/Salah") {
-    const statementCount = question.tipeSoal === "PGK"
-      ? question.opsi?.length || 0
-      : question.benarSalah?.length || 0;
+  if (question.tipeSoal === "PGK") {
+    return Array.isArray(answer) &&
+      answer.length > 0 &&
+      new Set(answer).size === answer.length &&
+      answer.every((label) => {
+        const optionIndex = label.charCodeAt(0) - 65;
+        return label.length === 1 && optionIndex >= 0 && optionIndex < (question.opsi?.length || 0);
+      });
+  }
+
+  if (question.tipeSoal === "Benar/Salah") {
+    const statementCount = question.benarSalah?.length || 0;
     if (statementCount === 0 || !answer || typeof answer === "string" || Array.isArray(answer)) {
       return false;
     }
@@ -545,7 +553,7 @@ export default function CbtExamPage() {
                 <div
                   className={styles.questionPrompt}
                   dangerouslySetInnerHTML={{
-                    __html: DOMPurify.sanitize(currentQuestion.pertanyaan || ""),
+                    __html: sanitizeQuestionHtml(currentQuestion.pertanyaan || ""),
                   }}
                 />
                 {currentQuestion.gambarUrl && (
@@ -565,18 +573,58 @@ export default function CbtExamPage() {
                             checked={currentAnswer === letter}
                             onChange={() => setAnswer(currentQuestion.id, letter)}
                           />
-                          <span><b>{letter}.</b> {option}</span>
+                          <span className={styles.answerOptionContent}>
+                            <b>{letter}.</b>{" "}
+                            <span
+                              dangerouslySetInnerHTML={{
+                                __html: sanitizeQuestionHtml(option),
+                              }}
+                            />
+                          </span>
                         </label>
                       );
                     })}
                   </div>
                 )}
 
-                {(currentQuestion.tipeSoal === "PGK" || currentQuestion.tipeSoal === "Benar/Salah") && (
+                {currentQuestion.tipeSoal === "PGK" && (
+                  <div className={styles.answerOptions}>
+                    <p className={styles.multipleAnswerInstruction}>
+                      Pilih semua jawaban yang benar! Jawaban benar lebih dari satu.
+                    </p>
+                    {(currentQuestion.opsi || []).map((option, optionIndex) => {
+                      const letter = String.fromCharCode(65 + optionIndex);
+                      const selectedAnswers = Array.isArray(currentAnswer) ? currentAnswer : [];
+                      return (
+                        <label className={styles.answerOption} key={`${currentQuestion.id}-${letter}`}>
+                          <input
+                            type="checkbox"
+                            name={currentQuestion.id}
+                            checked={selectedAnswers.includes(letter)}
+                            onChange={(event) => {
+                              const nextAnswers = event.target.checked
+                                ? [...selectedAnswers, letter]
+                                : selectedAnswers.filter((answer) => answer !== letter);
+                              setAnswer(currentQuestion.id, nextAnswers);
+                            }}
+                          />
+                          <span className={styles.answerOptionContent}>
+                            <b>{letter}</b>{" "}
+                            <span
+                              dangerouslySetInnerHTML={{
+                                __html: sanitizeQuestionHtml(option),
+                              }}
+                            />
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {currentQuestion.tipeSoal === "Benar/Salah" && (
                   (() => {
-                    const statements = currentQuestion.tipeSoal === "PGK"
-                      ? (currentQuestion.opsi || []).map((statement) => ({ statement }))
-                      : currentQuestion.benarSalah || [];
+                    const statements = currentQuestion.benarSalah || [];
                     const statementAnswers =
                       typeof currentAnswer === "object" && !Array.isArray(currentAnswer)
                         ? currentAnswer
@@ -597,7 +645,12 @@ export default function CbtExamPage() {
                               const rowKey = String(statementIndex);
                               return (
                                 <tr key={`${currentQuestion.id}-${statementIndex}`}>
-                                  <th scope="row">{statement.statement}</th>
+                                  <th
+                                    scope="row"
+                                    dangerouslySetInnerHTML={{
+                                      __html: sanitizeQuestionHtml(statement.statement),
+                                    }}
+                                  />
                                   {(["Benar", "Salah"] as const).map((value) => (
                                     <td key={value}>
                                       <label className={styles.answerTableChoice}>
