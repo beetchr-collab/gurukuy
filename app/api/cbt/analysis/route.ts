@@ -42,12 +42,12 @@ const getTeacherId = async (request: Request) => {
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
-const getCorrectness = (
+const getScoreRatio = (
   question: FirebaseFirestore.DocumentData,
   answer: AnswerValue
-): boolean | null => {
+): number => {
   const type = question.tipeSoal;
-  if (isManualQuestion(type)) return null;
+  if (isManualQuestion(type)) return 0;
 
   if (type === "PG") {
     const correctAnswers = Array.isArray(question.jawabanBenar)
@@ -61,7 +61,9 @@ const getCorrectness = (
         ? [answer]
         : [];
     return selectedAnswers.length === correctAnswers.length &&
-      selectedAnswers.every((label) => correctAnswers.includes(label));
+      selectedAnswers.every((label) => correctAnswers.includes(label))
+      ? 1
+      : 0;
   }
 
   if (type === "PGK") {
@@ -74,31 +76,45 @@ const getCorrectness = (
       ).filter((label): label is string => typeof label === "string")
     );
     if (Array.isArray(answer)) {
-      return answer.length === correctLabels.size &&
-        answer.every((label) => correctLabels.has(label));
+      if (correctLabels.size === 0 || answer.length === 0) return 0;
+      const correctSelections = answer.filter((label) => correctLabels.has(label)).length;
+      const incorrectSelections = answer.length - correctSelections;
+      return Math.max(
+        0,
+        Math.min(1, (correctSelections - incorrectSelections) / correctLabels.size)
+      );
     }
-    if (!isRecord(answer)) return false;
-    return (question.opsi as unknown[] || []).every((_, index) => {
+    if (!isRecord(answer)) return 0;
+    const options = Array.isArray(question.opsi) ? question.opsi : [];
+    if (options.length === 0) return 0;
+    const matchedOptions = options.filter((_, index) => {
       const expected = correctLabels.has(String.fromCharCode(65 + index)) ? "Benar" : "Salah";
       return answer[String(index)] === expected;
     });
+    return matchedOptions.length / options.length;
   }
 
   if (type === "Benar/Salah") {
-    if (!Array.isArray(question.benarSalah) || !isRecord(answer)) return false;
-    return question.benarSalah.every((item: { jawaban?: string }, index: number) =>
+    if (!Array.isArray(question.benarSalah) || !isRecord(answer)) return 0;
+    const statements = question.benarSalah as { jawaban?: string }[];
+    if (statements.length === 0) return 0;
+    const correctStatements = statements.filter((item, index) =>
       answer[String(index)] === item.jawaban
-    );
+    ).length;
+    return correctStatements / statements.length;
   }
 
   if (type === "Menjodohkan") {
-    if (!Array.isArray(question.pasangan) || !isRecord(answer)) return false;
-    return question.pasangan.every((pair: { right?: string }, index: number) =>
+    if (!Array.isArray(question.pasangan) || !isRecord(answer)) return 0;
+    const pairs = question.pasangan as { right?: string }[];
+    if (pairs.length === 0) return 0;
+    const correctPairs = pairs.filter((pair, index) =>
       answer[String(index)] === pair.right
-    );
+    ).length;
+    return correctPairs / pairs.length;
   }
 
-  return false;
+  return 0;
 };
 
 const toIsoString = (value: unknown) => {
@@ -201,13 +217,13 @@ export async function GET(request: Request) {
           earnedScore = Math.min(question.skor, Math.max(0, manualScore));
         } else {
           const answer = submissionData.answers?.[question.id] as AnswerValue;
-          earnedScore = getCorrectness(question.data, answer) ? question.skor : 0;
+          earnedScore = question.skor * getScoreRatio(question.data, answer);
         }
 
         totalEarned += earnedScore;
         totalPossible += question.skor;
-        if (earnedScore === question.skor) correctCount += 1;
-        else if (earnedScore === 0) incorrectCount += 1;
+        if (earnedScore >= question.skor - Number.EPSILON) correctCount += 1;
+        else if (earnedScore <= 0) incorrectCount += 1;
         else partialCount += 1;
       }
 
@@ -262,12 +278,10 @@ export async function GET(request: Request) {
           ? manuallyGraded
             ? Math.min(question.skor, Math.max(0, storedManualScore))
             : 0
-          : getCorrectness(question.data, answer)
-            ? question.skor
-            : 0;
+          : question.skor * getScoreRatio(question.data, answer);
         const correctness = isManualQuestion(question.data.tipeSoal) && !manuallyGraded
           ? null
-          : earnedScore === question.skor;
+          : earnedScore >= question.skor - Number.EPSILON;
         score += earnedScore;
         return {
           questionId: question.id,

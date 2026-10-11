@@ -14,6 +14,7 @@ type ExamOption = {
   namaBankSoal?: string;
   mataPelajaran?: string;
   kelas?: string;
+  createdAt?: number;
 };
 
 const formatStudentAnswer = (
@@ -112,7 +113,9 @@ export default function AnalisisUjianPage() {
   const [gradingTarget, setGradingTarget] = useState<GradingTarget | null>(
     null,
   );
-  const [detailStudent, setDetailStudent] = useState<StudentResult | null>(null);
+  const [detailStudent, setDetailStudent] = useState<StudentResult | null>(
+    null,
+  );
   const [gradeValue, setGradeValue] = useState("");
   const [savingGrade, setSavingGrade] = useState(false);
   const [gradeError, setGradeError] = useState("");
@@ -137,12 +140,30 @@ export default function AnalisisUjianPage() {
     const unsubscribe = onSnapshot(
       examsQuery,
       (snapshot) => {
-        const nextExams = snapshot.docs.map((document) => ({
-          id: document.id,
-          namaBankSoal: String(document.data().namaBankSoal || ""),
-          mataPelajaran: String(document.data().mataPelajaran || ""),
-          kelas: String(document.data().kelas || ""),
-        }));
+        const nextExams = snapshot.docs
+          .map((document) => {
+            const data = document.data();
+            const createdAt = data.createdAt;
+            const createdAtMillis =
+              createdAt && typeof createdAt.toMillis === "function"
+                ? createdAt.toMillis()
+                : createdAt && typeof createdAt.seconds === "number"
+                  ? createdAt.seconds * 1000
+                  : typeof createdAt === "string" ||
+                      typeof createdAt === "number"
+                    ? new Date(createdAt).getTime()
+                    : 0;
+            return {
+              id: document.id,
+              namaBankSoal: String(data.namaBankSoal || ""),
+              mataPelajaran: String(data.mataPelajaran || ""),
+              kelas: String(data.kelas || ""),
+              createdAt: Number.isFinite(createdAtMillis) ? createdAtMillis : 0,
+            };
+          })
+          .sort(
+            (left, right) => (right.createdAt || 0) - (left.createdAt || 0),
+          );
         setExams(nextExams);
         setSelectedExamId((current) =>
           nextExams.some((exam) => exam.id === current)
@@ -414,38 +435,33 @@ export default function AnalisisUjianPage() {
           </section>
 
           <section className="card mb-3">
-            <div className="card-body d-flex flex-wrap align-items-center gap-3">
-              <label
-                className="fw-semibold mb-0"
-                htmlFor="analysisExamSelector"
-              >
-                Pilih ujian
-              </label>
-              <select
-                className="form-select"
-                id="analysisExamSelector"
-                style={{ maxWidth: 480 }}
-                value={selectedExamId}
-                onChange={(event) => setSelectedExamId(event.target.value)}
-                disabled={loadingExams || exams.length === 0}
-              >
-                {exams.length === 0 ? (
-                  <option value="">Belum ada ujian</option>
-                ) : (
-                  exams.map((exam) => (
-                    <option key={exam.id} value={exam.id}>
-                      {exam.namaBankSoal || "Ujian tanpa nama"}
-                      {exam.kelas ? ` - ${exam.kelas}` : ""}
-                    </option>
-                  ))
-                )}
-              </select>
-              {analysis?.exam && (
-                <span className="text-muted small">
-                  {analysis.exam.mataPelajaran || "Ujian CBT"}
-                  {analysis.exam.kelas ? ` · ${analysis.exam.kelas}` : ""}
-                </span>
-              )}
+            <div className="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+              <h3 className="card-title mb-0">Analisis Butir Soal dan Nilai</h3>
+
+              <div className="d-flex flex-wrap align-items-center gap-2 ms-auto">
+                <select
+                  className="form-select"
+                  id="analysisExamSelector"
+                  style={{
+                    minWidth: "min(240px, 100%)",
+                    maxWidth: "min(100%, 420px)",
+                  }}
+                  value={selectedExamId}
+                  onChange={(event) => setSelectedExamId(event.target.value)}
+                  disabled={loadingExams || exams.length === 0}
+                >
+                  {exams.length === 0 ? (
+                    <option value="">Belum ada ujian</option>
+                  ) : (
+                    exams.map((exam) => (
+                      <option key={exam.id} value={exam.id}>
+                        {exam.namaBankSoal || "Ujian tanpa nama"}
+                        {exam.kelas ? ` - ${exam.kelas}` : ""}
+                      </option>
+                    ))
+                  )}
+                </select>
+              </div>
             </div>
           </section>
 
@@ -525,7 +541,7 @@ export default function AnalisisUjianPage() {
                   <div className="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
                     <h3 className="card-title mb-0">Nilai Siswa</h3>
                     <button
-                      className="btn btn-sm btn-success"
+                      className="btn btn-sm btn-success ms-auto"
                       disabled={analysis.students.length === 0}
                       onClick={downloadScores}
                       type="button"
@@ -558,7 +574,14 @@ export default function AnalisisUjianPage() {
                               <th rowSpan={2} scope="col">
                                 NISN
                               </th>
-                              <th rowSpan={2} scope="col">
+                              <th
+                                rowSpan={2}
+                                scope="col"
+                                style={{
+                                  width: "1%",
+                                  whiteSpace: "nowrap",
+                                }}
+                              >
                                 Nama Siswa
                               </th>
                               <th rowSpan={2} scope="col">
@@ -606,7 +629,13 @@ export default function AnalisisUjianPage() {
                                 <td>{index + 1}</td>
                                 <td>{student.nis || "-"}</td>
                                 <td>{student.nisn || "-"}</td>
-                                <td className="text-start fw-semibold">
+                                <td
+                                  style={{
+                                    width: "1%",
+                                    whiteSpace: "nowrap",
+                                  }}
+                                  className="text-start fw-semibold"
+                                >
                                   {student.nama}
                                 </td>
                                 <td>{student.jk || "-"}</td>
@@ -657,7 +686,13 @@ export default function AnalisisUjianPage() {
                                     </td>
                                   );
                                 })}
-                                <td className="fw-bold">
+                                <td
+                                  className="fw-bold"
+                                  style={{
+                                    width: "1%",
+                                    whiteSpace: "nowrap",
+                                  }}
+                                >
                                   {Number(student.score.toFixed(2))} /{" "}
                                   {student.possibleScore}
                                 </td>
@@ -876,7 +911,8 @@ export default function AnalisisUjianPage() {
                     <div
                       className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center p-3"
                       onMouseDown={(event) => {
-                        if (event.target === event.currentTarget) setDetailStudent(null);
+                        if (event.target === event.currentTarget)
+                          setDetailStudent(null);
                       }}
                       style={{ background: "rgba(0,0,0,0.5)", zIndex: 1060 }}
                     >
@@ -885,15 +921,23 @@ export default function AnalisisUjianPage() {
                         aria-modal="true"
                         className="card shadow-lg w-100"
                         role="dialog"
-                        style={{ maxWidth: 900, maxHeight: "90vh", overflowY: "auto" }}
+                        style={{
+                          maxWidth: 900,
+                          maxHeight: "90vh",
+                          overflowY: "auto",
+                        }}
                       >
                         <div className="card-header d-flex justify-content-between align-items-center gap-3">
                           <div>
-                            <h3 className="card-title mb-1" id="student-answers-title">
+                            <h3
+                              className="card-title mb-1"
+                              id="student-answers-title"
+                            >
                               Jawaban Siswa
                             </h3>
                             <div className="small text-muted">
-                              {detailStudent.nama} · NIS {detailStudent.nis || "-"} · Skor{" "}
+                              {detailStudent.nama} · NIS{" "}
+                              {detailStudent.nis || "-"} · Skor{" "}
                               {Number(detailStudent.score.toFixed(2))}/
                               {detailStudent.possibleScore}
                             </div>
@@ -911,14 +955,20 @@ export default function AnalisisUjianPage() {
                               (item) => item.questionId === question.id,
                             );
                             return (
-                              <article className="border rounded p-3" key={question.id}>
+                              <article
+                                className="border rounded p-3"
+                                key={question.id}
+                              >
                                 <div className="d-flex flex-wrap justify-content-between gap-2 mb-2">
                                   <strong>
                                     Soal {index + 1} · {question.tipeSoal}
                                   </strong>
                                   <span className="badge text-bg-light border">
-                                    Skor: {Number(result?.earnedScore.toFixed(2) || 0)}/
-                                    {question.skor}
+                                    Skor:{" "}
+                                    {Number(
+                                      result?.earnedScore.toFixed(2) || 0,
+                                    )}
+                                    /{question.skor}
                                   </span>
                                 </div>
                                 <div
@@ -930,7 +980,9 @@ export default function AnalisisUjianPage() {
                                   }}
                                 />
                                 <div className="border rounded bg-light p-3">
-                                  <div className="fw-semibold mb-1">Jawaban siswa</div>
+                                  <div className="fw-semibold mb-1">
+                                    Jawaban siswa
+                                  </div>
                                   <pre
                                     className="mb-0"
                                     style={{
@@ -939,7 +991,9 @@ export default function AnalisisUjianPage() {
                                       font: "inherit",
                                     }}
                                   >
-                                    {formatStudentAnswer(result?.answer ?? null)}
+                                    {formatStudentAnswer(
+                                      result?.answer ?? null,
+                                    )}
                                   </pre>
                                 </div>
                               </article>

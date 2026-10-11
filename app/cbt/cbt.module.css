@@ -1257,6 +1257,112 @@
   accent-color: #28745e;
 }
 
+.matchingQuestion {
+  margin-top: 23px;
+}
+
+.matchingInstruction {
+  margin: 0 0 14px;
+  color: #405a53;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.matchingBoard {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: stretch;
+  gap: 12px 48px;
+  isolation: isolate;
+}
+
+.matchingLines {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.matchingLine,
+.matchingLinePreview {
+  fill: none;
+  stroke: #28745e;
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.matchingLinePreview {
+  stroke: #82a997;
+  stroke-dasharray: 7 6;
+}
+
+.matchingColumn {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  min-width: 0;
+}
+
+.matchingItem {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  min-height: 52px;
+  padding: 11px 14px;
+  border: 1px solid #d8e4dc;
+  border-radius: 6px;
+  color: #405a53;
+  background: #fff;
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.55;
+  text-align: left;
+  cursor: crosshair;
+  touch-action: none;
+}
+
+.matchingItem > span {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.matchingLeft::after,
+.matchingRight::before {
+  position: absolute;
+  top: 50%;
+  width: 11px;
+  height: 11px;
+  border: 2px solid #28745e;
+  border-radius: 50%;
+  background: #fff;
+  content: "";
+  transform: translateY(-50%);
+}
+
+.matchingLeft::after {
+  right: -7px;
+}
+
+.matchingRight::before {
+  left: -7px;
+}
+
+.matchingItemActive {
+  border-color: #28745e;
+  background: #eef7f1;
+  box-shadow: 0 0 0 2px rgb(40 116 94 / 14%);
+}
+
+.matchingItemConnected {
+  border-color: #9abbaa;
+}
+
 .statementAnswer {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(150px, 220px);
@@ -1409,6 +1515,13 @@
   line-height: 1.5;
 }
 
+.resumeNotice {
+  margin: 10px 0 0;
+  color: #28745e;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
 .submissionError {
   margin: 0 0 16px !important;
   padding: 10px 12px;
@@ -1498,6 +1611,30 @@
   .statementAnswer {
     grid-template-columns: 1fr;
     gap: 8px;
+  }
+
+  .matchingBoard {
+    gap: 10px 28px;
+  }
+
+  .matchingColumn {
+    gap: 10px;
+  }
+
+  .matchingItem {
+    min-height: 48px;
+    padding: 9px 10px;
+    font-size: 12px;
+  }
+
+  .matchingLeft::after {
+    width: 9px;
+    height: 9px;
+  }
+
+  .matchingRight::before {
+    width: 9px;
+    height: 9px;
   }
 
   .questionPrompt {

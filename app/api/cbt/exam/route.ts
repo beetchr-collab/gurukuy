@@ -78,17 +78,6 @@ export async function POST(request: Request) {
       );
     }
 
-    if (sessionSnapshot.data()?.status === "locked") {
-      return NextResponse.json(
-        {
-          success: false,
-          locked: true,
-          message: "Akses Anda ke ujian ini dikunci karena pelanggaran. Hubungi guru untuk membuka kunci.",
-        },
-        { status: 423 }
-      );
-    }
-
     if (
       String(exam.token || "").trim().toLocaleUpperCase() !==
       token.toLocaleUpperCase()
@@ -100,6 +89,17 @@ export async function POST(request: Request) {
     }
 
     const existingSession = sessionSnapshot.data() || {};
+    const wasLocked = existingSession.status === "locked";
+    if (wasLocked && !startOnly) {
+      return NextResponse.json(
+        {
+          success: false,
+          locked: true,
+          message: "Sesi ujian terkunci. Masukkan kembali token ujian untuk melanjutkan sesi.",
+        },
+        { status: 423 }
+      );
+    }
     const sessionData: Record<string, unknown> = {
       examId,
       studentId,
@@ -110,9 +110,10 @@ export async function POST(request: Request) {
       lastSeenAt: new Date(),
       status: "Sedang mengerjakan",
       violationCount: Number(existingSession.violationCount || 0),
-      currentViolationCount: Number(
-        existingSession.currentViolationCount ?? existingSession.violationCount ?? 0
-      ),
+      currentViolationCount: wasLocked
+        ? 0
+        : Number(existingSession.currentViolationCount ?? existingSession.violationCount ?? 0),
+      resumedAfterLock: wasLocked,
     };
 
     if (!sessionSnapshot.exists) {
@@ -133,6 +134,41 @@ export async function POST(request: Request) {
       .doc(examId)
       .collection("soal")
       .get();
+    const questionsById = new Map(
+      questionSnapshot.docs.map((questionDoc) => [
+        questionDoc.id,
+        { id: questionDoc.id, ...questionDoc.data() },
+      ])
+    );
+    const savedQuestionOrder = Array.isArray(existingSession.questionOrder)
+      ? existingSession.questionOrder.filter(
+          (questionId: unknown): questionId is string =>
+            typeof questionId === "string" && questionsById.has(questionId)
+        )
+      : [];
+    const questionOrder = [
+      ...savedQuestionOrder,
+      ...questionSnapshot.docs
+        .map((questionDoc) => questionDoc.id)
+        .filter((questionId) => !savedQuestionOrder.includes(questionId)),
+    ];
+    if (savedQuestionOrder.length === 0) {
+      for (let index = questionOrder.length - 1; index > 0; index -= 1) {
+        const randomIndex = Math.floor(Math.random() * (index + 1));
+        [questionOrder[index], questionOrder[randomIndex]] = [
+          questionOrder[randomIndex],
+          questionOrder[index],
+        ];
+      }
+    }
+    await sessionRef.set({ questionOrder }, { merge: true });
+
+    const startedAtValue = existingSession.startedAt || sessionData.startedAt;
+    const startedAt = startedAtValue instanceof Date
+      ? startedAtValue.getTime()
+      : typeof startedAtValue?.toMillis === "function"
+        ? startedAtValue.toMillis()
+        : null;
     const publicExam = {
       namaBankSoal: exam.namaBankSoal,
       mataPelajaran: exam.mataPelajaran,
@@ -143,16 +179,21 @@ export async function POST(request: Request) {
       examDate: exam.examDate,
       endTime: exam.endTime,
       duration: exam.duration,
+      startedAt,
     };
 
     return NextResponse.json({
       success: true,
       exam: publicExam,
       violationCount: Number(existingSession.violationCount || 0),
-      questions: questionSnapshot.docs.map((questionDoc) => ({
-        id: questionDoc.id,
-        ...questionDoc.data(),
-      })),
+      resumedSession: Boolean(existingSession.startedAt),
+      resumedAfterLock: existingSession.resumedAfterLock === true,
+      answers: existingSession.answers || {},
+      currentQuestionId: existingSession.currentQuestionId || null,
+      questions: questionOrder.flatMap((questionId) => {
+        const question = questionsById.get(questionId);
+        return question ? [question] : [];
+      }),
     });
   } catch (error) {
     console.error("CBT exam API error:", error);

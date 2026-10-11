@@ -849,11 +849,11 @@ export default function TambahSoalPage() {
 
                                 </div>
 
-                                <div className="card-footer">
+                                <div className="card-footer ms-auto d-flex gap-2">
                                     {editingQuestionId && (
                                         <button
                                             type="button"
-                                            className="btn btn-outline-secondary me-2"
+                                            className="btn btn-outline-secondary me-2 ms-auto"
                                             onClick={cancelEdit}
                                             disabled={loading}
                                         >
@@ -862,7 +862,7 @@ export default function TambahSoalPage() {
                                     )}
                                     <button
                                         type="submit"
-                                        className="btn btn-primary"
+                                        className="btn btn-primary ms-auto"
                                         disabled={loading}
                                     >
                                         {loading ? (

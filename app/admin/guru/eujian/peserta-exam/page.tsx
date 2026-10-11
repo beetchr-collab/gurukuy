@@ -12,6 +12,7 @@ type ExamOption = {
   namaBankSoal?: string;
   mataPelajaran?: string;
   kelas?: string;
+  createdAt?: number;
 };
 
 type Participant = {
@@ -66,12 +67,27 @@ export default function PesertaExamPage() {
     const unsubscribe = onSnapshot(
       examsQuery,
       (snapshot) => {
-        const nextExams = snapshot.docs.map((exam) => ({
-          id: exam.id,
-          namaBankSoal: String(exam.data().namaBankSoal || ""),
-          mataPelajaran: String(exam.data().mataPelajaran || ""),
-          kelas: String(exam.data().kelas || ""),
-        }));
+        const nextExams = snapshot.docs
+          .map((exam) => {
+            const data = exam.data();
+            const createdAt = data.createdAt;
+            const createdAtMillis =
+              createdAt && typeof createdAt.toMillis === "function"
+                ? createdAt.toMillis()
+                : createdAt && typeof createdAt.seconds === "number"
+                  ? createdAt.seconds * 1000
+                : typeof createdAt === "string" || typeof createdAt === "number"
+                  ? new Date(createdAt).getTime()
+                  : 0;
+            return {
+              id: exam.id,
+              namaBankSoal: String(data.namaBankSoal || ""),
+              mataPelajaran: String(data.mataPelajaran || ""),
+              kelas: String(data.kelas || ""),
+              createdAt: Number.isFinite(createdAtMillis) ? createdAtMillis : 0,
+            };
+          })
+          .sort((left, right) => (right.createdAt || 0) - (left.createdAt || 0));
         setExams(nextExams);
         setSelectedExamId((current) =>
           nextExams.some((exam) => exam.id === current)
@@ -264,13 +280,14 @@ export default function PesertaExamPage() {
           <div className="card">
             <div className="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
               <h3 className="card-title mb-0">Daftar Peserta</h3>
-              <div className="d-flex align-items-center gap-2">
+              <div className="d-flex align-items-center gap-2 ms-auto">
                 <label className="fw-semibold mb-0" htmlFor="examSelector">
                   Ujian
                 </label>
                 <select
                   className="form-select"
                   id="examSelector"
+                  style={{ minWidth: 240, maxWidth: "min(100%, 420px)" }}
                   value={selectedExamId}
                   onChange={(event) => setSelectedExamId(event.target.value)}
                   disabled={loadingExams || exams.length === 0}
