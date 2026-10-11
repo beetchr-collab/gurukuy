@@ -27,25 +27,26 @@ const isCompleteAnswer = (
   const questionType = question.tipeSoal;
 
   if (questionType === "PG" || questionType === "PGK") {
-    if (!Array.isArray(question.opsi)) return false;
+    const options = question.opsi;
+    if (!Array.isArray(options)) return false;
     if (typeof answer === "string") {
       const optionIndex = answer.charCodeAt(0) - 65;
       return questionType === "PG" &&
         answer.length === 1 &&
         optionIndex >= 0 &&
-        optionIndex < question.opsi.length;
+        optionIndex < options.length;
     }
     if (Array.isArray(answer)) {
       return answer.length > 0 &&
         new Set(answer).size === answer.length &&
         answer.every((label) => {
           const optionIndex = label.charCodeAt(0) - 65;
-          return label.length === 1 && optionIndex >= 0 && optionIndex < question.opsi.length;
+          return label.length === 1 && optionIndex >= 0 && optionIndex < options.length;
         });
     }
     if (questionType === "PGK" && isStringRecord(answer)) {
-      return Object.keys(answer).length === question.opsi.length &&
-        question.opsi.every((_, index) => {
+      return Object.keys(answer).length === options.length &&
+        options.every((_, index) => {
           const value = answer[String(index)];
           return value === "Benar" || value === "Salah";
         });
