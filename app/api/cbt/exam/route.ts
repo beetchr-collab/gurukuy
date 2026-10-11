@@ -88,39 +88,54 @@ export async function POST(request: Request) {
       );
     }
 
-    const existingSession = sessionSnapshot.data() || {};
-    const wasLocked = existingSession.status === "locked";
-    if (wasLocked && !startOnly) {
+    const sessionResult = await adminDb.runTransaction(async (transaction) => {
+      const latestSessionSnapshot = await transaction.get(sessionRef);
+      const existingSession = latestSessionSnapshot.data() || {};
+      if (existingSession.status === "locked") {
+        return {
+          error: "Sesi ujian terkunci karena pelanggaran. Hubungi guru untuk membuka kunci sebelum melanjutkan.",
+          status: 423,
+        };
+      }
+      if (existingSession.status === "Selesai") {
+        return {
+          error: "Anda sudah menyelesaikan ujian ini. Minta guru mereset percobaan jika perlu mengulang.",
+          status: 409,
+        };
+      }
+
+      const sessionData: Record<string, unknown> = {
+        examId,
+        studentId,
+        nis: String(student.nis || ""),
+        nisn: String(student.nisn || ""),
+        nama: String(student.nama || "Siswa"),
+        jk: String(student.jk || student.jenisKelamin || ""),
+        lastSeenAt: new Date(),
+        status: "Sedang mengerjakan",
+        violationCount: Number(existingSession.violationCount || 0),
+        currentViolationCount: Number(
+          existingSession.currentViolationCount ?? existingSession.violationCount ?? 0
+        ),
+        resumedAfterLock: existingSession.resumedAfterLock === true,
+      };
+      const startedAt = existingSession.startedAt || new Date();
+
+      if (!latestSessionSnapshot.exists) {
+        sessionData.startedAt = startedAt;
+      }
+
+      transaction.set(sessionRef, sessionData, { merge: true });
+      return { existingSession, startedAt };
+    });
+
+    if ("error" in sessionResult) {
       return NextResponse.json(
-        {
-          success: false,
-          locked: true,
-          message: "Sesi ujian terkunci. Masukkan kembali token ujian untuk melanjutkan sesi.",
-        },
-        { status: 423 }
+        { success: false, locked: sessionResult.status === 423, message: sessionResult.error },
+        { status: sessionResult.status }
       );
     }
-    const sessionData: Record<string, unknown> = {
-      examId,
-      studentId,
-      nis: String(student.nis || ""),
-      nisn: String(student.nisn || ""),
-      nama: String(student.nama || "Siswa"),
-      jk: String(student.jk || student.jenisKelamin || ""),
-      lastSeenAt: new Date(),
-      status: "Sedang mengerjakan",
-      violationCount: Number(existingSession.violationCount || 0),
-      currentViolationCount: wasLocked
-        ? 0
-        : Number(existingSession.currentViolationCount ?? existingSession.violationCount ?? 0),
-      resumedAfterLock: wasLocked,
-    };
-
-    if (!sessionSnapshot.exists) {
-      sessionData.startedAt = new Date();
-    }
-
-    await sessionRef.set(sessionData, { merge: true });
+    const existingSession = sessionResult.existingSession;
 
     if (startOnly) {
       return NextResponse.json({
@@ -163,7 +178,7 @@ export async function POST(request: Request) {
     }
     await sessionRef.set({ questionOrder }, { merge: true });
 
-    const startedAtValue = existingSession.startedAt || sessionData.startedAt;
+    const startedAtValue = sessionResult.startedAt;
     const startedAt = startedAtValue instanceof Date
       ? startedAtValue.getTime()
       : typeof startedAtValue?.toMillis === "function"
