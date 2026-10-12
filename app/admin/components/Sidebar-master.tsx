@@ -538,7 +538,7 @@ export default function Sidebar() {
                             : ""
                         }`}
                       >
-                        <i className="far fa-edit nav-icon"></i>
+                        <i className="far fa-play-circle nav-icon"></i>
                         <p>Status Ujian</p>
                       </Link>
                     </li>
@@ -552,7 +552,7 @@ export default function Sidebar() {
                             : ""
                         }`}
                       >
-                        <i className="far fa-edit nav-icon"></i>
+                        <i className="far fa-folder-open nav-icon"></i>
                         <p>Bank Soal</p>
                       </Link>
                     </li>

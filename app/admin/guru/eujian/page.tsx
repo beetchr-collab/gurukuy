@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import Modal from "bootstrap/js/dist/modal";
 import EujianMenu from "./components/EujianMenu";
 import {
     collection,
@@ -261,6 +262,13 @@ export default function UsersPage() {
         return diff;
     };
 
+    const closeScheduleModal = () => {
+        const modalElement = document.getElementById("modalJadwal");
+        if (modalElement) {
+            Modal.getInstance(modalElement)?.hide();
+        }
+    };
+
     // SIMPAN JADWAL UJIAN
     const saveSchedule = async () => {
 
@@ -289,10 +297,11 @@ export default function UsersPage() {
                 }
             );
 
-            alert("Jadwal berhasil disimpan");
+            closeScheduleModal();
 
         } catch (error) {
-            console.log(error);
+            console.error("Gagal menyimpan jadwal:", error);
+            alert("Gagal menyimpan jadwal");
         }
     };
 
@@ -476,8 +485,6 @@ export default function UsersPage() {
                                                             <button
                                                                 type="button"
                                                                 className="btn btn-sm btn-warning"
-                                                                data-bs-toggle="modal"
-                                                                data-bs-target="#modalJadwal"
                                                                 onClick={() => {
                                                                     setSelectedUjian(item);
 
@@ -491,6 +498,14 @@ export default function UsersPage() {
                                                                         endTime:
                                                                             item.endTime || "",
                                                                     });
+
+                                                                    const modalElement = document.getElementById("modalJadwal");
+                                                                    if (modalElement) {
+                                                                        const modal =
+                                                                            Modal.getInstance(modalElement) ||
+                                                                            new Modal(modalElement);
+                                                                        modal.show();
+                                                                    }
                                                                 }}
                                                             >
                                                                 <i className="fas fa-clock"></i>
@@ -655,7 +670,7 @@ export default function UsersPage() {
                             <button
                                 type="button"
                                 className="btn-close"
-                                data-bs-dismiss="modal"
+                                onClick={closeScheduleModal}
                             ></button>
                         </div>
 
@@ -737,8 +752,9 @@ export default function UsersPage() {
                         <div className="modal-footer border-0">
 
                             <button
+                                type="button"
                                 className="btn btn-light border rounded-pill px-4"
-                                data-bs-dismiss="modal"
+                                onClick={closeScheduleModal}
                             >
                                 Batal
                             </button>

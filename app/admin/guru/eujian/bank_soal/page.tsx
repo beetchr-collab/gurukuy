@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { db } from "@/lib/firebase";
-import { getAuth } from "firebase/auth";
+import { useAuth } from "@/context/AuthContext";
 import {
     collection,
     addDoc,
@@ -20,7 +20,7 @@ import Modal from "bootstrap/js/dist/modal";
 import EujianMenu from "../components/EujianMenu";
 
 export default function BankSoalPage() {
-    const auth = getAuth();
+    const { user, loading: authLoading } = useAuth();
     const router = useRouter();
 
     const [formData, setFormData] = useState({
@@ -53,6 +53,16 @@ export default function BankSoalPage() {
     // LOADING
     const [loading, setLoading] = useState(false);
 
+    const getBankSoalModal = () => {
+        const modalElement = document.getElementById("modalTambahBankSoal");
+        if (!modalElement) return null;
+
+        return (
+            Modal.getInstance(modalElement) ||
+            new Modal(modalElement)
+        );
+    };
+
     // SIMPAN DATA
     const handleSubmit = async (
         e: React.FormEvent<HTMLFormElement>
@@ -63,8 +73,6 @@ export default function BankSoalPage() {
         setLoading(true);
 
         try {
-            const user = auth.currentUser;
-
             if (!user) {
                 alert("User belum login");
                 return;
@@ -93,34 +101,7 @@ export default function BankSoalPage() {
             }
 
             // TUTUP MODAL
-            const modalElement = document.getElementById(
-                "modalTambahBankSoal"
-            );
-
-            if (modalElement) {
-                const modal =
-                    Modal.getInstance(modalElement) ||
-                    new Modal(modalElement);
-                modal.hide();
-                if (modalElement) {
-                    const modal =
-                        Modal.getInstance(modalElement) ||
-                        new Modal(modalElement);
-
-                    modal.hide();
-
-                    // HAPUS BACKDROP
-                    document
-                        .querySelectorAll(".modal-backdrop")
-                        .forEach((el) => el.remove());
-
-                    // HAPUS CLASS BODY
-                    document.body.classList.remove("modal-open");
-
-                    // RESET STYLE BODY
-                    document.body.style.removeProperty("padding-right");
-                }
-            }
+            getBankSoalModal()?.hide();
 
             // RESET FORM
             setFormData({
@@ -205,10 +186,14 @@ export default function BankSoalPage() {
 
     // DATA BANK SOAL
     const [bankSoalList, setBankSoalList] = useState<any[]>([]);
+    const [listenerError, setListenerError] = useState("");
     useEffect(() => {
-        const user = auth.currentUser;
-
-        if (!user) return;
+        if (authLoading) return;
+        if (!user?.uid) {
+            setBankSoalList([]);
+            setListenerError("");
+            return;
+        }
 
         const q = query(
             collection(db, "bank_soal"),
@@ -226,11 +211,17 @@ export default function BankSoalPage() {
             });
 
             setBankSoalList(data);
+            setListenerError("");
+        }, (error) => {
+            console.error("Gagal memuat daftar bank soal:", error);
+            setListenerError(
+                "Gagal memuat daftar bank soal. Periksa izin baca bank_soal di Firestore Security Rules."
+            );
         });
 
         return () => unsubscribe();
 
-    }, []);
+    }, [authLoading, user?.uid]);
 
     // PENCARIAN & PAGINASI
     const [searchTerm, setSearchTerm] = useState("");
@@ -330,17 +321,7 @@ export default function BankSoalPage() {
             duration: 0,
         });
 
-        const modalElement = document.getElementById(
-            "modalTambahBankSoal"
-        );
-
-        if (modalElement) {
-            const modal =
-                Modal.getInstance(modalElement) ||
-                new Modal(modalElement);
-
-            modal.show();
-        }
+        getBankSoalModal()?.show();
     };
 
     // HAPUS
@@ -420,6 +401,14 @@ export default function BankSoalPage() {
                     ...prev,
                     [bankSoal.id]: snapshot.size,
                 }));
+            }, (error) => {
+                console.error(
+                    `Gagal memuat jumlah soal untuk bank soal ${bankSoal.id}:`,
+                    error
+                );
+                setListenerError(
+                    `Gagal membaca subkoleksi soal untuk "${bankSoal.namaBankSoal || bankSoal.id}". Periksa izin bank_soal/{id}/soal di Firestore Security Rules.`
+                );
             });
 
             unsubscribes.push(unsubscribe);
@@ -490,9 +479,9 @@ export default function BankSoalPage() {
                             {/* BUTTON */}
                             <div>
                                 <button
+                                    type="button"
                                     className="btn btn-light text-primary fw-semibold px-4 py-3 rounded-3 shadow-sm"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#modalTambahBankSoal"
+                                    onClick={() => getBankSoalModal()?.show()}
                                 >
                                     <i className="fas fa-plus-circle me-2"></i>
                                     Tambah Bank Soal
@@ -502,6 +491,14 @@ export default function BankSoalPage() {
                         </div>
                     </div>
                 </div>
+
+                {listenerError && (
+                    <div className="container-fluid">
+                        <div className="alert alert-danger" role="alert">
+                            {listenerError}
+                        </div>
+                    </div>
+                )}
 
                 {/* CARD */}
                 <div className="container-fluid">
@@ -847,7 +844,7 @@ export default function BankSoalPage() {
                             <button
                                 type="button"
                                 className="btn-close"
-                                data-bs-dismiss="modal"
+                                onClick={() => getBankSoalModal()?.hide()}
                             ></button>
                         </div>
 

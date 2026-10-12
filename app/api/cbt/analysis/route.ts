@@ -13,10 +13,32 @@ type Question = {
   tipeSoal: string;
   pertanyaan: string;
   skor: number;
+  createdAt: number;
   data: FirebaseFirestore.DocumentData;
 };
 
 type AnswerValue = string | string[] | Record<string, string> | undefined;
+
+const getCreatedAtMillis = (value: unknown): number => {
+  if (value instanceof Date) return value.getTime();
+
+  if (typeof value === "object" && value !== null) {
+    if ("toMillis" in value && typeof value.toMillis === "function") {
+      return value.toMillis();
+    }
+    if ("seconds" in value && typeof value.seconds === "number") {
+      return value.seconds * 1000;
+    }
+  }
+
+  if (typeof value === "string" || typeof value === "number") {
+    const timestamp =
+      typeof value === "number" ? value : new Date(value).getTime();
+    return Number.isFinite(timestamp) ? timestamp : 0;
+  }
+
+  return 0;
+};
 
 const isManualQuestion = (type: unknown) =>
   type === "Isian Singkat" || type === "Uraian";
@@ -177,9 +199,10 @@ export async function GET(request: Request) {
         tipeSoal: String(data.tipeSoal || "Soal"),
         pertanyaan: String(data.pertanyaan || ""),
         skor: Number.isFinite(score) && score >= 0 ? score : 1,
+        createdAt: getCreatedAtMillis(data.createdAt),
         data,
       };
-    });
+    }).sort((left, right) => left.createdAt - right.createdAt);
 
     const studentIds = [...new Set(
       submissionsSnapshot.docs
