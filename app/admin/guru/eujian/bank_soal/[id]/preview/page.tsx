@@ -345,9 +345,12 @@ export default function PreviewSoalPage() {
                                             border: "1px solid #333",
                                             padding: 8,
                                           }}
-                                        >
-                                          {item.statement}
-                                        </td>
+                                          dangerouslySetInnerHTML={{
+                                            __html: sanitizeQuestionHtml(
+                                              item.statement || "",
+                                            ),
+                                          }}
+                                        />
                                         {[0, 1].map((answerIndex) => (
                                           <td
                                             key={answerIndex}

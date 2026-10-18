@@ -367,6 +367,12 @@ body {
   letter-spacing: 8px;
 }
 
+.math-answer-editor:empty::before {
+  color: #6c757d;
+  content: attr(data-placeholder);
+  pointer-events: none;
+}
+
 .token-button {
   position: absolute;
 

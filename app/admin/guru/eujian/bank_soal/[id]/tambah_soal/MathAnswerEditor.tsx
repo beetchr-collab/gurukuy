@@ -5,13 +5,13 @@ import { sanitizeQuestionHtml } from "@/lib/sanitize-question-html";
 import MathFormulaEditor from "./MathFormulaEditor";
 
 type MathAnswerEditorProps = {
-  label: string;
+  placeholder: string;
   value: string;
   onChange: (value: string) => void;
 };
 
 export default function MathAnswerEditor({
-  label,
+  placeholder,
   value,
   onChange,
 }: MathAnswerEditorProps) {
@@ -69,26 +69,16 @@ export default function MathAnswerEditor({
   };
 
   return (
-    <div>
-      <div className="d-flex justify-content-between align-items-center gap-2 mb-1">
-        <label className="form-label fw-semibold mb-0">{label}</label>
-        <button
-          className="btn btn-sm btn-outline-primary"
-          onMouseDown={(event) => {
-            saveSelection();
-            event.preventDefault();
-          }}
-          onClick={() => setMathEditorOpen(true)}
-          type="button"
-        >
-          <i className="fas fa-square-root-variable me-1" />
-          Rumus
-        </button>
-      </div>
+    <div
+      className="d-flex align-items-center gap-2 flex-grow-1"
+      style={{ minWidth: 0 }}
+    >
       <div
-        aria-label={label}
-        className="form-control"
+        aria-label={placeholder}
+        aria-placeholder={placeholder}
+        className="form-control math-answer-editor flex-grow-1"
         contentEditable
+        data-placeholder={placeholder}
         onInput={(event) =>
           onChange(sanitizeQuestionHtml(event.currentTarget.innerHTML))
         }
@@ -96,9 +86,22 @@ export default function MathAnswerEditor({
         onMouseUp={saveSelection}
         ref={editorRef}
         role="textbox"
-        style={{ minHeight: 42, whiteSpace: "pre-wrap" }}
+        style={{ minHeight: 42, minWidth: 0, whiteSpace: "pre-wrap" }}
         suppressContentEditableWarning
       />
+      <button
+        className="btn btn-sm btn-outline-primary flex-shrink-0"
+        onMouseDown={(event) => {
+          saveSelection();
+          event.preventDefault();
+        }}
+        onClick={() => setMathEditorOpen(true)}
+        title="Sisipkan rumus"
+        type="button"
+      >
+        <i className="fas fa-square-root-variable me-1" />
+        Rumus
+      </button>
       {mathEditorOpen && (
         <MathFormulaEditor
           onClose={() => setMathEditorOpen(false)}
