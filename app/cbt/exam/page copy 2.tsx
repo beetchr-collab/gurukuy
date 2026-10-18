@@ -1,6 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  type MouseEvent as ReactMouseEvent,
+  type PointerEvent as ReactPointerEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useRouter } from "next/navigation";
 import { sanitizeQuestionHtml } from "@/lib/sanitize-question-html";
 import styles from "../cbt.module.css";
@@ -25,6 +33,7 @@ type Exam = {
   examDate?: string;
   endTime?: string;
   duration?: number;
+  startedAt?: number | null;
 };
 
 type Question = {
@@ -39,16 +48,265 @@ type Question = {
 
 type Answer = string | string[] | Record<string, string>;
 
-const shuffleQuestions = (questions: Question[]) => {
-  const shuffled = [...questions];
-
-  for (let index = shuffled.length - 1; index > 0; index -= 1) {
-    const randomIndex = Math.floor(Math.random() * (index + 1));
-    [shuffled[index], shuffled[randomIndex]] = [shuffled[randomIndex], shuffled[index]];
-  }
-
-  return shuffled;
+type MatchEndpoint = {
+  side: "left" | "right";
+  index: number;
 };
+
+const shuffleIndexes = (length: number) => {
+  const indexes = Array.from({ length }, (_, index) => index);
+  for (let index = indexes.length - 1; index > 0; index -= 1) {
+    const randomIndex = Math.floor(Math.random() * (index + 1));
+    [indexes[index], indexes[randomIndex]] = [indexes[randomIndex], indexes[index]];
+  }
+  return indexes;
+};
+
+function MatchingAnswer({
+  questionId,
+  pairs,
+  answer,
+  onChange,
+}: {
+  questionId: string;
+  pairs: { left: string; right: string }[];
+  answer: Record<string, string>;
+  onChange: (answer: Record<string, string>) => void;
+}) {
+  const [leftOrder] = useState(() => shuffleIndexes(pairs.length));
+  const [rightOrder] = useState(() => shuffleIndexes(pairs.length));
+  const [activeEndpoint, setActiveEndpoint] = useState<MatchEndpoint | null>(null);
+  const [dragging, setDragging] = useState<{
+    from: MatchEndpoint;
+    point: { x: number; y: number };
+  } | null>(null);
+  const [lineLayout, setLineLayout] = useState<{
+    width: number;
+    height: number;
+    points: Record<string, { x: number; y: number }>;
+  }>({ width: 0, height: 0, points: {} });
+  const boardRef = useRef<HTMLDivElement>(null);
+  const leftNodes = useRef(new Map<number, HTMLButtonElement>());
+  const rightNodes = useRef(new Map<number, HTMLButtonElement>());
+
+  useEffect(() => {
+    const updateLineLayout = () => {
+      const board = boardRef.current;
+      if (!board) return;
+      const boardRect = board.getBoundingClientRect();
+      const points: Record<string, { x: number; y: number }> = {};
+      for (const [side, nodes] of [
+        ["left", leftNodes.current],
+        ["right", rightNodes.current],
+      ] as const) {
+        nodes.forEach((node, index) => {
+          const rect = node.getBoundingClientRect();
+          points[`${side}-${index}`] = {
+            x: (side === "left" ? rect.right : rect.left) - boardRect.left,
+            y: rect.top + rect.height / 2 - boardRect.top,
+          };
+        });
+      }
+      setLineLayout({ width: boardRect.width, height: boardRect.height, points });
+    };
+
+    updateLineLayout();
+    const resizeObserver = new ResizeObserver(updateLineLayout);
+    if (boardRef.current) resizeObserver.observe(boardRef.current);
+    window.addEventListener("resize", updateLineLayout);
+    window.addEventListener("scroll", updateLineLayout, true);
+    return () => {
+      resizeObserver.disconnect();
+      window.removeEventListener("resize", updateLineLayout);
+      window.removeEventListener("scroll", updateLineLayout, true);
+    };
+  }, [answer, pairs.length]);
+
+  const connectEndpoints = (first: MatchEndpoint, second: MatchEndpoint) => {
+    if (first.side === second.side) {
+      setActiveEndpoint(second);
+      return;
+    }
+    const leftIndex = first.side === "left" ? first.index : second.index;
+    const rightIndex = first.side === "right" ? first.index : second.index;
+    const selectedRight = pairs[rightIndex]?.right;
+    if (selectedRight === undefined) return;
+
+    const nextAnswer = { ...answer };
+    Object.entries(nextAnswer).forEach(([index, value]) => {
+      if (value === selectedRight && index !== String(leftIndex)) delete nextAnswer[index];
+    });
+    nextAnswer[String(leftIndex)] = selectedRight;
+    onChange(nextAnswer);
+    setActiveEndpoint(null);
+  };
+
+  const activateEndpoint = (endpoint: MatchEndpoint) => {
+    if (activeEndpoint && activeEndpoint.side !== endpoint.side) {
+      connectEndpoints(activeEndpoint, endpoint);
+    } else if (
+      activeEndpoint?.side === endpoint.side &&
+      activeEndpoint.index === endpoint.index
+    ) {
+      setActiveEndpoint(null);
+    } else {
+      setActiveEndpoint(endpoint);
+    }
+  };
+
+  const handlePointerDown = (
+    event: ReactPointerEvent<HTMLButtonElement>,
+    endpoint: MatchEndpoint
+  ) => {
+    event.preventDefault();
+    const from = activeEndpoint && activeEndpoint.side !== endpoint.side
+      ? activeEndpoint
+      : endpoint;
+    const board = boardRef.current;
+    if (!board) return;
+    const rect = board.getBoundingClientRect();
+    board.setPointerCapture(event.pointerId);
+    setDragging({
+      from,
+      point: { x: event.clientX - rect.left, y: event.clientY - rect.top },
+    });
+  };
+
+  const handlePointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (!dragging || !boardRef.current) return;
+    const rect = boardRef.current.getBoundingClientRect();
+    setDragging({
+      ...dragging,
+      point: { x: event.clientX - rect.left, y: event.clientY - rect.top },
+    });
+  };
+
+  const handlePointerUp = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (!dragging) return;
+    const target = document.elementFromPoint(event.clientX, event.clientY);
+    const endpointButton = target instanceof Element
+      ? target.closest<HTMLButtonElement>("[data-match-side][data-match-index]")
+      : null;
+    const side = endpointButton?.dataset.matchSide;
+    const index = Number(endpointButton?.dataset.matchIndex);
+    if (
+      (side === "left" || side === "right") &&
+      Number.isInteger(index) &&
+      side !== dragging.from.side
+    ) {
+      connectEndpoints(dragging.from, { side, index });
+    } else {
+      setActiveEndpoint(dragging.from);
+    }
+    setDragging(null);
+  };
+
+  const handleKeyboardClick = (
+    event: ReactMouseEvent<HTMLButtonElement>,
+    endpoint: MatchEndpoint
+  ) => {
+    if (event.detail === 0) activateEndpoint(endpoint);
+  };
+
+  const connectionLines = Object.entries(answer).flatMap(([leftIndex, rightValue]) => {
+    const left = lineLayout.points[`left-${Number(leftIndex)}`];
+    const rightIndex = pairs.findIndex((pair) => pair.right === rightValue);
+    const right = lineLayout.points[`right-${rightIndex}`];
+    return left && right ? [{ key: leftIndex, left, right }] : [];
+  });
+  const dragStart = dragging && lineLayout.points[`${dragging.from.side}-${dragging.from.index}`];
+
+  return (
+    <div className={styles.matchingQuestion}>
+      <p className={styles.matchingInstruction}>
+        Tarik garis untuk memasangkan jawaban, atau pilih satu item di kiri lalu pasangannya di kanan.
+      </p>
+      <div
+        className={styles.matchingBoard}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={() => setDragging(null)}
+        ref={boardRef}
+      >
+        {lineLayout.width > 0 && lineLayout.height > 0 && (
+          <svg
+            aria-hidden="true"
+            className={styles.matchingLines}
+            viewBox={`0 0 ${lineLayout.width} ${lineLayout.height}`}
+          >
+            {connectionLines.map(({ key, left, right }) => (
+              <line
+                key={key}
+                x1={left.x}
+                y1={left.y}
+                x2={right.x}
+                y2={right.y}
+                className={styles.matchingLine}
+              />
+            ))}
+            {dragging && dragStart && (
+              <line
+                x1={dragStart.x}
+                y1={dragStart.y}
+                x2={dragging.point.x}
+                y2={dragging.point.y}
+                className={styles.matchingLinePreview}
+              />
+            )}
+          </svg>
+        )}
+        <div className={styles.matchingColumn} aria-label="Pernyataan" role="group">
+          {leftOrder.map((pairIndex) => {
+            const endpoint = { side: "left" as const, index: pairIndex };
+            const isConnected = answer[String(pairIndex)] !== undefined;
+            return (
+              <button
+                aria-pressed={activeEndpoint?.side === "left" && activeEndpoint.index === pairIndex}
+                className={`${styles.matchingItem} ${styles.matchingLeft} ${activeEndpoint?.side === "left" && activeEndpoint.index === pairIndex ? styles.matchingItemActive : ""} ${isConnected ? styles.matchingItemConnected : ""}`}
+                data-match-side="left"
+                data-match-index={pairIndex}
+                key={`${questionId}-left-${pairIndex}`}
+                onClick={(event) => handleKeyboardClick(event, endpoint)}
+                onPointerDown={(event) => handlePointerDown(event, endpoint)}
+                ref={(node) => {
+                  if (node) leftNodes.current.set(pairIndex, node);
+                  else leftNodes.current.delete(pairIndex);
+                }}
+                type="button"
+              >
+                <span dangerouslySetInnerHTML={{ __html: sanitizeQuestionHtml(pairs[pairIndex].left) }} />
+              </button>
+            );
+          })}
+        </div>
+        <div className={styles.matchingColumn} aria-label="Pilihan pasangan" role="group">
+          {rightOrder.map((pairIndex) => {
+            const endpoint = { side: "right" as const, index: pairIndex };
+            const isConnected = Object.values(answer).includes(pairs[pairIndex].right);
+            return (
+              <button
+                aria-pressed={activeEndpoint?.side === "right" && activeEndpoint.index === pairIndex}
+                className={`${styles.matchingItem} ${styles.matchingRight} ${activeEndpoint?.side === "right" && activeEndpoint.index === pairIndex ? styles.matchingItemActive : ""} ${isConnected ? styles.matchingItemConnected : ""}`}
+                data-match-side="right"
+                data-match-index={pairIndex}
+                key={`${questionId}-right-${pairIndex}`}
+                onClick={(event) => handleKeyboardClick(event, endpoint)}
+                onPointerDown={(event) => handlePointerDown(event, endpoint)}
+                ref={(node) => {
+                  if (node) rightNodes.current.set(pairIndex, node);
+                  else rightNodes.current.delete(pairIndex);
+                }}
+                type="button"
+              >
+                <span dangerouslySetInnerHTML={{ __html: sanitizeQuestionHtml(pairs[pairIndex].right) }} />
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const isQuestionAnswered = (question: Question, answer: Answer | undefined) => {
   if (question.tipeSoal === "PG") {
@@ -65,13 +323,26 @@ const isQuestionAnswered = (question: Question, answer: Answer | undefined) => {
       });
   }
 
-  if (question.tipeSoal === "Benar/Salah") {
+  if (
+    question.tipeSoal === "Benar/Salah" ||
+    question.tipeSoal === "Sesuai/Tidak Sesuai" ||
+    question.tipeSoal === "Mendukung/Tidak mendukung" ||
+    question.tipeSoal === "Fakta/Pendapat"
+  ) {
     const statementCount = question.benarSalah?.length || 0;
     if (statementCount === 0 || !answer || typeof answer === "string" || Array.isArray(answer)) {
       return false;
     }
+    const allowedAnswers =
+      question.tipeSoal === "Benar/Salah"
+        ? ["Benar", "Salah"]
+        : question.tipeSoal === "Sesuai/Tidak Sesuai"
+          ? ["Sesuai", "Tidak Sesuai"]
+          : question.tipeSoal === "Mendukung/Tidak mendukung"
+            ? ["Mendukung", "Tidak mendukung"]
+            : ["Fakta", "Pendapat"];
     return Array.from({ length: statementCount }, (_, index) => answer[String(index)])
-      .every((value) => value === "Benar" || value === "Salah");
+      .every((value) => allowedAnswers.includes(value));
   }
 
   if (question.tipeSoal === "Menjodohkan") {
@@ -99,6 +370,9 @@ export default function CbtExamPage() {
   const [finishConfirmationOpen, setFinishConfirmationOpen] = useState(false);
   const [examFinished, setExamFinished] = useState(false);
   const [savingSubmission, setSavingSubmission] = useState(false);
+  const [progressReady, setProgressReady] = useState(false);
+  const [progressSaveError, setProgressSaveError] = useState("");
+  const [resumeMessage, setResumeMessage] = useState("");
   const [submissionError, setSubmissionError] = useState("");
   const [violationMessage, setViolationMessage] = useState("");
   const [violationWarningOpen, setViolationWarningOpen] = useState(false);
@@ -154,7 +428,11 @@ export default function CbtExamPage() {
           message?: string;
           exam?: Exam;
           violationCount?: number;
+          resumedSession?: boolean;
+          resumedAfterLock?: boolean;
           questions?: Question[];
+          answers?: Record<string, Answer>;
+          currentQuestionId?: string | null;
         };
 
         if (!response.ok || !result.success || !result.exam) {
@@ -168,7 +446,19 @@ export default function CbtExamPage() {
         if (cancelled) return;
 
         setExam(result.exam);
-        setQuestions(shuffleQuestions(result.questions || []));
+        const restoredQuestions = result.questions || [];
+        setQuestions(restoredQuestions);
+        setAnswers(result.answers || {});
+        if (result.resumedSession || result.resumedAfterLock) {
+          setResumeMessage("Sesi sebelumnya telah dilanjutkan. Jawaban tersimpan dan sisa waktu tetap berjalan.");
+        }
+        if (result.currentQuestionId) {
+          const restoredIndex = restoredQuestions.findIndex(
+            (question) => question.id === result.currentQuestionId
+          );
+          if (restoredIndex >= 0) setCurrentQuestionIndex(restoredIndex);
+        }
+        setProgressReady(true);
         if ((result.violationCount || 0) === 1) {
           setViolationMessage(
             "Peringatan: satu pelanggaran telah tercatat pada ujian ini. Pelanggaran berikutnya akan mengunci akses Anda."
@@ -314,6 +604,80 @@ export default function CbtExamPage() {
   };
 
   useEffect(() => {
+    if (
+      !progressReady ||
+      !student ||
+      questions.length === 0 ||
+      examFinished ||
+      savingSubmission
+    ) return;
+
+    let cancelled = false;
+    const examId = new URLSearchParams(window.location.search).get("examId");
+    const currentQuestionId = questions[currentQuestionIndex]?.id || "";
+    if (!examId || !currentQuestionId) return;
+    const progress = JSON.stringify({
+      examId,
+      studentId: student.id,
+      answers,
+      currentQuestionId,
+      progressUpdatedAt: Date.now(),
+    });
+
+    const saveProgress = async () => {
+      const response = await fetch("/api/cbt/progress", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: progress,
+        keepalive: true,
+      });
+      const result = await response.json() as { success: boolean; message?: string };
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || "Progres ujian gagal disimpan.");
+      }
+    };
+
+    const timeout = window.setTimeout(async () => {
+      try {
+        await saveProgress();
+        if (!cancelled) setProgressSaveError("");
+      } catch (progressError) {
+        if (cancelled) return;
+        console.error("Gagal menyimpan progres CBT:", progressError);
+        setProgressSaveError(
+          progressError instanceof Error
+            ? progressError.message
+            : "Progres ujian gagal disimpan. Periksa koneksi internet."
+        );
+      }
+    }, 500);
+    const handlePageHide = () => {
+      const queued = navigator.sendBeacon(
+        "/api/cbt/progress",
+        new Blob([progress], { type: "application/json" })
+      );
+      if (!queued) {
+        console.error("CBT progress could not be queued before leaving the page.");
+      }
+    };
+    window.addEventListener("pagehide", handlePageHide);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeout);
+      window.removeEventListener("pagehide", handlePageHide);
+    };
+  }, [
+    answers,
+    currentQuestionIndex,
+    examFinished,
+    progressReady,
+    questions,
+    savingSubmission,
+    student,
+  ]);
+
+  useEffect(() => {
     if (!exam) return;
 
     const scheduledEnd = exam.examDate && exam.endTime
@@ -322,7 +686,7 @@ export default function CbtExamPage() {
     const deadline = Number.isFinite(scheduledEnd)
       ? scheduledEnd
       : typeof exam.duration === "number" && exam.duration > 0
-        ? Date.now() + exam.duration * 60 * 1000
+        ? (exam.startedAt || Date.now()) + exam.duration * 60 * 1000
         : null;
 
     if (deadline === null) return;
@@ -426,6 +790,7 @@ export default function CbtExamPage() {
 
       setFinishConfirmationOpen(false);
       setExamFinished(true);
+      setProgressReady(false);
       if (examId) sessionStorage.removeItem(`cbtExamToken:${examId}`);
     } catch (submitError) {
       console.error("Gagal menyimpan jawaban CBT:", submitError);
@@ -622,13 +987,24 @@ export default function CbtExamPage() {
                   </div>
                 )}
 
-                {currentQuestion.tipeSoal === "Benar/Salah" && (
+                {(currentQuestion.tipeSoal === "Benar/Salah" ||
+                  currentQuestion.tipeSoal === "Sesuai/Tidak Sesuai" ||
+                  currentQuestion.tipeSoal === "Mendukung/Tidak mendukung" ||
+                  currentQuestion.tipeSoal === "Fakta/Pendapat") && (
                   (() => {
                     const statements = currentQuestion.benarSalah || [];
                     const statementAnswers =
                       typeof currentAnswer === "object" && !Array.isArray(currentAnswer)
                         ? currentAnswer
                         : {};
+                    const answerOptions =
+                      currentQuestion.tipeSoal === "Benar/Salah"
+                        ? ["Benar", "Salah"]
+                        : currentQuestion.tipeSoal === "Sesuai/Tidak Sesuai"
+                          ? ["Sesuai", "Tidak Sesuai"]
+                          : currentQuestion.tipeSoal === "Mendukung/Tidak mendukung"
+                            ? ["Mendukung", "Tidak mendukung"]
+                            : ["Fakta", "Pendapat"];
 
                     return (
                       <div className={styles.answerTableWrap}>
@@ -636,8 +1012,11 @@ export default function CbtExamPage() {
                           <thead>
                             <tr>
                               <th scope="col">Pernyataan</th>
-                              <th scope="col">Benar</th>
-                              <th scope="col">Salah</th>
+                              {answerOptions.map((value) => (
+                                <th scope="col" key={value}>
+                                  {value}
+                                </th>
+                              ))}
                             </tr>
                           </thead>
                           <tbody>
@@ -651,7 +1030,7 @@ export default function CbtExamPage() {
                                       __html: sanitizeQuestionHtml(statement.statement),
                                     }}
                                   />
-                                  {(["Benar", "Salah"] as const).map((value) => (
+                                  {answerOptions.map((value) => (
                                     <td key={value}>
                                       <label className={styles.answerTableChoice}>
                                         <input
@@ -680,35 +1059,17 @@ export default function CbtExamPage() {
                 )}
 
                 {currentQuestion.tipeSoal === "Menjodohkan" && (
-                  <div className={styles.answerOptions}>
-                    {(currentQuestion.pasangan || []).map((pair, pairIndex) => {
-                      const pairAnswers = typeof currentAnswer === "object" && !Array.isArray(currentAnswer)
+                  <MatchingAnswer
+                    key={currentQuestion.id}
+                    questionId={currentQuestion.id}
+                    pairs={currentQuestion.pasangan || []}
+                    answer={
+                      currentAnswer && typeof currentAnswer === "object" && !Array.isArray(currentAnswer)
                         ? currentAnswer
-                        : {};
-                      return (
-                        <div className={styles.statementAnswer} key={`${currentQuestion.id}-${pairIndex}`}>
-                          <span>{pair.left}</span>
-                          <select
-                            aria-label={`Pasangan untuk ${pair.left}`}
-                            value={pairAnswers[String(pairIndex)] || ""}
-                            onChange={(event) =>
-                              setAnswer(currentQuestion.id, {
-                                ...pairAnswers,
-                                [String(pairIndex)]: event.target.value,
-                              })
-                            }
-                          >
-                            <option value="">Pilih pasangan</option>
-                            {(currentQuestion.pasangan || []).map((choice, choiceIndex) => (
-                              <option key={`${currentQuestion.id}-choice-${choiceIndex}`} value={choice.right}>
-                                {choice.right}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      );
-                    })}
-                  </div>
+                        : {}
+                    }
+                    onChange={(answer) => setAnswer(currentQuestion.id, answer)}
+                  />
                 )}
 
                 {currentQuestion.tipeSoal === "Isian Singkat" && (
@@ -775,6 +1136,10 @@ export default function CbtExamPage() {
                 <p className={styles.finishRequirement}>
                   Lengkapi semua jawaban dan hapus semua tanda ragu-ragu untuk menyelesaikan ujian.
                 </p>
+              )}
+              {resumeMessage && <p className={styles.resumeNotice} role="status">{resumeMessage}</p>}
+              {progressSaveError && (
+                <p className={styles.finishRequirement} role="alert">{progressSaveError}</p>
               )}
             </div>
           </section>

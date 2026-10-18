@@ -33,6 +33,15 @@ type Question = {
   pasangan?: { left?: string; right?: string }[];
 };
 
+const getStatementAnswerOptions = (type?: string) => {
+  if (type === "Sesuai/Tidak Sesuai") return ["Sesuai", "Tidak Sesuai"];
+  if (type === "Mendukung/Tidak mendukung") {
+    return ["Mendukung", "Tidak mendukung"];
+  }
+  if (type === "Fakta/Pendapat") return ["Fakta", "Pendapat"];
+  return ["Benar", "Salah"];
+};
+
 const escapeHtml = (value: string) =>
   value.replace(/[&<>"']/g, (character) => {
     const entities: Record<string, string> = {
@@ -290,94 +299,102 @@ export default function PreviewSoalPage() {
                                   />
                                 </div>
                               ))}
-                            {question.tipeSoal === "Benar/Salah" &&
+                            {[
+                              "Benar/Salah",
+                              "Sesuai/Tidak Sesuai",
+                              "Mendukung/Tidak mendukung",
+                              "Fakta/Pendapat",
+                            ].includes(question.tipeSoal || "") &&
                               Array.isArray(question.benarSalah) && (
-                                <table
-                                  className="true-false-table"
-                                  style={{
-                                    borderCollapse: "collapse",
-                                    border: "1px solid #333",
-                                    width: "100%",
-                                    marginTop: 12,
-                                  }}
-                                >
-                                  <thead>
-                                    <tr>
-                                      <th
-                                        scope="col"
-                                        style={{
-                                          border: "1px solid #333",
-                                          padding: 8,
-                                          textAlign: "center",
-                                        }}
-                                      >
-                                        Pernyataan
-                                      </th>
-                                      <th
-                                        scope="col"
-                                        style={{
-                                          border: "1px solid #333",
-                                          padding: 8,
-                                          textAlign: "center",
-                                          width: 90,
-                                        }}
-                                      >
-                                        Benar
-                                      </th>
-                                      <th
-                                        scope="col"
-                                        style={{
-                                          border: "1px solid #333",
-                                          padding: 8,
-                                          textAlign: "center",
-                                          width: 90,
-                                        }}
-                                      >
-                                        Salah
-                                      </th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {question.benarSalah.map((item, itemIndex) => (
-                                      <tr key={itemIndex}>
-                                        <td
-                                          style={{
-                                            border: "1px solid #333",
-                                            padding: 8,
-                                          }}
-                                          dangerouslySetInnerHTML={{
-                                            __html: sanitizeQuestionHtml(
-                                              item.statement || "",
-                                            ),
-                                          }}
-                                        />
-                                        {[0, 1].map((answerIndex) => (
-                                          <td
-                                            key={answerIndex}
+                                (() => {
+                                  const answerOptions = getStatementAnswerOptions(
+                                    question.tipeSoal,
+                                  );
+                                  return (
+                                    <table
+                                      className="true-false-table"
+                                      style={{
+                                        borderCollapse: "collapse",
+                                        border: "1px solid #333",
+                                        width: "100%",
+                                        marginTop: 12,
+                                      }}
+                                    >
+                                      <thead>
+                                        <tr>
+                                          <th
+                                            scope="col"
                                             style={{
                                               border: "1px solid #333",
                                               padding: 8,
                                               textAlign: "center",
-                                              width: 90,
                                             }}
                                           >
-                                            <span
-                                              aria-label={`${answerIndex === 0 ? "Benar" : "Salah"} untuk pernyataan ${itemIndex + 1}`}
-                                              className="answer-checkbox"
+                                            Pernyataan
+                                          </th>
+                                          {answerOptions.map((answerOption) => (
+                                            <th
+                                              key={answerOption}
+                                              scope="col"
                                               style={{
-                                                display: "inline-block",
-                                                width: 16,
-                                                height: 16,
                                                 border: "1px solid #333",
-                                                verticalAlign: "middle",
+                                                padding: 8,
+                                                textAlign: "center",
+                                                width: 90,
                                               }}
-                                            />
-                                          </td>
-                                        ))}
-                                      </tr>
-                                    ))}
-                                  </tbody>
-                                </table>
+                                            >
+                                              {answerOption}
+                                            </th>
+                                          ))}
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        {question.benarSalah.map(
+                                          (item, itemIndex) => (
+                                            <tr key={itemIndex}>
+                                              <td
+                                                style={{
+                                                  border: "1px solid #333",
+                                                  padding: 8,
+                                                }}
+                                                dangerouslySetInnerHTML={{
+                                                  __html: sanitizeQuestionHtml(
+                                                    item.statement || "",
+                                                  ),
+                                                }}
+                                              />
+                                              {answerOptions.map(
+                                                (answerOption) => (
+                                                  <td
+                                                    key={answerOption}
+                                                    style={{
+                                                      border: "1px solid #333",
+                                                      padding: 8,
+                                                      textAlign: "center",
+                                                      width: 90,
+                                                    }}
+                                                  >
+                                                    <span
+                                                      aria-label={`${answerOption} untuk pernyataan ${itemIndex + 1}`}
+                                                      className="answer-checkbox"
+                                                      style={{
+                                                        display: "inline-block",
+                                                        width: 16,
+                                                        height: 16,
+                                                        border: "1px solid #333",
+                                                        verticalAlign: "middle",
+                                                      }}
+                                                    />
+                                                  </td>
+                                                ),
+                                              )}
+                                            </tr>
+                                          ),
+                                        )}
+                                      </tbody>
+                                    </table>
+                                  );
+                                })()
                               )}
                             {question.tipeSoal === "Menjodohkan" &&
                               Array.isArray(question.pasangan) && (

@@ -23,6 +23,42 @@ body {
   height: 100%;
 }
 
+.exam-action-pill {
+  width: 120px;
+  min-height: 29px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 3px 10px;
+  border: 0;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.exam-action-pill i {
+  font-size: 15px;
+}
+
+.exam-action-start {
+  background: #168a52;
+}
+
+.exam-action-end {
+  background: #dc3545;
+}
+
+.exam-action-pill:disabled {
+  cursor: not-allowed;
+  opacity: 0.75;
+}
+
+.exam-action-pill:not(:disabled) {
+  cursor: pointer;
+}
 
 .wrapper {
   min-height: 100vh;

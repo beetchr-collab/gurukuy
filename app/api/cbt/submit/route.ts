@@ -54,13 +54,26 @@ const isCompleteAnswer = (
     return false;
   }
 
-  if (questionType === "Benar/Salah") {
+  if (
+    questionType === "Benar/Salah" ||
+    questionType === "Sesuai/Tidak Sesuai" ||
+    questionType === "Mendukung/Tidak mendukung" ||
+    questionType === "Fakta/Pendapat"
+  ) {
     const statements = question.benarSalah;
     if (!Array.isArray(statements) || !isStringRecord(answer)) return false;
+    const allowedAnswers =
+      questionType === "Benar/Salah"
+        ? ["Benar", "Salah"]
+        : questionType === "Sesuai/Tidak Sesuai"
+          ? ["Sesuai", "Tidak Sesuai"]
+          : questionType === "Mendukung/Tidak mendukung"
+            ? ["Mendukung", "Tidak mendukung"]
+            : ["Fakta", "Pendapat"];
     return Object.keys(answer).length === statements.length &&
       statements.every((_, index) => {
         const value = answer[String(index)];
-        return value === "Benar" || value === "Salah";
+        return allowedAnswers.includes(value);
       });
   }
 
@@ -220,7 +233,11 @@ export async function POST(request: Request) {
     );
     await batch.commit();
 
-    return NextResponse.json({ success: true, message: "Jawaban ujian berhasil disimpan." });
+    return NextResponse.json({
+      success: true,
+      message: "Jawaban ujian berhasil disimpan.",
+      showResults: exam.showResults === true,
+    });
   } catch (error) {
     console.error("CBT submission API error:", error);
     return NextResponse.json(

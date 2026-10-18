@@ -50,6 +50,22 @@ type QuestionItem = {
   jawabanEssay?: string;
 };
 
+const statementQuestionTypes = [
+  "Benar/Salah",
+  "Sesuai/Tidak Sesuai",
+  "Mendukung/Tidak mendukung",
+  "Fakta/Pendapat",
+];
+
+const getStatementAnswerOptions = (type: string) => {
+  if (type === "Sesuai/Tidak Sesuai") return ["Sesuai", "Tidak Sesuai"];
+  if (type === "Mendukung/Tidak mendukung") {
+    return ["Mendukung", "Tidak mendukung"];
+  }
+  if (type === "Fakta/Pendapat") return ["Fakta", "Pendapat"];
+  return ["Benar", "Salah"];
+};
+
 export default function TambahSoalPage() {
   const router = useRouter();
   const params = useParams();
@@ -156,6 +172,30 @@ export default function TambahSoalPage() {
     >,
   ) => {
     const { name, value } = e.target;
+    if (name === "tipeSoal") {
+      setFormData((prev) => {
+        const isStatementType = statementQuestionTypes.includes(value);
+        const nextOptions = getStatementAnswerOptions(value);
+        return {
+          ...prev,
+          tipeSoal: value,
+          benarSalah:
+            !isStatementType
+              ? prev.benarSalah
+              : prev.benarSalah.map((item) => ({
+                  ...item,
+                  jawaban: nextOptions[
+                    ["Salah", "Tidak Sesuai", "Tidak mendukung", "Pendapat"].includes(
+                      item.jawaban,
+                    )
+                      ? 1
+                      : 0
+                  ],
+                })),
+        };
+      });
+      return;
+    }
     setFormData((prev) => ({
       ...prev,
       [name]: value,
@@ -441,12 +481,12 @@ export default function TambahSoalPage() {
       statement: sanitizeQuestionHtml(item.statement),
     }));
     if (
-      formData.tipeSoal === "Benar/Salah" &&
+      statementQuestionTypes.includes(formData.tipeSoal) &&
       cleanTrueFalseStatements.some(
         (item) => !item.statement.replace(/<[^>]*>/g, "").trim(),
       )
     ) {
-      alert("Semua pernyataan Benar/Salah wajib diisi");
+      alert("Semua pernyataan wajib diisi");
       return;
     }
 
@@ -485,7 +525,9 @@ export default function TambahSoalPage() {
         payload.jawabanIsian = formData.jawabanIsian;
       }
 
-      if (formData.tipeSoal === "Benar/Salah") {
+      if (
+        statementQuestionTypes.includes(formData.tipeSoal)
+      ) {
         payload.benarSalah = cleanTrueFalseStatements;
       }
 
@@ -547,7 +589,9 @@ export default function TambahSoalPage() {
 
           <p className="mb-0">
             Tambahkan soal dengan tipe: Pilihan Ganda, Pilihan Ganda Kompleks,
-            Menjodohkan, Benar/Salah, Isian Singkat, atau Uraian.
+            Menjodohkan, Benar/Salah, Sesuai/Tidak Sesuai,
+            Mendukung/Tidak mendukung, Fakta/Pendapat, Isian Singkat, atau
+            Uraian.
           </p>
         </div>
 
@@ -581,6 +625,13 @@ export default function TambahSoalPage() {
                         <option value="PGK">Pilihan Ganda Kompleks</option>
                         <option value="Menjodohkan">Menjodohkan</option>
                         <option value="Benar/Salah">Benar/Salah</option>
+                        <option value="Sesuai/Tidak Sesuai">
+                          Sesuai/Tidak Sesuai
+                        </option>
+                        <option value="Mendukung/Tidak mendukung">
+                          Mendukung/Tidak mendukung
+                        </option>
+                        <option value="Fakta/Pendapat">Fakta/Pendapat</option>
                         <option value="Isian Singkat">Isian Singkat</option>
                         <option value="Uraian">Uraian</option>
                       </select>
@@ -609,7 +660,7 @@ export default function TambahSoalPage() {
 
                   <div className="mb-3">
                     <label className="form-label fw-semibold">
-                      {formData.tipeSoal === "Benar/Salah"
+                      {statementQuestionTypes.includes(formData.tipeSoal)
                         ? "Pernyataan"
                         : "Pertanyaan"}
                     </label>
@@ -710,11 +761,11 @@ export default function TambahSoalPage() {
                     )}
                   </div>
 
-                  {formData.tipeSoal === "Benar/Salah" && (
+                  {statementQuestionTypes.includes(formData.tipeSoal) && (
                     <>
                       <div className="mb-3 d-flex justify-content-between align-items-center">
                         <label className="form-label fw-semibold">
-                          Pernyataan Benar/Salah
+                          Pernyataan {formData.tipeSoal}
                         </label>
                       </div>
 
@@ -743,8 +794,13 @@ export default function TambahSoalPage() {
                                 handleBenarSalahChange(idx, e.target.value)
                               }
                             >
-                              <option value="Benar">Benar</option>
-                              <option value="Salah">Salah</option>
+                              {getStatementAnswerOptions(formData.tipeSoal).map(
+                                (answerOption) => (
+                                  <option key={answerOption} value={answerOption}>
+                                    {answerOption}
+                                  </option>
+                                ),
+                              )}
                             </select>
                           </div>
                           <div className="col-1">
@@ -1014,8 +1070,11 @@ export default function TambahSoalPage() {
                               ? `Jawaban: ${Array.isArray(item.jawabanBenar) ? item.jawabanBenar.join(", ") : item.jawabanBenar}`
                               : item.tipeSoal === "PG"
                                 ? `Jawaban: ${item.jawabanBenar}`
-                                : item.tipeSoal === "Benar/Salah"
-                                  ? "Benar/Salah"
+                                : item.tipeSoal === "Benar/Salah" ||
+                                    item.tipeSoal === "Sesuai/Tidak Sesuai" ||
+                                    item.tipeSoal === "Mendukung/Tidak mendukung" ||
+                                    item.tipeSoal === "Fakta/Pendapat"
+                                    ? item.tipeSoal
                                   : item.tipeSoal === "Isian Singkat"
                                     ? `Jawaban: ${item.jawabanIsian}`
                                     : item.tipeSoal === "Uraian"
@@ -1098,7 +1157,7 @@ export default function TambahSoalPage() {
                         </div>
                       )}
 
-                      {item.tipeSoal === "Benar/Salah" &&
+                      {statementQuestionTypes.includes(item.tipeSoal) &&
                         Array.isArray(item.benarSalah) && (
                           <div className="row g-2">
                             {item.benarSalah.map(

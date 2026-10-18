@@ -323,13 +323,26 @@ const isQuestionAnswered = (question: Question, answer: Answer | undefined) => {
       });
   }
 
-  if (question.tipeSoal === "Benar/Salah") {
+  if (
+    question.tipeSoal === "Benar/Salah" ||
+    question.tipeSoal === "Sesuai/Tidak Sesuai" ||
+    question.tipeSoal === "Mendukung/Tidak mendukung" ||
+    question.tipeSoal === "Fakta/Pendapat"
+  ) {
     const statementCount = question.benarSalah?.length || 0;
     if (statementCount === 0 || !answer || typeof answer === "string" || Array.isArray(answer)) {
       return false;
     }
+    const allowedAnswers =
+      question.tipeSoal === "Benar/Salah"
+        ? ["Benar", "Salah"]
+        : question.tipeSoal === "Sesuai/Tidak Sesuai"
+          ? ["Sesuai", "Tidak Sesuai"]
+          : question.tipeSoal === "Mendukung/Tidak mendukung"
+            ? ["Mendukung", "Tidak mendukung"]
+            : ["Fakta", "Pendapat"];
     return Array.from({ length: statementCount }, (_, index) => answer[String(index)])
-      .every((value) => value === "Benar" || value === "Salah");
+      .every((value) => allowedAnswers.includes(value));
   }
 
   if (question.tipeSoal === "Menjodohkan") {
@@ -356,6 +369,7 @@ export default function CbtExamPage() {
   const [questionNavigationOpen, setQuestionNavigationOpen] = useState(false);
   const [finishConfirmationOpen, setFinishConfirmationOpen] = useState(false);
   const [examFinished, setExamFinished] = useState(false);
+  const [showResultsAfterFinish, setShowResultsAfterFinish] = useState(false);
   const [savingSubmission, setSavingSubmission] = useState(false);
   const [progressReady, setProgressReady] = useState(false);
   const [progressSaveError, setProgressSaveError] = useState("");
@@ -618,7 +632,11 @@ export default function CbtExamPage() {
         body: progress,
         keepalive: true,
       });
-      const result = await response.json() as { success: boolean; message?: string };
+      const result = await response.json() as {
+        success: boolean;
+        message?: string;
+        showResults?: boolean;
+      };
       if (!response.ok || !result.success) {
         throw new Error(result.message || "Progres ujian gagal disimpan.");
       }
@@ -769,13 +787,18 @@ export default function CbtExamPage() {
           doubtfulQuestionIds: Array.from(doubtfulQuestions),
         }),
       });
-      const result = await response.json() as { success: boolean; message?: string };
+      const result = await response.json() as {
+        success: boolean;
+        message?: string;
+        showResults?: boolean;
+      };
 
       if (!response.ok || !result.success) {
         throw new Error(result.message || "Jawaban gagal disimpan. Silakan coba lagi.");
       }
 
       setFinishConfirmationOpen(false);
+      setShowResultsAfterFinish(result.showResults === true);
       setExamFinished(true);
       setProgressReady(false);
       if (examId) sessionStorage.removeItem(`cbtExamToken:${examId}`);
@@ -974,13 +997,24 @@ export default function CbtExamPage() {
                   </div>
                 )}
 
-                {currentQuestion.tipeSoal === "Benar/Salah" && (
+                {(currentQuestion.tipeSoal === "Benar/Salah" ||
+                  currentQuestion.tipeSoal === "Sesuai/Tidak Sesuai" ||
+                  currentQuestion.tipeSoal === "Mendukung/Tidak mendukung" ||
+                  currentQuestion.tipeSoal === "Fakta/Pendapat") && (
                   (() => {
                     const statements = currentQuestion.benarSalah || [];
                     const statementAnswers =
                       typeof currentAnswer === "object" && !Array.isArray(currentAnswer)
                         ? currentAnswer
                         : {};
+                    const answerOptions =
+                      currentQuestion.tipeSoal === "Benar/Salah"
+                        ? ["Benar", "Salah"]
+                        : currentQuestion.tipeSoal === "Sesuai/Tidak Sesuai"
+                          ? ["Sesuai", "Tidak Sesuai"]
+                          : currentQuestion.tipeSoal === "Mendukung/Tidak mendukung"
+                            ? ["Mendukung", "Tidak mendukung"]
+                            : ["Fakta", "Pendapat"];
 
                     return (
                       <div className={styles.answerTableWrap}>
@@ -988,8 +1022,11 @@ export default function CbtExamPage() {
                           <thead>
                             <tr>
                               <th scope="col">Pernyataan</th>
-                              <th scope="col">Benar</th>
-                              <th scope="col">Salah</th>
+                              {answerOptions.map((value) => (
+                                <th scope="col" key={value}>
+                                  {value}
+                                </th>
+                              ))}
                             </tr>
                           </thead>
                           <tbody>
@@ -1003,7 +1040,7 @@ export default function CbtExamPage() {
                                       __html: sanitizeQuestionHtml(statement.statement),
                                     }}
                                   />
-                                  {(["Benar", "Salah"] as const).map((value) => (
+                                  {answerOptions.map((value) => (
                                     <td key={value}>
                                       <label className={styles.answerTableChoice}>
                                         <input
@@ -1275,13 +1312,24 @@ export default function CbtExamPage() {
             <span className={styles.finishDialogIcon} aria-hidden="true">✓</span>
             <h2 id="finished-title">Ujian selesai</h2>
             <p>{answeredCount} dari {questions.length} soal sudah dijawab.</p>
-            <button
-              className={styles.finishConfirmButton}
-              onClick={() => router.push("/cbt")}
-              type="button"
-            >
-              Kembali ke dashboard
-            </button>
+            <div className={styles.finishDialogActions}>
+              {showResultsAfterFinish && (
+                <button
+                  className={styles.previousButton}
+                  onClick={() => router.push("/cbt/nilai-siswa")}
+                  type="button"
+                >
+                  Lihat nilai
+                </button>
+              )}
+              <button
+                className={styles.finishConfirmButton}
+                onClick={() => router.push("/cbt")}
+                type="button"
+              >
+                Keluar
+              </button>
+            </div>
           </section>
         </div>
       )}

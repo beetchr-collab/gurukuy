@@ -1,5 +1,6 @@
 import { FieldPath } from "firebase-admin/firestore";
 import { NextResponse } from "next/server";
+import { getMatchingScoreRatio, getPgkScoreRatio } from "@/lib/cbt-scoring";
 import {
   adminAuth,
   adminDb,
@@ -89,34 +90,15 @@ const getScoreRatio = (
   }
 
   if (type === "PGK") {
-    const correctLabels = new Set(
-      (Array.isArray(question.jawabanBenar)
-        ? question.jawabanBenar
-        : typeof question.jawabanBenar === "string"
-          ? [question.jawabanBenar]
-          : []
-      ).filter((label): label is string => typeof label === "string")
-    );
-    if (Array.isArray(answer)) {
-      if (correctLabels.size === 0 || answer.length === 0) return 0;
-      const correctSelections = answer.filter((label) => correctLabels.has(label)).length;
-      const incorrectSelections = answer.length - correctSelections;
-      return Math.max(
-        0,
-        Math.min(1, (correctSelections - incorrectSelections) / correctLabels.size)
-      );
-    }
-    if (!isRecord(answer)) return 0;
-    const options = Array.isArray(question.opsi) ? question.opsi : [];
-    if (options.length === 0) return 0;
-    const matchedOptions = options.filter((_, index) => {
-      const expected = correctLabels.has(String.fromCharCode(65 + index)) ? "Benar" : "Salah";
-      return answer[String(index)] === expected;
-    });
-    return matchedOptions.length / options.length;
+    return getPgkScoreRatio(question, answer);
   }
 
-  if (type === "Benar/Salah") {
+  if (
+    type === "Benar/Salah" ||
+    type === "Sesuai/Tidak Sesuai" ||
+    type === "Mendukung/Tidak mendukung" ||
+    type === "Fakta/Pendapat"
+  ) {
     if (!Array.isArray(question.benarSalah) || !isRecord(answer)) return 0;
     const statements = question.benarSalah as { jawaban?: string }[];
     if (statements.length === 0) return 0;
@@ -127,13 +109,7 @@ const getScoreRatio = (
   }
 
   if (type === "Menjodohkan") {
-    if (!Array.isArray(question.pasangan) || !isRecord(answer)) return 0;
-    const pairs = question.pasangan as { right?: string }[];
-    if (pairs.length === 0) return 0;
-    const correctPairs = pairs.filter((pair, index) =>
-      answer[String(index)] === pair.right
-    ).length;
-    return correctPairs / pairs.length;
+    return getMatchingScoreRatio(question, answer);
   }
 
   return 0;
@@ -255,7 +231,10 @@ export async function GET(request: Request) {
         ? question.data.jawabanBenar
         : question.data.tipeSoal === "PGK"
           ? question.data.jawabanBenar
-          : question.data.tipeSoal === "Benar/Salah"
+          : question.data.tipeSoal === "Benar/Salah" ||
+              question.data.tipeSoal === "Sesuai/Tidak Sesuai" ||
+              question.data.tipeSoal === "Mendukung/Tidak mendukung" ||
+              question.data.tipeSoal === "Fakta/Pendapat"
             ? question.data.benarSalah?.map((item: { jawaban?: string }) => item.jawaban)
             : question.data.tipeSoal === "Menjodohkan"
               ? question.data.pasangan?.map((pair: { left?: string; right?: string }) => ({

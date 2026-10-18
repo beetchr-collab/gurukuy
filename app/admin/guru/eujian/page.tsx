@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
 import Modal from "bootstrap/js/dist/modal";
 import EujianMenu from "./components/EujianMenu";
 import {
@@ -19,6 +19,8 @@ export default function UsersPage() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [edit, setEdit] = useState(false);
+    const [updatingResultsVisibility, setUpdatingResultsVisibility] =
+        useState<string | null>(null);
 
     const [profil, setProfil] = useState({
         username: "",
@@ -123,6 +125,7 @@ export default function UsersPage() {
 
         } catch (error) {
             console.log(error);
+            alert("Gagal memulai ujian. Silakan coba lagi.");
         }
     };
 
@@ -144,6 +147,42 @@ export default function UsersPage() {
 
         } catch (error) {
             console.log(error);
+            alert("Gagal mengakhiri ujian. Silakan coba lagi.");
+        }
+    };
+
+    const toggleResultsVisibility = async (
+        examId: string,
+        isVisible: boolean
+    ) => {
+        if (!user || updatingResultsVisibility) return;
+
+        setUpdatingResultsVisibility(examId);
+        try {
+            const idToken = await auth.currentUser?.getIdToken();
+            if (!idToken) {
+                throw new Error("Sesi pengguna tidak valid. Silakan masuk kembali.");
+            }
+            const response = await fetch("/api/cbt/results-visibility", {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${idToken}`,
+                },
+                body: JSON.stringify({ examId, showResults: !isVisible }),
+            });
+            const result = await response.json() as {
+                success: boolean;
+                message?: string;
+            };
+            if (!response.ok || !result.success) {
+                throw new Error(result.message || "Gagal mengubah tampilan nilai.");
+            }
+        } catch (error) {
+            console.error("Gagal mengubah tampilan nilai:", error);
+            alert(error instanceof Error ? error.message : "Gagal mengubah tampilan nilai.");
+        } finally {
+            setUpdatingResultsVisibility(null);
         }
     };
 
@@ -546,73 +585,39 @@ export default function UsersPage() {
 
                                                             <div className="d-flex justify-content-center">
 
-                                                                <div
-                                                                    className="btn-group shadow-sm rounded-pill overflow-hidden"
-                                                                    role="group"
-                                                                >
+                                                                <div className="d-flex flex-column align-items-center gap-2">
 
-                                                                    {/* MULAI */}
                                                                     <button
                                                                         type="button"
-                                                                        className={`btn btn-sm px-3 d-flex align-items-center gap-2 ${item.examStatus === "mulai"
-                                                                            ? "btn-success"
-                                                                            : "btn-light text-success border"
-                                                                            }`}
-                                                                        onClick={() => mulaiUjian(item.id)}
+                                                                        className={`exam-action-pill ${item.examStatus === "mulai" ? "exam-action-end" : "exam-action-start"}`}
+                                                                        onClick={() => item.examStatus === "mulai"
+                                                                            ? akhiriUjian(item.id)
+                                                                            : mulaiUjian(item.id)}
                                                                         disabled={
-                                                                            item.examStatus === "mulai" ||
-                                                                            !item.examDate ||
-                                                                            !item.startTime ||
-                                                                            !item.endTime ||
-                                                                            isBeforeSchedule(item)
+                                                                            item.examStatus !== "mulai" &&
+                                                                            (
+                                                                                !item.examDate ||
+                                                                                !item.startTime ||
+                                                                                !item.endTime ||
+                                                                                isBeforeSchedule(item)
+                                                                            )
                                                                         }
+                                                                        aria-pressed={item.examStatus === "mulai"}
                                                                     >
-                                                                        <div
-                                                                            className="d-flex align-items-center justify-content-center rounded-circle"
-                                                                            style={{
-                                                                                width: "24px",
-                                                                                height: "24px",
-                                                                                background:
-                                                                                    item.examStatus === "mulai"
-                                                                                        ? "rgba(255,255,255,0.2)"
-                                                                                        : "#19875420",
-                                                                            }}
-                                                                        >
-                                                                            <i className="fas fa-play"></i>
-                                                                        </div>
-
-                                                                        <span className="fw-semibold">
-                                                                            Mulai
-                                                                        </span>
+                                                                        {item.examStatus === "mulai" ? "Akhiri" : "Mulai"}
+                                                                        <i className={`fas ${item.examStatus === "mulai" ? "fa-toggle-on" : "fa-toggle-off"}`} aria-hidden="true" />
                                                                     </button>
 
-                                                                    {/* AKHIRI */}
                                                                     <button
                                                                         type="button"
-                                                                        className={`btn btn-sm px-3 d-flex align-items-center gap-2 ${item.examStatus === "selesai"
-                                                                            ? "btn-danger"
-                                                                            : "btn-light text-danger border"
-                                                                            }`}
-                                                                        onClick={() => akhiriUjian(item.id)}
-                                                                        disabled={item.examStatus === "selesai"}
+                                                                        className={`exam-action-pill ${item.showResults === true ? "exam-action-end" : "exam-action-start"}`}
+                                                                        onClick={() => toggleResultsVisibility(item.id, item.showResults === true)}
+                                                                        aria-pressed={item.showResults === true}
+                                                                        disabled={updatingResultsVisibility === item.id}
+                                                                        title={item.showResults === true ? "Sembunyikan nilai dari siswa" : "Tampilkan nilai kepada siswa"}
                                                                     >
-                                                                        <div
-                                                                            className="d-flex align-items-center justify-content-center rounded-circle"
-                                                                            style={{
-                                                                                width: "24px",
-                                                                                height: "24px",
-                                                                                background:
-                                                                                    item.examStatus === "selesai"
-                                                                                        ? "rgba(255,255,255,0.2)"
-                                                                                        : "#dc354520",
-                                                                            }}
-                                                                        >
-                                                                            <i className="fas fa-stop"></i>
-                                                                        </div>
-
-                                                                        <span className="fw-semibold">
-                                                                            Akhiri
-                                                                        </span>
+                                                                        {item.showResults === true ? "Sembunyikan Nilai" : "Tampilkan Nilai"}
+                                                                        <i className={`fas ${item.showResults === true ? "fa-toggle-on" : "fa-toggle-off"}`} aria-hidden="true" />
                                                                     </button>
 
                                                                 </div>
@@ -627,7 +632,7 @@ export default function UsersPage() {
 
                                                 <tr>
                                                     <td
-                                                        colSpan={7}
+                                                        colSpan={9}
                                                         className="text-center py-5 text-muted"
                                                     >
                                                         <i className="fas fa-folder-open fa-2x mb-3 d-block"></i>

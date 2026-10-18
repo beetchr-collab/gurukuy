@@ -31,14 +31,27 @@ const isValidAnswerForQuestion = (
       new Set(answer).size === answer.length &&
       answer.every(isOptionLabel);
   }
-  if (question.tipeSoal === "Benar/Salah") {
+  if (
+    question.tipeSoal === "Benar/Salah" ||
+    question.tipeSoal === "Sesuai/Tidak Sesuai" ||
+    question.tipeSoal === "Mendukung/Tidak mendukung" ||
+    question.tipeSoal === "Fakta/Pendapat"
+  ) {
     const statements = Array.isArray(question.benarSalah) ? question.benarSalah : [];
+    const allowedAnswers =
+      question.tipeSoal === "Benar/Salah"
+        ? ["Benar", "Salah"]
+        : question.tipeSoal === "Sesuai/Tidak Sesuai"
+          ? ["Sesuai", "Tidak Sesuai"]
+          : question.tipeSoal === "Mendukung/Tidak mendukung"
+            ? ["Mendukung", "Tidak mendukung"]
+            : ["Fakta", "Pendapat"];
     return !Array.isArray(answer) &&
       typeof answer !== "string" &&
       Object.entries(answer).every(([index, value]) =>
         /^\d+$/.test(index) &&
         Number(index) < statements.length &&
-        (value === "Benar" || value === "Salah")
+        allowedAnswers.includes(value)
       );
   }
   if (question.tipeSoal === "Menjodohkan") {

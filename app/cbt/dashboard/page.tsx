@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useSyncExternalStore, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import styles from "../cbt.module.css";
 
 type CbtStudent = {
@@ -195,10 +196,16 @@ useEffect(() => {
             <span className={styles.brandMark}>G</span>
             <span>GuruKuy CBT</span>
           </div>
-          <button className={styles.logoutButton} onClick={handleLogout}>
-            <i className="bi bi-box-arrow-right" aria-hidden="true" />
-            Keluar
-          </button>
+          <div className={styles.resultsHeaderActions}>
+            <Link className={styles.logoutButton} href="/cbt/nilai-siswa">
+              <i className="bi bi-award" aria-hidden="true" />
+              Nilai saya
+            </Link>
+            <button className={styles.logoutButton} onClick={handleLogout}>
+              <i className="bi bi-box-arrow-right" aria-hidden="true" />
+              Keluar
+            </button>
+          </div>
         </header>
 
         <section className={styles.dashboardContent}>
