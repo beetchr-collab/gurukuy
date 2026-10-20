@@ -3,7 +3,12 @@
 import Link from "next/link";
 
 type EujianMenuProps = {
-  active: "overview" | "bank-soal" | "peserta" | "analisis" | "pelanggaran";
+  active:
+    | "overview"
+    | "bank-soal"
+    | "peserta"
+    | "analisis"
+    | "pelanggaran";
 };
 
 const menuItems = [
@@ -25,7 +30,7 @@ const menuItems = [
     href: "/admin/guru/eujian/peserta-exam",
     icon: "fa-users",
   },
-    {
+  {
     id: "analisis",
     label: "Analisis & Nilai",
     href: "/admin/guru/eujian/analisis",
