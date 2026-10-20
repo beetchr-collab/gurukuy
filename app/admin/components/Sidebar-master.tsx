@@ -559,15 +559,15 @@ export default function Sidebar() {
 
                     <li className="nav-item">
                       <Link
-                        href="/admin/guru/eujian/import-eujian"
+                        href="/admin/guru/eujian/impor-bank-soal"
                         className={`nav-link ${
-                          isActive("/admin/guru/eujian/import-eujian")
+                          isActive("/admin/guru/eujian/impor-bank-soal")
                             ? "active bg-primary text-white"
                             : ""
                         }`}
                       >
                         <i className="fas fa-file-import nav-icon"></i>
-                        <p>Import E-Ujian</p>
+                        <p>Import Bank Soal</p>
                       </Link>
                     </li>
 
